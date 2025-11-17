@@ -1,0 +1,34 @@
+[gd_scene load_steps=7 format=3 uid="uid://bsu7ag5f5ci4u"]
+
+[ext_resource type="Texture2D" uid="uid://cserkghc74pqy" path="res://Assets/Tiles/Platform.png" id="1_g68ka"]
+[ext_resource type="Texture2D" uid="uid://cqpfa133x7ya0" path="res://Assets/Tiles/Platform_n.png" id="2_0opt1"]
+[ext_resource type="Texture2D" uid="uid://bx2oyw87usbqy" path="res://Assets/Tiles/Platform_s.png" id="3_24kkw"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_7qdk8"]
+diffuse_texture = ExtResource("1_g68ka")
+normal_texture = ExtResource("2_0opt1")
+specular_texture = ExtResource("3_24kkw")
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_53r27"]
+size = Vector2(42, 8)
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_g68ka"]
+cull_mode = 1
+polygon = PackedVector2Array(21, 0, 21, 5, -21, 5, -21, 0)
+
+[node name="MovingPlatform" type="CharacterBody2D"]
+disable_mode = 2
+motion_mode = 1
+floor_constant_speed = true
+platform_wall_layers = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("CanvasTexture_7qdk8")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_53r27")
+one_way_collision = true
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+occluder = SubResource("OccluderPolygon2D_g68ka")

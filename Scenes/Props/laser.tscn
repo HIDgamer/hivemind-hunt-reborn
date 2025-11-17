@@ -1,0 +1,172 @@
+[gd_scene load_steps=19 format=3 uid="uid://b3bda3442ll2y"]
+
+[ext_resource type="Texture2D" uid="uid://ch6rifkapaie7" path="res://Assets/Tiles/Laser.tres" id="1_kapjr"]
+[ext_resource type="Script" uid="uid://buasvpdac577w" path="res://Code/Props/Laser.cs" id="1_laser_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hx80u"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(0, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d435s"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(256, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_12qfl"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(256, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5awgg"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(192, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cnouv"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(128, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ime2x"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(64, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nhhf1"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(0, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_clvgq"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(0, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vo20m"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(64, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lw2aq"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(128, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mpx1m"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(192, 0, 64, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gu055"]
+atlas = ExtResource("1_kapjr")
+region = Rect2(256, 0, 64, 124)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_cikve"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hx80u")
+}],
+"loop": true,
+"name": &"Idle Off",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d435s")
+}],
+"loop": true,
+"name": &"Idle on",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_12qfl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5awgg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cnouv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ime2x")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nhhf1")
+}],
+"loop": false,
+"name": &"Off",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_clvgq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vo20m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lw2aq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mpx1m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gu055")
+}],
+"loop": false,
+"name": &"On",
+"speed": 20.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tlawh"]
+size = Vector2(17, 111)
+
+[sub_resource type="Gradient" id="Gradient_hx80u"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+metadata/_snap_enabled = true
+metadata/_snap_count = 30
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_d435s"]
+gradient = SubResource("Gradient_hx80u")
+height = 128
+fill = 2
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+metadata/_snap_enabled = true
+
+[node name="Laser" type="Node2D"]
+script = ExtResource("1_laser_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_cikve")
+animation = &"Off"
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(-1.5, 6.5)
+shape = SubResource("RectangleShape2D_tlawh")
+
+[node name="Timer" type="Timer" parent="."]
+
+[node name="GlowLight" type="PointLight2D" parent="."]
+light_mask = 3
+position = Vector2(-1.5, 6.499995)
+scale = Vector2(0.421875, 0.8671875)
+color = Color(1, 0, 0, 1)
+energy = 1.5
+texture = SubResource("GradientTexture2D_d435s")
+
+[node name="SparkParticles" type="CPUParticles2D" parent="."]
+position = Vector2(-1, 62)
+amount = 20
+lifetime = 0.5
+explosiveness = 0.2
+emission_shape = 3
+emission_rect_extents = Vector2(8.5, 1)
+direction = Vector2(0, -1)
+gravity = Vector2(0, 200)
+initial_velocity_min = 50.0
+initial_velocity_max = 100.0
+color = Color(1.2545434, 0.63957125, 0, 1)
+
+[node name="ActivationPlayer" type="AudioStreamPlayer2D" parent="."]
+volume_db = -10.0
+max_distance = 300.0
+
+[node name="IdlePlayer" type="AudioStreamPlayer2D" parent="."]
+volume_db = -15.0
+max_distance = 300.0

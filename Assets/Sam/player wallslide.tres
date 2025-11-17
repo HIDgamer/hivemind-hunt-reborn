@@ -1,0 +1,10 @@
+[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://d2ds5ks2nnvvl"]
+
+[ext_resource type="Texture2D" uid="uid://cgqnb5wykjrg6" path="res://Assets/Sam/player wall slide (left) 48x48_d.png" id="1_id636"]
+[ext_resource type="Texture2D" uid="uid://r0ome0fwih4i" path="res://Assets/Sam/player wall slide (left) 48x48_n.png" id="2_etafy"]
+[ext_resource type="Texture2D" uid="uid://cgxmvmcqdybtb" path="res://Assets/Sam/player wall slide (left) 48x48_s.png" id="3_lw8y4"]
+
+[resource]
+diffuse_texture = ExtResource("1_id636")
+normal_texture = ExtResource("2_etafy")
+specular_texture = ExtResource("3_lw8y4")

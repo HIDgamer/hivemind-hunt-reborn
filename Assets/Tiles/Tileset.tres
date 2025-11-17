@@ -1,0 +1,10 @@
+[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://cqjqlf1p5mqhy"]
+
+[ext_resource type="Texture2D" uid="uid://j3a7t84gmgki" path="res://Assets/Tiles/TileSet2.png" id="1_fwtef"]
+[ext_resource type="Texture2D" uid="uid://soem1qot4rjr" path="res://Assets/Tiles/TileSet2_n.png" id="2_e78cg"]
+[ext_resource type="Texture2D" uid="uid://dfgq37mvfvvje" path="res://Assets/Tiles/TileSet2_s.png" id="3_sv1x4"]
+
+[resource]
+diffuse_texture = ExtResource("1_fwtef")
+normal_texture = ExtResource("2_e78cg")
+specular_texture = ExtResource("3_sv1x4")

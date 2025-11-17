@@ -1,0 +1,152 @@
+[gd_scene load_steps=20 format=3 uid="uid://cbi3p44vh5cba"]
+
+[ext_resource type="Script" uid="uid://ddp4lasmq25lb" path="res://Code/Props/door.cs" id="2_door_script"]
+[ext_resource type="Texture2D" uid="uid://bnl0bajxu6qs4" path="res://Assets/Tiles/Airlock.tres" id="2_sc646"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bplwt"]
+atlas = ExtResource("2_sc646")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_phrfh"]
+atlas = ExtResource("2_sc646")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7w7lc"]
+atlas = ExtResource("2_sc646")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ri2ew"]
+atlas = ExtResource("2_sc646")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o5jlc"]
+atlas = ExtResource("2_sc646")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_apc2o"]
+atlas = ExtResource("2_sc646")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2456p"]
+atlas = ExtResource("2_sc646")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_koe7n"]
+atlas = ExtResource("2_sc646")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_88fnn"]
+atlas = ExtResource("2_sc646")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gnamk"]
+atlas = ExtResource("2_sc646")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_es2c5"]
+atlas = ExtResource("2_sc646")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2l0oy"]
+atlas = ExtResource("2_sc646")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4m525"]
+atlas = ExtResource("2_sc646")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vy1va"]
+atlas = ExtResource("2_sc646")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_2l0oy"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bplwt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_phrfh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7w7lc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ri2ew")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o5jlc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_apc2o")
+}],
+"loop": false,
+"name": &"Close",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2456p")
+}],
+"loop": true,
+"name": &"IdleClose",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_koe7n")
+}],
+"loop": true,
+"name": &"IdleOpen",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_88fnn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gnamk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_es2c5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2l0oy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4m525")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vy1va")
+}],
+"loop": false,
+"name": &"Open",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4m525"]
+size = Vector2(48, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vy1va"]
+size = Vector2(32, 32)
+
+[node name="Door" type="StaticBody2D"]
+script = ExtResource("2_door_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_2l0oy")
+animation = &"Open"
+autoplay = "IdleClose"
+frame = 5
+frame_progress = 1.0
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("RectangleShape2D_4m525")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_vy1va")
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="."]

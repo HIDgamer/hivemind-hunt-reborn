@@ -1,0 +1,17 @@
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind-Hunt_Reborn.csproj.AssemblyReference.cache
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind-Hunt_Reborn.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind-Hunt_Reborn.AssemblyInfoInputs.cache
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind-Hunt_Reborn.AssemblyInfo.cs
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind-Hunt_Reborn.csproj.CoreCompileInputs.cache
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\bin\Debug\Hivemind-Hunt_Reborn.deps.json
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\bin\Debug\Hivemind-Hunt_Reborn.runtimeconfig.json
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\bin\Debug\Hivemind-Hunt_Reborn.dll
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\bin\Debug\Hivemind-Hunt_Reborn.pdb
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\bin\Debug\GodotSharp.dll
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\bin\Debug\GodotSharpEditor.dll
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind.ADCD6BAD.Up2Date
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind-Hunt_Reborn.dll
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\refint\Hivemind-Hunt_Reborn.dll
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind-Hunt_Reborn.pdb
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\Hivemind-Hunt_Reborn.genruntimeconfig.cache
+C:\Users\HIDga\Documents\hivemind-hunt-reborn\.godot\mono\temp\obj\Debug\ref\Hivemind-Hunt_Reborn.dll

@@ -1,0 +1,44 @@
+[gd_scene load_steps=5 format=3 uid="uid://bchqabnvy3dup"]
+
+[ext_resource type="Texture2D" uid="uid://diwreabpfsge4" path="res://Assets/Light/Light_cone_conical.png" id="1_rn5e5"]
+[ext_resource type="Texture2D" uid="uid://c25ihpq2umiy5" path="res://Assets/Tiles/Light.png" id="1_trad4"]
+
+[sub_resource type="Gradient" id="Gradient_rn5e5"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_trad4"]
+gradient = SubResource("Gradient_rn5e5")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.7, 0)
+metadata/_snap_enabled = true
+
+[node name="Light" type="Node2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_trad4")
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+light_mask = 3
+scale = Vector2(2.5, 3)
+color = Color(0.9411765, 0.9411765, 0.9411765, 1)
+energy = 0.3
+range_item_cull_mask = 3
+shadow_enabled = true
+shadow_filter = 1
+shadow_item_cull_mask = 3
+texture = ExtResource("1_rn5e5")
+offset = Vector2(0, 105)
+
+[node name="Aura" type="PointLight2D" parent="."]
+light_mask = 3
+energy = 0.4
+range_item_cull_mask = 3
+shadow_enabled = true
+shadow_filter = 1
+shadow_item_cull_mask = 3
+texture = SubResource("GradientTexture2D_trad4")
+offset = Vector2(0, 50)
+texture_scale = 5.0

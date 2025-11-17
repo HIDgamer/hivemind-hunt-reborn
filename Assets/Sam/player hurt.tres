@@ -1,0 +1,10 @@
+[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://c1jv8ggdd75ub"]
+
+[ext_resource type="Texture2D" uid="uid://fdggypes0fwa" path="res://Assets/Sam/Player Hurt 48x48.png" id="1_yrn44"]
+[ext_resource type="Texture2D" uid="uid://coqf2l41uem4" path="res://Assets/Sam/Player Hurt 48x48_n.png" id="2_bd4w8"]
+[ext_resource type="Texture2D" uid="uid://03vstb8216dw" path="res://Assets/Sam/Player Hurt 48x48_s.png" id="3_b27hv"]
+
+[resource]
+diffuse_texture = ExtResource("1_yrn44")
+normal_texture = ExtResource("2_bd4w8")
+specular_texture = ExtResource("3_b27hv")
