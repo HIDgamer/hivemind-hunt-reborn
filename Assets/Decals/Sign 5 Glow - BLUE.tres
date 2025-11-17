@@ -1,0 +1,10 @@
+[gd_resource type="CanvasTexture" format=3 uid="uid://cy6stmmtk7y75"]
+
+[ext_resource type="Texture2D" uid="uid://cvdfddeatkbpb" path="res://Assets/Decals/Sign 5  Glow - BLUE.png" id="1_a0jax"]
+[ext_resource type="Texture2D" uid="uid://dr7w32n6cf38k" path="res://Assets/Decals/Sign 5  Glow - BLUE_n.png" id="2_c4hns"]
+[ext_resource type="Texture2D" uid="uid://c3e758lgo8usa" path="res://Assets/Decals/Sign 5  Glow - BLUE_s.png" id="3_7c0p6"]
+
+[resource]
+diffuse_texture = ExtResource("1_a0jax")
+normal_texture = ExtResource("2_c4hns")
+specular_texture = ExtResource("3_7c0p6")

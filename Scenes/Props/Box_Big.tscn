@@ -1,21 +1,19 @@
-[gd_scene load_steps=4 format=3 uid="uid://btpubms5230ws"]
+[gd_scene format=3 uid="uid://btpubms5230ws"]
 
-[ext_resource type="Texture2D" uid="uid://dh5j63fi3vg5w" path="res://Assets/Tiles/Crate 64.png" id="1_3bihh"]
 [ext_resource type="Script" uid="uid://jw32jan66lyj" path="res://Code/Props/Box_Big.cs" id="2_boxbig"]
-[ext_resource type="Texture2D" uid="uid://ctc3u34dbptuq" path="res://Assets/Particles/Smoke 8x8.png" id="3_r0d20"]
+[ext_resource type="Texture2D" uid="uid://b3aubekkay4ci" path="res://Assets/Tiles/Crate 64.tres" id="2_r0d20"]
+[ext_resource type="Texture2D" uid="uid://b6ih7jgjdjwcp" path="res://Assets/FX/particles/alpha/dirt_02_a.png" id="3_r0d20"]
 
-[node name="Box_Big" type="RigidBody2D" groups=["pushable"]]
-collision_layer = 4
-collision_mask = 7
+[node name="Box_Big" type="RigidBody2D" unique_id=872767005 groups=["pushable"]]
 script = ExtResource("2_boxbig")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("1_3bihh")
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=198450959]
+texture = ExtResource("2_r0d20")
 
-[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=1246388083]
 polygon = PackedVector2Array(-32, -32, -32, 32, 32, 32, 32, -32)
 
-[node name="DustParticles" type="CPUParticles2D" parent="."]
+[node name="DustParticles" type="CPUParticles2D" parent="." unique_id=1517522701]
 position = Vector2(0, 32)
 emitting = false
 amount = 10
@@ -29,5 +27,6 @@ initial_velocity_min = 20.0
 initial_velocity_max = 40.0
 angular_velocity_min = -180.0
 angular_velocity_max = 180.0
-scale_amount_min = 0.5
+scale_amount_min = 0.008
+scale_amount_max = 0.014
 color = Color(0.8, 0.6, 0.4, 1)

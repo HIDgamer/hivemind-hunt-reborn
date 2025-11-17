@@ -1,6 +1,6 @@
 ﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hivemind-Hunt_Reborn", "Hivemind-Hunt_Reborn.csproj", "{9692123F-27EF-4FEF-9516-DD4A22CBEA31}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hivemind-Hunt_Reborn", "Hivemind-Hunt_Reborn.csproj", "{5807DD8B-E18C-4F3B-AB6E-367456D340FD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -9,11 +9,11 @@ Global
 	ExportRelease|Any CPU = ExportRelease|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9692123F-27EF-4FEF-9516-DD4A22CBEA31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9692123F-27EF-4FEF-9516-DD4A22CBEA31}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9692123F-27EF-4FEF-9516-DD4A22CBEA31}.ExportDebug|Any CPU.ActiveCfg = ExportDebug|Any CPU
-		{9692123F-27EF-4FEF-9516-DD4A22CBEA31}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
-		{9692123F-27EF-4FEF-9516-DD4A22CBEA31}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
-		{9692123F-27EF-4FEF-9516-DD4A22CBEA31}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+		{5807DD8B-E18C-4F3B-AB6E-367456D340FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5807DD8B-E18C-4F3B-AB6E-367456D340FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5807DD8B-E18C-4F3B-AB6E-367456D340FD}.ExportDebug|Any CPU.ActiveCfg = ExportDebug|Any CPU
+		{5807DD8B-E18C-4F3B-AB6E-367456D340FD}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
+		{5807DD8B-E18C-4F3B-AB6E-367456D340FD}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
+		{5807DD8B-E18C-4F3B-AB6E-367456D340FD}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
 	EndGlobalSection
 EndGlobal

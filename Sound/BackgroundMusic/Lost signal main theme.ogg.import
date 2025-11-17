@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://b23jjrawbaong"
+path="res://.godot/imported/Lost signal main theme.ogg-7b7a15ad4bf72751ddc7109b5d02696c.oggvorbisstr"
+
+[deps]
+
+source_file="res://Sound/BackgroundMusic/Lost signal main theme.ogg"
+dest_files=["res://.godot/imported/Lost signal main theme.ogg-7b7a15ad4bf72751ddc7109b5d02696c.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

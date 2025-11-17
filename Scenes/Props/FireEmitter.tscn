@@ -1,0 +1,96 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" uid="uid://qqmoqitjel4u" path="res://Code/Props/FlickeringLight.cs" id="1_flicker"]
+[ext_resource type="Texture2D" uid="uid://bbks3dwy5e52a" path="res://Assets/FX/particles/alpha/muzzle_03_a.png" id="3_flame"]
+[ext_resource type="Texture2D" uid="uid://p6j5vfnhorsm" path="res://Assets/FX/particles/alpha/smoke_07_a.png" id="2_smoke"]
+
+[sub_resource type="Gradient" id="Gradient_flame_falloff"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.6, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_flame_falloff"]
+gradient = SubResource("Gradient_flame_falloff")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+width = 32
+height = 32
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_additive"]
+blend_mode = 1
+
+[sub_resource type="Gradient" id="Gradient_flame_ramp"]
+colors = PackedColorArray(1, 0.95, 0.6, 1, 1, 0.5, 0.08, 0.9, 0.6, 0.05, 0.02, 0)
+
+[sub_resource type="Gradient" id="Gradient_ember_ramp"]
+colors = PackedColorArray(1, 0.9, 0.5, 1, 1, 0.4, 0.05, 0)
+
+[sub_resource type="Gradient" id="Gradient_smoke_ramp"]
+colors = PackedColorArray(0.12, 0.12, 0.12, 0.5, 0.05, 0.05, 0.05, 0)
+
+[node name="FireProp" type="Node2D"]
+script = ExtResource("1_flicker")
+Profile = 1
+FlickerSpeed = 2.2
+FlickerDepth = 0.35
+MinEnergyScale = 0.5
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(1, 0.55, 0.2, 1)
+energy = 1.4
+texture = SubResource("GradientTexture2D_flame_falloff")
+scale = Vector2(1.4, 1.4)
+height = 30.0
+
+[node name="FlameParticles" type="CPUParticles2D" parent="."]
+material = SubResource("CanvasItemMaterial_additive")
+amount = 14
+lifetime = 0.55
+randomness = 0.4
+texture = ExtResource("3_flame")
+emission_shape = 3
+emission_rect_extents = Vector2(3, 1)
+direction = Vector2(0, -1)
+spread = 18.0
+gravity = Vector2(0, -40)
+initial_velocity_min = 14.0
+initial_velocity_max = 30.0
+scale_amount_min = 0.016
+scale_amount_max = 0.03
+color_ramp = SubResource("Gradient_flame_ramp")
+
+[node name="EmberParticles" type="CPUParticles2D" parent="."]
+material = SubResource("CanvasItemMaterial_additive")
+amount = 6
+lifetime = 1.3
+randomness = 0.6
+texture = SubResource("GradientTexture2D_flame_falloff")
+emission_shape = 3
+emission_rect_extents = Vector2(2, 1)
+direction = Vector2(0, -1)
+spread = 30.0
+gravity = Vector2(0, -18)
+initial_velocity_min = 18.0
+initial_velocity_max = 42.0
+scale_amount_min = 0.08
+scale_amount_max = 0.16
+color_ramp = SubResource("Gradient_ember_ramp")
+
+[node name="SmokeParticles" type="CPUParticles2D" parent="."]
+position = Vector2(0, -6)
+amount = 8
+texture = ExtResource("2_smoke")
+lifetime = 2.6
+randomness = 0.7
+emission_shape = 3
+emission_rect_extents = Vector2(4, 1)
+direction = Vector2(0, -1)
+spread = 22.0
+gravity = Vector2(0, -10)
+initial_velocity_min = 8.0
+initial_velocity_max = 18.0
+angular_velocity_min = -14.0
+angular_velocity_max = 14.0
+scale_amount_min = 0.02
+scale_amount_max = 0.035
+color_ramp = SubResource("Gradient_smoke_ramp")

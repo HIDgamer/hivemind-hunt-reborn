@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" format=3]
+
+[ext_resource type="Texture2D" uid="uid://bbt8y24jqx4ok" path="res://Assets/Sam/Sam jump left 48x48.png" id="1_diffuse"]
+[ext_resource type="Texture2D" uid="uid://dpyrea8204dq8" path="res://Assets/Sam/Sam jump left 48x48_n.png" id="2_normal"]
+
+[resource]
+diffuse_texture = ExtResource("1_diffuse")
+normal_texture = ExtResource("2_normal")

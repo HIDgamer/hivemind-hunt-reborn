@@ -1,0 +1,74 @@
+[gd_scene format=3 uid="uid://cwkxtm0y5wvxk"]
+
+[ext_resource type="Script" uid="uid://1rygera0crb6" path="res://Code/Background/ParallaxBackgroundController.cs" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dt75bripqd2lj" path="res://Assets/FX/particles/alpha/star_05_a.png" id="2_2vaeg"]
+[ext_resource type="Texture2D" uid="uid://b0s2ae48ap46c" path="res://Assets/FX/particles/alpha/star_02_a.png" id="3_64i7i"]
+[ext_resource type="Texture2D" uid="uid://dvy1scgaochl5" path="res://Assets/FX/particles/alpha/spotlight_08_a.png" id="4_t7ski"]
+[ext_resource type="Script" uid="uid://njulkahwr08v" path="res://Code/Background/ShootingStarSpawner.cs" id="6_shooter"]
+[ext_resource type="Texture2D" uid="uid://dar8glm7oql2p" path="res://Assets/FX/particles/alpha/trace_07_a.png" id="8_streak"]
+
+[sub_resource type="Gradient" id="Gradient_star_twinkle"]
+offsets = PackedFloat32Array(0, 0.15, 0.85, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[node name="SpaceBackground" type="CanvasLayer" unique_id=1171840212]
+layer = -10
+script = ExtResource("1_script")
+
+[node name="StarsFarLayer" type="Node2D" parent="." unique_id=1979395964]
+metadata/parallax_factor = 0.02
+
+[node name="StarsFar" type="CPUParticles2D" parent="StarsFarLayer" unique_id=691880211]
+amount = 220
+texture = ExtResource("2_2vaeg")
+lifetime = 7.0
+randomness = 0.25
+emission_shape = 3
+emission_rect_extents = Vector2(900, 600)
+direction = Vector2(0, 0)
+spread = 0.0
+gravity = Vector2(0, 0)
+scale_amount_min = 0.012
+scale_amount_max = 0.025
+color = Color(0.72, 0.78, 0.9, 1)
+color_ramp = SubResource("Gradient_star_twinkle")
+
+[node name="StarsMidLayer" type="Node2D" parent="." unique_id=1979395965]
+metadata/parallax_factor = 0.06
+
+[node name="StarsMid" type="CPUParticles2D" parent="StarsMidLayer" unique_id=1204584108]
+amount = 110
+texture = ExtResource("3_64i7i")
+lifetime = 5.5
+randomness = 0.25
+emission_shape = 3
+emission_rect_extents = Vector2(900, 600)
+direction = Vector2(0, 0)
+spread = 0.0
+gravity = Vector2(0, 0)
+scale_amount_min = 0.022
+scale_amount_max = 0.037
+color = Color(0.86, 0.9, 1, 1)
+color_ramp = SubResource("Gradient_star_twinkle")
+
+[node name="StarsNearLayer" type="Node2D" parent="." unique_id=1979395966]
+metadata/parallax_factor = 0.12
+
+[node name="StarsNear" type="CPUParticles2D" parent="StarsNearLayer" unique_id=1766739437]
+amount = 40
+texture = ExtResource("4_t7ski")
+lifetime = 4.0
+randomness = 0.25
+emission_shape = 3
+emission_rect_extents = Vector2(900, 600)
+direction = Vector2(0, 0)
+spread = 0.0
+gravity = Vector2(0, 0)
+scale_amount_min = 0.034
+scale_amount_max = 0.059
+color_ramp = SubResource("Gradient_star_twinkle")
+
+[node name="ShootingStars" type="Node2D" parent="." unique_id=118875120]
+script = ExtResource("6_shooter")
+StreakTexture = ExtResource("8_streak")
+metadata/parallax_factor = 0.08

@@ -1,0 +1,81 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Code/Props/FlickeringLight.cs" id="1_flicker"]
+[ext_resource type="Script" path="res://Code/Props/SparkHazard.cs" id="2_hazard"]
+[ext_resource type="AudioStream" path="res://Sound/fx/spark.ogg" id="3_spark"]
+[ext_resource type="AudioStream" path="res://Sound/fx/continuousspark.ogg" id="4_crackle"]
+
+[sub_resource type="Gradient" id="Gradient_conduit"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_conduit"]
+gradient = SubResource("Gradient_conduit")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.8, 0)
+metadata/_snap_enabled = true
+
+[sub_resource type="Gradient" id="Gradient_conduit_spark"]
+colors = PackedColorArray(1, 1, 1, 1, 0.6, 0.85, 1, 0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_conduit"]
+size = Vector2(48, 40)
+
+# A gap of broken/exposed wiring — no fixture sprite, the light and particles
+# ARE the visual. Deals light contact damage on a cooldown (see SparkHazard.cs)
+# and periodically pops with a bright flash + particle burst + sound
+# (FlickeringLight.cs, SparkBurst profile). A constant low crackle loops in
+# the background so it reads as "actively arcing" even between bursts.
+[node name="SparkConduit" type="Node2D"]
+script = ExtResource("1_flicker")
+Profile = 2
+SparkIntervalMin = 2.0
+SparkIntervalMax = 5.5
+SparkFlashEnergyScale = 3.0
+SparkSound = ExtResource("3_spark")
+
+[node name="Aura" type="PointLight2D" parent="."]
+color = Color(0.75, 0.9, 1, 1)
+energy = 0.35
+range_item_cull_mask = 3
+shadow_enabled = true
+shadow_filter = 1
+shadow_item_cull_mask = 3
+texture = SubResource("GradientTexture2D_conduit")
+texture_scale = 2.5
+height = 120.0
+
+[node name="SparkParticles" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 16
+lifetime = 0.35
+one_shot = true
+explosiveness = 1.0
+direction = Vector2(0, 1)
+spread = 70.0
+gravity = Vector2(0, 260)
+initial_velocity_min = 60.0
+initial_velocity_max = 160.0
+scale_amount_min = 1.0
+scale_amount_max = 2.2
+color_ramp = SubResource("Gradient_conduit_spark")
+
+[node name="SparkAudio" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3_spark")
+max_distance = 700.0
+
+[node name="AmbientCrackle" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_crackle")
+volume_db = -14.0
+max_distance = 350.0
+autoplay = true
+
+[node name="DamageArea" type="Area2D" parent="."]
+script = ExtResource("2_hazard")
+collision_layer = 0
+collision_mask = 10
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea"]
+shape = SubResource("RectangleShape2D_conduit")

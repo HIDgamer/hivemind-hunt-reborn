@@ -1,6 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://bsu7ag5f5ci4u"]
+[gd_scene format=3 uid="uid://bsu7ag5f5ci4u"]
 
 [ext_resource type="Texture2D" uid="uid://cserkghc74pqy" path="res://Assets/Tiles/Platform.png" id="1_g68ka"]
+[ext_resource type="Script" path="res://Code/Props/MovingPlatform.cs" id="4_moving"]
 [ext_resource type="Texture2D" uid="uid://cqpfa133x7ya0" path="res://Assets/Tiles/Platform_n.png" id="2_0opt1"]
 [ext_resource type="Texture2D" uid="uid://bx2oyw87usbqy" path="res://Assets/Tiles/Platform_s.png" id="3_24kkw"]
 
@@ -16,19 +17,20 @@ size = Vector2(42, 8)
 cull_mode = 1
 polygon = PackedVector2Array(21, 0, 21, 5, -21, 5, -21, 0)
 
-[node name="MovingPlatform" type="CharacterBody2D"]
+[node name="MovingPlatform" type="CharacterBody2D" unique_id=1368600897]
 disable_mode = 2
 motion_mode = 1
 floor_constant_speed = true
 platform_wall_layers = 1
+script = ExtResource("4_moving")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1927714928]
 texture = SubResource("CanvasTexture_7qdk8")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=771205418]
 position = Vector2(0, 1)
 shape = SubResource("RectangleShape2D_53r27")
 one_way_collision = true
 
-[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+[node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=399486850]
 occluder = SubResource("OccluderPolygon2D_g68ka")

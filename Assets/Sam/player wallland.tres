@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://b8dr5gcmuj0vb"]
+[gd_resource type="CanvasTexture" format=3 uid="uid://b8dr5gcmuj0vb"]
 
 [ext_resource type="Texture2D" uid="uid://qit0ncdes5km" path="res://Assets/Sam/Player Wall Land (left) 48x48_d.png" id="1_cm5i8"]
 [ext_resource type="Texture2D" uid="uid://cxwefe1ihd8k" path="res://Assets/Sam/Player Wall Land (left) 48x48_n.png" id="2_83jeg"]

@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://cgphloqvj3mm"]
+[gd_resource type="CanvasTexture" format=3 uid="uid://cgphloqvj3mm"]
 
 [ext_resource type="Texture2D" uid="uid://1kiaefbojeoh" path="res://Assets/Sam/Player Death 64x64.png" id="1_ch1m0"]
 [ext_resource type="Texture2D" uid="uid://b3dc0f25xnij4" path="res://Assets/Sam/Player Death 64x64_n.png" id="2_dsaxs"]

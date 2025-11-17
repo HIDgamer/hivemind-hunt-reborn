@@ -1,8 +1,8 @@
-[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://b3aubekkay4ci"]
+[gd_resource type="CanvasTexture" format=3 uid="uid://b3aubekkay4ci"]
 
 [ext_resource type="Texture2D" uid="uid://dh5j63fi3vg5w" path="res://Assets/Tiles/Crate 64.png" id="1_uf1u2"]
-[ext_resource type="Texture2D" uid="uid://7o4mopqj4we" path="res://Assets/Tiles/Crate 64_n.png" id="2_m1den"]
-[ext_resource type="Texture2D" uid="uid://dpdquip2qdfgd" path="res://Assets/Tiles/Crate 64_s.png" id="3_c7wdr"]
+[ext_resource type="Texture2D" uid="uid://d1ur38hqddvts" path="res://Assets/Tiles/Crate 64_n.png" id="2_m1den"]
+[ext_resource type="Texture2D" uid="uid://dtcock6m7lfjs" path="res://Assets/Tiles/Crate 64_s.png" id="3_c7wdr"]
 
 [resource]
 diffuse_texture = ExtResource("1_uf1u2")

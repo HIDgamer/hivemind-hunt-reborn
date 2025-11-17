@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://b3vwmjrfaflng"]
+[gd_resource type="CanvasTexture" format=3 uid="uid://b3vwmjrfaflng"]
 
 [ext_resource type="Texture2D" uid="uid://b32vxa28b4gt" path="res://Assets/Sam/Player Crouch-Idle 48x48.png" id="1_88alt"]
 [ext_resource type="Texture2D" uid="uid://ltl1dd2mg475" path="res://Assets/Sam/Player Crouch-Idle 48x48_n.png" id="2_gwa1d"]

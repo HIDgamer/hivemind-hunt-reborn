@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://c1jv8ggdd75ub"]
+[gd_resource type="CanvasTexture" format=3 uid="uid://c1jv8ggdd75ub"]
 
 [ext_resource type="Texture2D" uid="uid://fdggypes0fwa" path="res://Assets/Sam/Player Hurt 48x48.png" id="1_yrn44"]
 [ext_resource type="Texture2D" uid="uid://coqf2l41uem4" path="res://Assets/Sam/Player Hurt 48x48_n.png" id="2_bd4w8"]

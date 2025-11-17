@@ -1,6 +1,6 @@
 using Godot;
 
-public partial class door : StaticBody2D
+public partial class Door : StaticBody2D
 {
     [Export] public float CloseDelay = 3.0f;
 
@@ -9,6 +9,7 @@ public partial class door : StaticBody2D
     private Area2D area;
     private CollisionShape2D collisionShape;
     private int bodiesInArea = 0;
+    private bool pressurePlateActive = false;
     private Timer closeTimer;
     private enum State { Closed, Opening, Open, Closing }
     private State currentState = State.Closed;
@@ -43,7 +44,7 @@ public partial class door : StaticBody2D
                 bodiesInArea++;
             }
         }
-        if (bodiesInArea > 0)
+        if (ShouldStayOpen())
         {
             StartOpening();
         }
@@ -60,9 +61,7 @@ public partial class door : StaticBody2D
         }
         else if (currentState == State.Open)
         {
-            // Restart timer
             closeTimer.Stop();
-            closeTimer.Start(CloseDelay);
         }
     }
 
@@ -70,7 +69,7 @@ public partial class door : StaticBody2D
     {
         if (body == this || !(body is CharacterBody2D)) return;
         bodiesInArea--;
-        if (bodiesInArea <= 0 && currentState == State.Open)
+        if (!ShouldStayOpen() && currentState == State.Open)
         {
             closeTimer.Start(CloseDelay);
         }
@@ -81,8 +80,7 @@ public partial class door : StaticBody2D
         currentState = State.Opening;
         animatedSprite.Animation = "Open";
         animatedSprite.Play();
-        audioPlayer.Stream = GD.Load<AudioStream>("res://Sound/machines/airlock.ogg");
-        audioPlayer.Play();
+        PlayDoorSound();
     }
 
     private void OnAnimationFinished()
@@ -93,7 +91,7 @@ public partial class door : StaticBody2D
             animatedSprite.Animation = "IdleOpen";
             animatedSprite.Play();
             collisionShape.Disabled = true;
-            if (bodiesInArea > 0)
+            if (!ShouldStayOpen())
             {
                 closeTimer.Start(CloseDelay);
             }
@@ -109,7 +107,7 @@ public partial class door : StaticBody2D
 
     private void OnCloseTimerTimeout()
     {
-        if (bodiesInArea <= 0 && currentState == State.Open)
+        if (!ShouldStayOpen() && currentState == State.Open)
         {
             StartClosing();
         }
@@ -121,7 +119,39 @@ public partial class door : StaticBody2D
         animatedSprite.Animation = "Close";
         animatedSprite.Play();
         collisionShape.Disabled = false;
-        audioPlayer.Stream = GD.Load<AudioStream>("res://Sound/machines/airlock.ogg");
+        PlayDoorSound();
+    }
+
+    // Generic "receive powered state" contract — the same method name
+    // PressurePlateComponent's TargetNodePath calls on anything with a
+    // Powered(bool) method, so a door is just one of possibly several
+    // things a pressure plate can drive, not a special case.
+    public void Powered(bool active)
+    {
+        pressurePlateActive = active;
+
+        if (pressurePlateActive)
+        {
+            closeTimer.Stop();
+            if (currentState == State.Closed || currentState == State.Closing)
+            {
+                StartOpening();
+            }
+        }
+        else if (!ShouldStayOpen() && currentState == State.Open)
+        {
+            closeTimer.Start(CloseDelay);
+        }
+    }
+
+    private bool ShouldStayOpen()
+    {
+        return bodiesInArea > 0 || pressurePlateActive;
+    }
+
+    private void PlayDoorSound()
+    {
+        if (audioPlayer.Stream == null) return;
         audioPlayer.Play();
     }
 

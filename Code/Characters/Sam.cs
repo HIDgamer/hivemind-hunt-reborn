@@ -1,1148 +1,1399 @@
 using Godot;
-using System;
-
-using CpuParticles2D = Godot.CpuParticles2D;
-using AnimatedSprite2D = Godot.AnimatedSprite2D;
-using PointLight2D = Godot.PointLight2D;
+using System.Collections.Generic;
 
 public partial class Sam : CharacterBody2D
 {
-	[Export] public float Speed = 150f; // Normal walking speed
-	[Export] public float SprintSpeed = 250f; // Running speed when sprinting
-	[Export] public float Acceleration = 800f; // How fast player accelerates
-	[Export] public float Deceleration = 1000f; // How fast player decelerates
-	[Export] public float Friction = 0.2f; // Unused friction value
-	[Export] public float JumpVelocity = -300f; // Initial jump force
-	[Export] public float Gravity = 750f; // Gravity applied every frame
-	[Export] public float MaxFallSpeed = 350f; // Maximum falling speed
-	[Export] public bool CanDoubleJump = true; // Whether player can double jump
-	[Export] public float CoyoteTime = 0.15f; // Grace period for jumping after leaving ground
-	[Export] public float JumpBufferTime = 0.15f; // Input buffer for jump presses
-	[Export] public int MaxHealth = 200; // Maximum health points
+	// Dash trail tracking structure
+	private struct DashTrailFrame
+	{
+		public Vector2 Position;
+		public Texture2D Texture;
+		public bool FlipH;
+	}
 
-	private AnimatedSprite2D _animatedSprite; // Player sprite with animations
+	[ExportCategory("Networking")]
+	// False (default) for the single-player Sam in Level_00_Tutorial — this
+	// script otherwise behaves exactly as it always has. Only the
+	// NetworkPlayer scene sets this true. When true and this peer isn't the
+	// authority, all local input/physics/animation-state simulation is
+	// skipped entirely — position and visual state instead arrive verbatim
+	// from the authority via MultiplayerSynchronizer and are applied as-is.
+	[Export] public bool IsNetworked { get; set; } = false;
+	// Mirrors _animatedSprite.Animation/FlipH on the authority each frame;
+	// a remote copy just plays back whatever arrives rather than re-running
+	// the state machine, so it can never disagree with what the authority
+	// actually decided to show.
+	[Export] public string NetAnimationName { get; set; } = "Idle";
+	[Export] public bool NetFlipH { get; set; } = false;
+	[Export] public string DisplayName { get; set; } = "PLAYER";
+
+	[ExportCategory("Movement Foundation")]
+	[Export] public float Speed { get; set; } = 130f;
+	[Export] public float WalkSpeed { get; set; } = 105f;
+	[Export] public float SprintSpeed { get; set; } = 235f;
+	[Export] public float CrawlSpeed { get; set; } = 55f;
+	// Same technique as TurnaroundPlaybackSpeed — a speed multiplier on top
+	// of the clip's own baked framerate, so the stand-to-prone windup doesn't
+	// stall the player before Crawl/CrawlIdle takes over.
+	[Export] public float CrawlEntryPlaybackSpeed { get; set; } = 1.8f;
+	[Export] public float Acceleration { get; set; } = 1200f;
+	[Export] public float AirAcceleration { get; set; } = 800f;
+	[Export] public float Friction { get; set; } = 1400f;
+	[Export] public float AirFriction { get; set; } = 240f;
+	[Export] public float TurnAroundAccelMultiplier { get; set; } = 1.6f;
+	// Minimum carried speed for a direction reversal to play the Turnaround/
+	// TurnaroundRun flourish at all — a light tap of the opposite key while
+	// nearly stopped shouldn't trigger a full pivot animation. Kept well
+	// below WalkSpeed's own target (Speed) — a brief input gap
+	// during a real key-swap (releasing one direction and pressing the
+	// other is never perfectly instantaneous) lets friction decay velocity
+	// for a frame or two, and at walking speed a 60+ threshold dropped
+	// below that constantly, silently missing the reversal half the time.
+	// Sprinting has far more headroom above either threshold, which is why
+	// it read as far more reliable than walking before this was lowered.
+	[Export] public float TurnaroundSpeedThreshold { get; set; } = 25f;
+	// Hard cap on how long the Turnaround/TurnaroundRun lock can hold, in
+	// case something interrupts the clip in a way that isn't one of the
+	// explicit resets in HandleAnimations — should comfortably exceed the
+	// clip's natural playback time so it never cuts a normal turn short.
+	[Export] public float TurnaroundMaxDuration { get; set; } = 0.6f;
+	// Movement never waits on this clip — it plays underneath full, immediate
+	// input responsiveness (see Hollow Knight's turn for the reference feel).
+	// 3.5x made a 9-frame clip strobe by at ~28ms/frame, reading as glitchy
+	// rather than snappy — this is a more moderate speed-up that still
+	// shortens the clip meaningfully without stepping through it too fast
+	// to read as a pose.
+	[Export] public float TurnaroundPlaybackSpeed { get; set; } = 1.8f;
+	// The dash itself lasts 0.16s but the Flip clip runs ~1.3s at its baked
+	// framerate — the flip keeps playing as follow-through after the dash
+	// physics ends, and this speed brings the full somersault down to a
+	// length that reads as part of the dash rather than dragging after it.
+	[Export] public float FlipPlaybackSpeed { get; set; } = 2.0f;
+
+	[ExportCategory("Verticality & Polish")]
+	[Export] public float JumpVelocity { get; set; } = -315f;
+	[Export] public float WallJumpVelocity { get; set; } = -305f;
+	[Export] public float WallJumpHorizontalVelocity { get; set; } = 235f;
+	[Export] public float Gravity { get; set; } = 780f;
+	[Export] public float MaxFallSpeed { get; set; } = 390f;
+	[Export] public float JumpCutMultiplier { get; set; } = 0.42f;
+	[Export] public float ApexThreshold { get; set; } = 42f;
+	[Export] public float ApexGravityMultiplier { get; set; } = 0.52f;
+	[Export] public float WallSlideMaxFallSpeed { get; set; } = 90f;
+	[Export] public float WallSlideGravityMultiplier { get; set; } = 0.2f;
+	[Export] public float WallJumpControlLock { get; set; } = 0.06f;
+
+	[ExportCategory("Forgiveness Mechanics")]
+	[Export] public float CoyoteTime { get; set; } = 0.12f;
+	[Export] public float JumpBufferTime { get; set; } = 0.12f;
+	[Export] public int BaseJumpCount { get; set; } = 1;
+	[Export] public float LandingParticleThreshold { get; set; } = 120f;
+	[Export] public float DeathRespawnDelay { get; set; } = 1.5f;
+
+	[ExportCategory("Crawl & Slide")]
+	[Export] public float SlideEntrySpeed { get; set; } = 160f;
+	[Export] public float SlideDuration { get; set; } = 1.5f;
+	[Export] public float SlideFriction { get; set; } = 180f;
+	// Same playback-multiplier treatment as Turnaround/CrawlEntry — every
+	// windup clip gets one of these so none of them stalls the player at
+	// its baked framerate.
+	[Export] public float SlideInPlaybackSpeed { get; set; } = 1.8f;
+	// The PushWindup clip's 9 windup frames run ~0.9s at their baked 10fps,
+	// but InteractionComponent only holds the object still for
+	// PushWindupDuration (~0.22s) — at 4x the art completes inside that
+	// physics gate instead of getting chopped off partway through.
+	[Export] public float PushWindupPlaybackSpeed { get; set; } = 4.0f;
+
+	[ExportCategory("Power")]
+	[Export] public float MaxPower { get; set; } = 100f;
+	[Export] public float PowerRegenPerSecond { get; set; } = 28f;
+	[Export] public float PowerRegenDelay { get; set; } = 0.65f;
+	[Export] public float SprintPowerDrainPerSecond { get; set; } = 18f;
+	[Export] public float MinimumPowerToSprint { get; set; } = 8f;
+
+	[ExportCategory("Sound")]
+	[Export] public AudioStream FootstepSound { get; set; }
+	[Export] public AudioStream JumpSound { get; set; }
+	[Export] public AudioStream LandSound { get; set; }
+	[Export] public AudioStream[] HurtSounds { get; set; }
+	[Export] public AudioStream DeathSound { get; set; }
+
+	private AnimatedSprite2D _animatedSprite;
+	private HealthComponent _health;
+	private InteractionComponent _interaction;
+	private DashComponent _dash;
+	private ExtraJumpComponent _extraJump;
+	private CollisionShape2D _normalCollision;
+	private CollisionShape2D _crawlCollision; // "Crouch_Roll" node — low-profile shape for crawling
 	private CpuParticles2D _jumpParticles;
 	private CpuParticles2D _doubleJumpParticles;
 	private CpuParticles2D _slideParticles;
 	private CpuParticles2D _landParticles;
-	private enum State { Idle, Walk, Run, Jump, Fall, Float, Land, AirRoll, Sliding, CrouchIdle, CrouchWalk, Roll, Hurt, Death, WallLand, WallSlide, Push, Pull } // Player animation states
-	private State _currentState = State.Idle; // Current animation state
-	private bool _facingRight = true; // Sprite facing direction
-	private int _jumpCount = 0; // Number of jumps performed
-	private int _maxJumps = 1; // Maximum jumps allowed
-	private float _coyoteTimer = 0f; // Coyote time remaining
-	private float _jumpBufferTimer = 0f; // Jump buffer time remaining
-	private bool _wasOnFloor = false; // Was player on floor last frame
-	private Vector2 _velocityBeforeStop = Vector2.Zero; // Velocity before stopping
-	private bool _isSliding = false; // Whether player is sliding
-	private float _slideTimer = 0f; // Slide duration remaining
-	private float _slideDuration = 0.8f; // Total slide animation length
-	private bool _landAnimationFinished = false; // Whether landing animation completed
-	private bool _isCrouching = false; // Whether player is crouching
-	private bool _flashlightOn = false; // Flashlight state
-	private bool _isSprinting = false; // Whether player is sprinting
-	private bool _isWallSliding = false; // Whether player is wall sliding
-	private RigidBody2D _currentPushable = null; // Currently interacting pushable object
-	private bool _isInteractingWithPushable = false; // Whether we're pushing or pulling
-	private RigidBody2D _objectInRange = null; // Tracked object in grab area
-	private Area2D _grabArea; // Grab area for detecting pushable objects
-	private bool _hasWallJumped = false; // Whether player has already wall jumped this air time
-	private float _wallJumpInputTimer = 0f; // Timer for temporary input inversion after wall jump
-	private float _wallJumpInputDuration = 0.3f; // How long input stays inverted
-	private int _currentHealth; // Current health points
-	private bool _isInvulnerable = false; // Invulnerability state
-	private float _hurtTimer = 0f; // Invulnerability time remaining
-	private float _invulnerabilityDuration = 0.5f; // Total invulnerability duration
-	private float _damageCooldownTimer = 0f; // Time until next damage allowed
-	private float _damageCooldownDuration = 0.3f; // Minimum time between damage instances
-	private bool _isDead = false; // Death state
-	private float _savedObjectLinearDamp = -1f;
-	private float _savedObjectAngularDamp = -1f;
-	private bool _wasAdjustingObjectDamping = false;
-	private CollisionShape2D _normalCollision;
-	private CollisionShape2D _crouchCollision;
-	private PointLight2D _characterLight;
-	private Light2D _coneLight;
 	private AudioStreamPlayer2D _footstepPlayer;
 	private AudioStreamPlayer2D _jumpPlayer;
-	private AudioStreamPlayer2D _hurtPlayer;
+	private AudioStreamPlayer2D _landPlayer;
+private AudioStreamPlayer2D _hurtPlayer;
+private AudioStreamPlayer2D _interactionPlayer;
+private CpuParticles2D _dashParticles;
+
+	private enum State
+	{
+		Idle,
+		Walk,
+		Run,
+		Jump,
+		Fall,
+		Float,
+		Land,
+		AirRoll,
+		Slide,
+		CrawlIdle,
+		Crawl,
+		Roll,
+		WallSlide,
+		Push,
+		Pull,
+		Hurt,
+		Dead
+	}
+
+	private State _currentState = State.Idle;
+	private float _coyoteTimer = 0f;
+	private float _jumpBufferTimer = 0f;
+	private float _stateLockTimer = 0f;
+	private float _airRollTimer = 0f;
+	private float _slideTimer = 0f;
 	private float _footstepTimer = 0f;
-	private float _footstepInterval = 0.4f; // Base interval for footsteps (faster)
-	private float _painCooldownTimer = 0f;
-	private float _painCooldownDuration = 1.0f; // 1 second cooldown
-	private RandomNumberGenerator _rng = new RandomNumberGenerator();
-	private bool _deathSoundPlayed = false; // Tracks if death sound has been played
+	private float _movementSlowMultiplier = 1f;
+	private float _movementSlowTimer = 0f;
+	private float _powerRegenTimer = 0f;
+	private int _extraJumpsUsed = 0;
+	private int _extraJumpCapacity = 0;
+	private bool _isCrawling = false;
+	private bool _isSliding = false;
+	private bool _isSprinting = false;
+	private bool _wasInteracting = false;
+	// SlideIn/CrawlEntry play once when their loop is freshly entered, then
+	// hand off to the real loop once the windup's AnimationFinished fires —
+	// see OnAnimationFinished. PushWindup instead follows InteractionComponent's
+	// own physics-timed windup gate (IsWindingUpPush) since that one needs to
+	// keep the animation and the "is the object actually allowed to move yet"
+	// gate in exact agreement.
+	private bool _slideWindupActive = false;
+	private bool _crawlEntryActive = false;
+	// Turnaround/TurnaroundRun have no separate left-facing art — the same
+	// clip is played forward for one turn direction and backward (from its
+	// last frame) for the other, since a time-reversed pivot reads as the
+	// mirrored motion without needing a second drawn version.
+	private bool _turnaroundActive = false;
+	private float _turnaroundTimer = 0f;
+	// Landing recovery plays until its clip finishes (or input cancels it) —
+	// it used to be tied to the 0.04-0.08s landing state-lock timer, which
+	// cut the 0.6s Land clip off after barely one frame, so it read as
+	// never playing at all.
+	private bool _landingAnimActive = false;
+	// The dash flip's follow-through: stays true until the Flip clip
+	// finishes, well after the dash physics itself (0.16s) has ended.
+	private bool _flipAnimActive = false;
+	private Tween _hurtFlashTween;
+
+	// Animations with genuinely distinct left-facing art (not just a mirror
+	// of the right-facing clip — asymmetric details like the ponytail don't
+	// flip cleanly). For these, facing is expressed by swapping to the
+	// "<Name>Left" clip instead of FlipH. Everything else still mirrors via
+	// FlipH like before.
+	private static readonly HashSet<string> DirectionalAnimations = new()
+	{
+		"Idle", "Walk", "Run", "Jump", "Land", "Hurt", "Death",
+		"Pull", "PushWindup", "Push", "Slide", "SlideIn",
+		"Crawl", "CrawlIdle", "CrawlEntry", "Flip", "Wallslide", "AirRoll",
+	};
+	private List<DashTrailFrame> _dashTrailFrames = new();
+	private float _dashTrailTimer = 0f;
+	private const float DashTrailInterval = 0.02f;
+	private bool _isDashing = false;
+	// Toggled by each wall jump so consecutive jumps off alternating walls
+	// read as a deliberate zigzag climb: while active, horizontal input is
+	// mirrored so pressing toward the wall you just left pushes off it
+	// again instead of pinning you against it. See DoWallJump/HandleHorizontalMovement.
+	private bool _wallClimbInputInverted = false;
+
+	public float FacingDirection { get; private set; } = 1f;
+	public float CurrentPower { get; private set; }
+	public float PowerNormalized => MaxPower <= 0f ? 0f : CurrentPower / MaxPower;
+	public bool IsAlive => _currentState != State.Dead;
+	public bool IsInHurtState => _currentState == State.Hurt;
+	public bool IsControlLocked => _stateLockTimer > 0f || _currentState == State.Hurt || _currentState == State.Dead || _interaction.IsInteracting;
+
+	[Signal] public delegate void JumpedEventHandler(bool usedExtraJump);
+	[Signal] public delegate void LandedEventHandler(float impactSpeed);
+	[Signal] public delegate void PowerChangedEventHandler(float currentPower, float maxPower);
 
 	public override void _Ready()
 	{
-		// Initialize node references
 		_animatedSprite = GetNode<AnimatedSprite2D>("AnimatedSprite2D");
-		_jumpParticles = GetNode<CpuParticles2D>("JumpParticles");
-		_doubleJumpParticles = GetNode<CpuParticles2D>("DoubleJumpParticles");
-		_slideParticles = GetNode<CpuParticles2D>("SlideParticles");
-		_landParticles = GetNode<CpuParticles2D>("LandParticles");
-		_normalCollision = GetNode<CollisionShape2D>("CollisionShape2D");
-		_crouchCollision = GetNode<CollisionShape2D>("Crouch_Roll");
-		_characterLight = GetNode<PointLight2D>("PointLight2D");
-		_coneLight = GetNode<Light2D>("ConeLight");
-		_footstepPlayer = GetNode<AudioStreamPlayer2D>("FootstepPlayer");
-		_jumpPlayer = GetNode<AudioStreamPlayer2D>("JumpPlayer");
-		_hurtPlayer = GetNode<AudioStreamPlayer2D>("HurtPlayer");
-		_grabArea = GetNode<Area2D>("GrabArea");
-		_grabArea.BodyEntered += OnGrabEntered;
-		_grabArea.BodyExited += OnGrabExited;
+		_health = GetNode<HealthComponent>("HealthComponent");
+		_interaction = GetNode<InteractionComponent>("InteractionComponent");
+		_dash = GetNodeOrNull<DashComponent>("DashComponent");
+		_extraJump = GetNodeOrNull<ExtraJumpComponent>("ExtraJumpComponent");
+		_normalCollision = GetNodeOrNull<CollisionShape2D>("CollisionShape2D");
+		_crawlCollision = GetNodeOrNull<CollisionShape2D>("Crouch_Roll");
+		_jumpParticles = GetNodeOrNull<CpuParticles2D>("JumpParticles");
+		_doubleJumpParticles = GetNodeOrNull<CpuParticles2D>("DoubleJumpParticles");
+		_slideParticles = GetNodeOrNull<CpuParticles2D>("SlideParticles");
+		_landParticles = GetNodeOrNull<CpuParticles2D>("LandParticles");
+		_footstepPlayer = GetOrCreateAudioPlayer("FootstepPlayer");
+		_jumpPlayer = GetOrCreateAudioPlayer("JumpPlayer");
+		_landPlayer = GetOrCreateAudioPlayer("LandPlayer");
+		_hurtPlayer = GetOrCreateAudioPlayer("HurtPlayer");
+_interactionPlayer = GetOrCreateAudioPlayer("InteractPlayer");
+_dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
-		// Setup initial state
-		_coneLight.Enabled = false;
-		_characterLight.Enabled = false;
-		_maxJumps = CanDoubleJump ? 2 : 1;
-		_currentHealth = MaxHealth;
+	if (FootstepSound != null) _footstepPlayer.Stream = FootstepSound;
+		if (JumpSound != null) _jumpPlayer.Stream = JumpSound;
+		if (LandSound != null) _landPlayer.Stream = LandSound;
 
-		// Connect animation finished signal with proper Godot signature
-		_animatedSprite.AnimationFinished += () => OnAnimationFinished(_animatedSprite.Animation);
-	}
+		CurrentPower = MaxPower;
+		SetCrawlCollider(false);
 
-	public override void _Process(double delta)
-	{
-		float deltaTime = (float)delta;
+		_animatedSprite.AnimationFinished += OnAnimationFinished;
+		_health.TookDamage += OnTookDamage;
+		_health.Died += OnDied;
+		_extraJump?.ApplyToPlayer(this);
 
-		// Skip input processing if dead, but allow death animation to play
-		if (_isDead)
+		// Only the local authority's own copy should have an active camera
+		// or visible HUD — every other connected player's Sam is just a
+		// remote puppet on screen, not something whose "point of view"
+		// this client is watching from.
+		if (IsNetworked && !IsMultiplayerAuthority())
 		{
-			// Only handle death animation here
-			PlayAnimation();
-			return;
-		}
-
-		// Handle input for state changes
-		bool crawlPressed = Input.IsActionPressed("Crawl");
-		bool sprintPressed = Input.IsActionPressed("Sprint");
-		bool crawlJustPressed = Input.IsActionJustPressed("Crawl");
-		bool flashlightJustPressed = Input.IsActionJustPressed("Flashlight");
-
-		// Toggle flashlight
-		if (flashlightJustPressed)
-		{
-			_flashlightOn = !_flashlightOn;
-			_characterLight.Enabled = _flashlightOn;
-			_coneLight.Enabled = _flashlightOn;
-		}
-
-		// Combat roll: sprinting + sudden crouch press (always dashes forward in facing direction)
-		if (crawlJustPressed && sprintPressed && IsOnFloorOnly() &&
-			(_currentState == State.Run || _currentState == State.Sliding))
-		{
-			_currentState = State.Roll;
-			float dashDirection = _facingRight ? 1f : -1f;
-			float dashSpeed = SprintSpeed * 2f; // Strong forward dash
-			Velocity = new Vector2(dashDirection * dashSpeed, Velocity.Y);
-		}
-		else if (crawlPressed && IsOnFloorOnly() && _currentState != State.Roll)
-		{
-			if (!_isCrouching)
-			{
-				_isCrouching = true;
-				_normalCollision.Disabled = true;
-				_crouchCollision.Disabled = false;
-			}
-		}
-		else if (!crawlPressed && _isCrouching)
-		{
-			_isCrouching = false;
-			_normalCollision.Disabled = false;
-			_crouchCollision.Disabled = true;
-		}
-
-		// Update flashlight cone rotation to follow mouse
-		if (_flashlightOn)
-		{
-			Vector2 mousePos = GetViewport().GetMousePosition();
-			Vector2 playerPos = GetGlobalTransformWithCanvas().Origin;
-			Vector2 direction = mousePos - playerPos;
-			float angle = Mathf.Atan2(direction.Y, direction.X);
-			_coneLight.Position = Vector2.Zero;
-			_coneLight.Rotation = angle - Mathf.Pi / 2;
+			GetNodeOrNull<Camera2D>("PlayerCamera")?.Set("enabled", false);
+			GetNodeOrNull<CanvasLayer>("SamHUD")?.Set("visible", false);
 		}
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
+		// Remote copy of another player: GlobalPosition, NetAnimationName,
+		// and NetFlipH already arrived verbatim from the authority via
+		// MultiplayerSynchronizer this tick — apply them and stop. No local
+		// input reading, gravity, or state-machine simulation at all here,
+		// so there's no way for a remote copy's own physics to disagree
+		// with where the authority actually put it.
+		if (IsNetworked && !IsMultiplayerAuthority())
+		{
+			ApplyRemoteVisualState();
+			return;
+		}
+
+		if (_currentState == State.Dead) return;
+
 		float deltaTime = (float)delta;
+		Vector2 inputDir = new(Input.GetAxis("Left", "Right"), Input.GetAxis("Jump", "Crawl"));
+		bool wasOnFloorBeforeMove = IsOnFloor();
+		float fallSpeedBeforeMove = Velocity.Y;
+		// Captured before HandleHorizontalMovement can react to this frame's
+		// input — turnaround detection needs to know which way Sam was
+		// actually facing/moving a moment ago, not the already-updated value.
+		float facingBeforeMove = FacingDirection;
+		float velocityXBeforeMove = Velocity.X;
 
-		// Skip all processing if dead
-		if (_isDead) return;
+		UpdateTimers(deltaTime);
+		UpdateStatusEffects(deltaTime);
+		UpdateInteraction(inputDir, deltaTime);
+		UpdateDashTrail(deltaTime);
 
-		Vector2 inputDir = Input.GetVector("Left", "Right", "Jump", "Crawl");
-		bool jumpPressed = Input.IsActionJustPressed("Jump");
-		bool jumpHeld = Input.IsActionPressed("Jump");
-		bool sprintPressed = Input.IsActionPressed("Sprint");
-
-		// Handle wall jump input inversion timer
-		if (_wallJumpInputTimer > 0)
+		bool dashActive = _dash != null && _dash.Tick(this, inputDir, deltaTime);
+		if (dashActive)
 		{
-			_wallJumpInputTimer -= deltaTime;
-		}
-
-		// Wall sliding detection - requires input towards the wall
-		bool isNearWall = IsOnWallOnly() && !IsOnFloor();
-		bool inputTowardsWall = false;
-
-		if (isNearWall)
-		{
-			// Determine which direction the wall is
-			if (Velocity.X > 0 && inputDir.X > 0) // Wall to the right, input right
+			if (!_isDashing) // Starting a new dash
 			{
-				inputTowardsWall = true;
+				_isDashing = true;
+				_dashTrailFrames.Clear();
+				_flipAnimActive = true;
+				// A re-dash can land while the previous flip is still mid-air
+				// in its follow-through — Stop() so Play() restarts the clip
+				// from frame 0 instead of being skipped as "already playing".
+				_animatedSprite.Stop();
 			}
-			else if (Velocity.X < 0 && inputDir.X < 0) // Wall to the left, input left
+			StopSlide();
+			SetState(State.Roll, "Flip", FlipPlaybackSpeed);
+		}
+		else if (_isDashing) // Dash just ended
+		{
+			_isDashing = false;
+			// Spawn the dash clone effect now that the dash has finished
+			SpawnDashEffect();
+		}
+
+		// Gravity keeps applying even while hurt-locked — only the
+		// input-driven handlers below are gated off. This used to be
+		// duplicated inside both branches below and skipped entirely during
+		// Hurt, which meant getting knocked back mid-air froze Sam's fall
+		// for the whole hurt-lock instead of letting the knockback arc
+		// naturally: gravity would resume abruptly once the lock ended.
+		if (!dashActive)
+		{
+			ApplyGravity(deltaTime);
+		}
+
+		if (!dashActive && _currentState != State.Hurt)
+		{
+			if (_interaction.IsInteracting)
 			{
-				inputTowardsWall = true;
-			}
-		}
-
-		if (isNearWall && inputTowardsWall && !_isWallSliding)
-		{
-			StartWallSlide();
-		}
-		else if ((!isNearWall || !inputTowardsWall) && _isWallSliding)
-		{
-			StopWallSlide();
-		}
-
-		// Handle hurt invulnerability timer
-		if (_isInvulnerable)
-		{
-			_hurtTimer -= deltaTime;
-			if (_hurtTimer <= 0)
-			{
-				_isInvulnerable = false;
-			}
-		}
-
-		// Handle damage cooldown timer
-		if (_damageCooldownTimer > 0)
-		{
-			_damageCooldownTimer -= deltaTime;
-		}
-
-		// Handle pain sound cooldown timer
-		if (_painCooldownTimer > 0)
-		{
-			_painCooldownTimer -= deltaTime;
-		}
-
-		// Interrupt landing animation if player attempts to move
-		if (_currentState == State.Land && inputDir.X != 0)
-		{
-			_currentState = _isSprinting ? State.Run : State.Walk;
-		}
-
-		if (IsOnFloorOnly())
-		{
-			_coyoteTimer = CoyoteTime;
-			_jumpCount = 0;
-			_hasWallJumped = false; // Reset wall jump when on ground
-			_wasOnFloor = true;
-		}
-		else
-		{
-			_coyoteTimer -= deltaTime;
-		}
-
-		if (jumpPressed)
-		{
-			_jumpBufferTimer = JumpBufferTime;
-		}
-		else
-		{
-			_jumpBufferTimer -= deltaTime;
-		}
-
-		float currentSpeed;
-		if (_isCrouching)
-		{
-			sprintPressed = false; // Prevent sprinting while crouching
-			currentSpeed = Speed * 0.5f;
-		}
-		else
-		{
-			currentSpeed = sprintPressed ? SprintSpeed : Speed;
-		}
-		_isSprinting = sprintPressed;
-
-		// Handle input inversion after wall jump
-		float effectiveInputDirX = inputDir.X;
-		if (_wallJumpInputTimer > 0)
-		{
-			effectiveInputDirX *= -1f; // Invert horizontal input temporarily
-		}
-
-		float targetSpeed = effectiveInputDirX * currentSpeed;
-
-		if (_isSliding)
-		{
-			_slideTimer -= deltaTime;
-			if (_slideTimer <= 0 || Mathf.Abs(Velocity.X) < 50f)
-			{
-				_isSliding = false;
-				_slideParticles.Emitting = false; // Stop slide particles
-				if (_currentState == State.Sliding)
-				{
-					_currentState = State.Float;
-				}
+				HandleInteractionMovement(inputDir, deltaTime);
+				HandleJumping(inputDir);
 			}
 			else
 			{
-				float slideFriction = 0.95f;
-				Velocity = new Vector2(Velocity.X * slideFriction, Velocity.Y);
-			}
-		}
-		else if (targetSpeed != 0)
-		{
-			Velocity = Velocity.MoveToward(new Vector2(targetSpeed, Velocity.Y), Acceleration * deltaTime);
-		}
-		else
-		{
-			if (Mathf.Abs(Velocity.X) > SprintSpeed * 0.8f && IsOnFloorOnly() && !_isCrouching)
-			{
-				_isSliding = true;
-				_slideTimer = _slideDuration;
-				_currentState = State.Sliding;
-				_slideParticles.Emitting = true;
-			}
-			else
-			{
-				Velocity = Velocity.MoveToward(new Vector2(0, Velocity.Y), Deceleration * deltaTime);
-			}
-		}
-
-		if (!IsOnFloorOnly())
-		{
-			float currentGravity = Gravity;
-			if (_isWallSliding)
-			{
-				currentGravity *= 0.15f; // Reduce gravity more during wall slide for slower descent
-			}
-			Velocity += new Vector2(0, currentGravity * deltaTime);
-			if (Velocity.Y > MaxFallSpeed)
-			{
-				Velocity = new Vector2(Velocity.X, MaxFallSpeed);
-			}
-		}
-		else
-		{
-			if (Velocity.Y > 0)
-			{
-				Velocity = new Vector2(Velocity.X, 0);
-			}
-		}
-
-		bool canJump = (_coyoteTimer > 0 || _jumpCount < _maxJumps) && _jumpBufferTimer > 0;
-		if (canJump)
-		{
-			if (_jumpCount == 0 || CanDoubleJump)
-			{
-				Velocity = new Vector2(Velocity.X, JumpVelocity);
-				_jumpCount++;
-				_coyoteTimer = 0f;
-				_jumpBufferTimer = 0f;
-				_currentState = _jumpCount == 1 ? State.Jump : State.AirRoll;
-
-				// Play jump sound
-				_jumpPlayer.Stream = GD.Load<AudioStream>("res://Sound/Footsteps/30_Jump_03.wav");
-				_jumpPlayer.Play();
-
-				// Play particles based on jump type
-				if (_jumpCount == 1)
+				HandleCrawlAndSlide(inputDir, deltaTime);
+				if (!_isSliding)
 				{
-					_jumpParticles.Restart(); // Regular jump particles
-				}
-				else
-				{
-					_doubleJumpParticles.Restart(); // Double jump particles
+					// Movement physics is never gated on the turnaround — see
+					// StartTurnaround for why the clip itself is played fast
+					// enough that this doesn't need to fight for sync.
+					HandleHorizontalMovement(inputDir, deltaTime);
+					HandleJumping(inputDir);
+					HandleWallSlide(inputDir);
 				}
 			}
-		}
-
-		// Wall jumping
-		if (jumpPressed && _isWallSliding && !_hasWallJumped && _jumpBufferTimer > 0)
-		{
-			// Determine wall direction and jump away from it
-			float wallDirection = Velocity.X > 0 ? -1f : 1f; // If velocity positive (wall right), jump left; if negative (wall left), jump right
-			float wallJumpForce = JumpVelocity * 1.4f; // Higher jump for better distance
-			float wallJumpHorizontal = Speed * 2.2f; // Much stronger horizontal push away from wall
-
-			Velocity = new Vector2(wallDirection * wallJumpHorizontal, wallJumpForce);
-			_hasWallJumped = true;
-			_isWallSliding = false; // Stop wall sliding
-			_wallJumpInputTimer = _wallJumpInputDuration; // Start input inversion timer
-			_jumpBufferTimer = 0f;
-			_currentState = State.Jump;
-
-			// Play jump sound
-			_jumpPlayer.Stream = GD.Load<AudioStream>("res://Sound/Footsteps/30_Jump_03.wav");
-			_jumpPlayer.Play();
-
-			_jumpParticles.Restart(); // Regular jump particles
-		}
-
-		if (!jumpHeld && Velocity.Y < 0 && (_currentState == State.Jump || _currentState == State.AirRoll || _currentState == State.Float))
-		{
-			Velocity = new Vector2(Velocity.X, Velocity.Y * 0.5f);
-		}
-
-		bool suddenStop = _wasOnFloor && !IsOnFloor() && Mathf.Abs(Velocity.X) > Speed * 0.5f;
-		if (suddenStop)
-		{
-			_velocityBeforeStop = Velocity;
-		}
-		else if (IsOnFloor())
-		{
-			_velocityBeforeStop = Vector2.Zero;
 		}
 
 		MoveAndSlide();
+		HandleLanding(wasOnFloorBeforeMove, fallSpeedBeforeMove);
+		UpdatePower(deltaTime);
 
-		// Handle pushable object interaction
-		HandlePushableInteraction(deltaTime);
-
-		if (Velocity.X > 0 && !_isWallSliding)
+		if (!dashActive && _currentState != State.Hurt && _currentState != State.Dead)
 		{
-			_facingRight = true;
-			_animatedSprite.FlipH = false;
-		}
-		else if (Velocity.X < 0 && !_isWallSliding)
-		{
-			_facingRight = false;
-			_animatedSprite.FlipH = true;
+			HandleAnimations(inputDir, facingBeforeMove, velocityXBeforeMove);
+			HandleFootsteps(deltaTime);
 		}
 
-		// Death state is handled in _Process now
-
-		// Footstep sound system
-		HandleFootsteps(deltaTime);
-
-		// Only update state and play animation if not dead
-		if (!_isDead)
+		if (IsNetworked && IsMultiplayerAuthority())
 		{
-			UpdateState(deltaTime);
-			PlayAnimation();
+			NetAnimationName = _animatedSprite.Animation;
+			NetFlipH = _animatedSprite.FlipH;
 		}
-
-		// Apply hurt knockback
-		if (_currentState == State.Hurt)
-		{
-			Velocity = Velocity.MoveToward(Vector2.Zero, 1000 * deltaTime);
-		}
-
-		_wasOnFloor = IsOnFloorOnly();
 	}
 
-	private void OnAnimationFinished(string animationName)
+	// A remote peer's copy never runs the state machine above — it just
+	// shows whatever the authority's own sprite is actually doing.
+	private void ApplyRemoteVisualState()
 	{
-		if (animationName == "Land")
+		if (_animatedSprite.SpriteFrames != null
+			&& _animatedSprite.SpriteFrames.HasAnimation(NetAnimationName)
+			&& _animatedSprite.Animation != NetAnimationName)
 		{
-			_landAnimationFinished = true;
+			_animatedSprite.Play(NetAnimationName);
 		}
-		else if (animationName == "AirRoll")
+		_animatedSprite.FlipH = NetFlipH;
+	}
+
+	private void UpdateTimers(float deltaTime)
+	{
+		if (!IsOnFloor()) _coyoteTimer = Mathf.Max(0f, _coyoteTimer - deltaTime);
+		if (Input.IsActionJustPressed("Jump")) _jumpBufferTimer = JumpBufferTime;
+		else _jumpBufferTimer = Mathf.Max(0f, _jumpBufferTimer - deltaTime);
+
+		_stateLockTimer = Mathf.Max(0f, _stateLockTimer - deltaTime);
+		_airRollTimer = Mathf.Max(0f, _airRollTimer - deltaTime);
+
+		if (_turnaroundActive)
 		{
-			if (_currentState == State.AirRoll)
+			_turnaroundTimer -= deltaTime;
+			if (_turnaroundTimer <= 0f)
 			{
-				_currentState = Velocity.Y > 0 ? State.Fall : State.Jump;
-			}
-		}
-		else if (animationName == "Roll")
-		{
-			if (_currentState == State.Roll)
-			{
-				if (Mathf.Abs(Velocity.X) > 10f)
-				{
-					_currentState = _isSprinting ? State.Run : State.Walk;
-				}
-				else
-				{
-					_currentState = State.Idle;
-				}
-			}
-		}
-		else if (animationName == "Hurt")
-		{
-			if (_currentState == State.Hurt)
-			{
-				if (Mathf.Abs(Velocity.X) > 10f)
-				{
-					_currentState = _isSprinting ? State.Run : State.Walk;
-				}
-				else
-				{
-					_currentState = State.Idle;
-				}
-			}
-		}
-		else if (animationName == "WallLand")
-		{
-			if (_currentState == State.WallLand)
-			{
-				_currentState = State.WallSlide;
-			}
-		}
-		else if (animationName == "AirSlide")
-		{
-			// Air slide animation finished - this shouldn't happen since we removed air slide, but just in case
-		}
-		else if (animationName == "Death")
-		{
-			if (_currentState == State.Death)
-			{
-				// Clean up and exit
-				SetProcess(false);
-				SetPhysicsProcess(false);
-				Visible = false; // Hide player after death animation
-				GetTree().Quit();
+				_turnaroundActive = false;
 			}
 		}
 	}
 
-	private void UpdateState(float deltaTime)
+	private void UpdateInteraction(Vector2 inputDir, float deltaTime)
 	{
-		State newState = _currentState;
-
-		if (IsOnFloor())
+		if (Input.IsActionPressed("Interact"))
 		{
-			_jumpCount = 0; // Reset jump count when on ground
+			_interaction.ProcessInteraction(inputDir, GlobalPosition, deltaTime);
+		}
+		else if (_interaction.IsInteracting)
+		{
+			_interaction.StopInteraction();
+		}
 
-			if (_currentState == State.Fall || _currentState == State.Jump || _currentState == State.Float || _currentState == State.AirRoll)
-			{
-				bool isSprinting = _isSprinting || Mathf.Abs(Velocity.X) > Speed * 1.2f;
+		if (_interaction.IsInteracting && !_wasInteracting)
+		{
+			StopSlide();
+			SetCrawling(false);
+			PlaySound(_interactionPlayer, 0.9f, 1.1f);
+		}
 
-				if (isSprinting)
-				{
-					newState = State.Run;
-					_landAnimationFinished = true;
-				}
-				else
-				{
-					if (_currentState != State.Land)
-					{
-						newState = State.Land;
-						_landAnimationFinished = false;
-						_landParticles.Restart();
-						// Play landing sound
-						_jumpPlayer.Stream = GD.Load<AudioStream>("res://Sound/Footsteps/45_Landing_01.wav");
-						_jumpPlayer.Play();
-					}
-				}
-			}
-			else if (_currentState == State.Sliding && !_isSliding)
+		_wasInteracting = _interaction.IsInteracting;
+	}
+
+	private void ApplyGravity(float deltaTime)
+	{
+		if (IsOnFloor()) return;
+
+		float currentGravity = Gravity;
+		if (Mathf.Abs(Velocity.Y) < ApexThreshold && !Input.IsActionPressed("Crawl"))
+		{
+			currentGravity *= ApexGravityMultiplier;
+		}
+
+		if (IsWallSlideCandidate() && Velocity.Y > 0)
+		{
+			currentGravity *= WallSlideGravityMultiplier;
+		}
+
+		Vector2 newVelocity = Velocity;
+		newVelocity.Y = Mathf.Min(newVelocity.Y + currentGravity * deltaTime, MaxFallSpeed);
+		Velocity = newVelocity;
+	}
+
+	private void HandleHorizontalMovement(Vector2 inputDir, float deltaTime)
+	{
+		bool canSprint = CanSprint(inputDir);
+		_isSprinting = canSprint;
+
+		// When wallJumpInvertInput is active, invert the input direction so pressing
+		// towards the wall pushes the player away, creating smooth back-and-forth wall climbing.
+		float effectiveInputX = _wallClimbInputInverted ? -inputDir.X : inputDir.X;
+		Vector2 effectiveInputDir = new(effectiveInputX, inputDir.Y);
+
+		float targetSpeed = GetTargetHorizontalSpeed(effectiveInputDir, canSprint);
+		float accel = IsOnFloor() ? Acceleration : AirAcceleration;
+		float friction = IsOnFloor() ? Friction : AirFriction;
+
+		Vector2 newVelocity = Velocity;
+		if (Mathf.Abs(effectiveInputX) > 0.01f && _stateLockTimer <= 0f)
+		{
+			float directionMultiplier = Mathf.Sign(effectiveInputX);
+			float speedDifference = Mathf.Abs(targetSpeed - newVelocity.X);
+			float adjustedAccel = accel * (speedDifference > 50f ? 1.1f : 0.95f);
+
+			// Snappier turn-around: if input is pressed against the current
+			// direction of travel, boost acceleration so reversing reads as
+			// an immediate, responsive stop-and-go instead of a sluggish
+			// drift through zero.
+			bool isReversing = Mathf.Sign(newVelocity.X) != 0f && Mathf.Sign(newVelocity.X) != directionMultiplier;
+			if (isReversing)
 			{
-				newState = State.Float; // Sliding stops, go to float
+				adjustedAccel *= TurnAroundAccelMultiplier;
 			}
-			else if (_currentState == State.Land && _landAnimationFinished)
+
+			newVelocity.X = Mathf.MoveToward(newVelocity.X, targetSpeed, adjustedAccel * deltaTime);
+			SetFacing(effectiveInputX);
+		}
+		else
+		{
+			newVelocity.X = Mathf.MoveToward(newVelocity.X, 0f, friction * deltaTime);
+		}
+
+		Velocity = newVelocity;
+
+		// Reset wallJumpInvertInput when the player releases all horizontal input
+		// and is no longer in contact with a wall
+		if (_wallClimbInputInverted && !IsOnWallOnly() && Mathf.Abs(inputDir.X) < 0.01f)
+		{
+			_wallClimbInputInverted = false;
+		}
+	}
+
+	private float GetTargetHorizontalSpeed(Vector2 inputDir, bool canSprint)
+	{
+		if (_isCrawling) return inputDir.X * CrawlSpeed * _movementSlowMultiplier;
+		return inputDir.X * (canSprint ? SprintSpeed : Speed) * _movementSlowMultiplier;
+	}
+
+	private bool CanSprint(Vector2 inputDir)
+	{
+		return Input.IsActionPressed("Sprint")
+			&& Mathf.Abs(inputDir.X) > 0.01f
+			&& !_isCrawling
+			&& !_isSliding
+			&& CurrentPower > MinimumPowerToSprint;
+	}
+
+	private void HandleInteractionMovement(Vector2 inputDir, float deltaTime)
+	{
+		// Mirror the exact velocity InteractionComponent is driving into the
+		// held object, rather than computing our own independent push/pull
+		// speed here — two separately-tuned speeds fighting each other is
+		// what made pushing/pulling feel like the player was bumping into
+		// their own cargo instead of moving it smoothly.
+		Vector2 newVelocity = Velocity;
+		newVelocity.X = Mathf.MoveToward(newVelocity.X, _interaction.CurrentTargetVelocityX, Acceleration * deltaTime);
+		Velocity = newVelocity;
+
+		if (Mathf.Abs(inputDir.X) > 0.01f)
+		{
+			SetFacing(inputDir.X);
+		}
+	}
+
+	private void HandleCrawlAndSlide(Vector2 inputDir, float deltaTime)
+	{
+		bool wantsCrawl = Input.IsActionPressed("Crawl") && IsOnFloor();
+		bool canEnterSlide = Input.IsActionJustPressed("Crawl")
+			&& IsOnFloor()
+			&& !_isCrawling
+			&& Mathf.Abs(Velocity.X) >= SlideEntrySpeed
+			&& CurrentPower > MinimumPowerToSprint;
+
+		if (canEnterSlide)
+		{
+			StartSlide(inputDir);
+			return;
+		}
+
+		if (_isSliding)
+		{
+			TickSlide(deltaTime);
+			return;
+		}
+
+		if (wantsCrawl)
+		{
+			SetCrawling(true);
+		}
+		else if (_isCrawling && CanStand())
+		{
+			SetCrawling(false);
+		}
+	}
+
+	private void StartSlide(Vector2 inputDir)
+	{
+		_isSliding = true;
+		_slideWindupActive = true;
+		_slideTimer = SlideDuration;
+		SetCrawling(true, playEntryAnimation: false);
+
+		float direction = Mathf.Abs(inputDir.X) > 0.01f ? Mathf.Sign(inputDir.X) : FacingDirection;
+		// Inherit current horizontal velocity, floored to SlideEntrySpeed so you always get a minimum slide boost
+		float entrySpeed = Mathf.Max(Mathf.Abs(Velocity.X), SlideEntrySpeed);
+		Velocity = new Vector2(direction * entrySpeed, Velocity.Y);
+		SetFacing(direction);
+
+		if (_slideParticles != null)
+		{
+			_slideParticles.Emitting = true;
+		}
+	}
+
+	private void TickSlide(float deltaTime)
+	{
+		_slideTimer -= deltaTime;
+		Vector2 newVelocity = Velocity;
+		newVelocity.X = Mathf.MoveToward(newVelocity.X, 0f, SlideFriction * deltaTime);
+		Velocity = newVelocity;
+
+		if (_slideTimer <= 0f || Mathf.Abs(Velocity.X) < CrawlSpeed)
+		{
+			StopSlide();
+		}
+	}
+
+	private void StopSlide()
+	{
+		if (!_isSliding) return;
+
+		_isSliding = false;
+		_slideWindupActive = false;
+		if (_slideParticles != null)
+		{
+			_slideParticles.Emitting = false;
+		}
+	}
+
+	private void HandleJumping(Vector2 inputDir)
+	{
+		if (Input.IsActionJustReleased("Jump") && Velocity.Y < 0f)
+		{
+			Velocity = new Vector2(Velocity.X, Velocity.Y * JumpCutMultiplier);
+		}
+
+		// Can't jump while crawling (prone) or sliding
+		if (_isCrawling) return;
+
+		if (_jumpBufferTimer <= 0f) return;
+
+		if (_currentState == State.WallSlide || IsWallSlideCandidate())
+		{
+			DoWallJump();
+			return;
+		}
+
+		bool canGroundJump = _coyoteTimer > 0f && BaseJumpCount > 0;
+		bool canExtraJump = !canGroundJump && _extraJumpsUsed < _extraJumpCapacity;
+		if (!canGroundJump && !canExtraJump) return;
+
+		StopSlide();
+		SetCrawling(false);
+
+		Velocity = new Vector2(Velocity.X, JumpVelocity);
+		if (canExtraJump)
+		{
+			_extraJumpsUsed++;
+			_airRollTimer = 0.6f;
+		}
+
+		_coyoteTimer = 0f;
+		_jumpBufferTimer = 0f;
+		_stateLockTimer = 0f;
+		EmitSignal(SignalName.Jumped, canExtraJump);
+		PlayJumpFeedback(canExtraJump);
+	}
+
+	private void DoWallJump()
+	{
+		Vector2 wallNormal = GetWallNormal();
+		float direction = wallNormal.X == 0f ? -FacingDirection : Mathf.Sign(wallNormal.X);
+		Velocity = new Vector2(direction * WallJumpHorizontalVelocity, WallJumpVelocity);
+		SetFacing(direction);
+
+		_coyoteTimer = 0f;
+		_jumpBufferTimer = 0f;
+		_stateLockTimer = 0.05f;
+		_airRollTimer = 0f;
+		_wallClimbInputInverted = !_wallClimbInputInverted;
+		PlayJumpFeedback(false);
+	}
+
+	private void HandleWallSlide(Vector2 inputDir)
+{
+	if (!IsWallSlideCandidate())
+	{
+		return;
+	}
+
+	StopSlide();
+	SetCrawling(false);
+	Vector2 newVelocity = Velocity;
+	newVelocity.Y = Mathf.Min(newVelocity.Y, WallSlideMaxFallSpeed);
+	Velocity = newVelocity;
+	SetState(State.WallSlide, "Wallslide");
+}
+
+	private bool IsWallSlideCandidate()
+	{
+		return !IsOnFloor() && IsOnWallOnly() && Velocity.Y >= 0f;
+	}
+
+	private void HandleLanding(bool wasOnFloorBeforeMove, float fallSpeedBeforeMove)
+	{
+		if (!IsOnFloor()) return;
+
+		_coyoteTimer = CoyoteTime;
+		_extraJumpsUsed = 0;
+		_extraJump?.ResetExtraJumps();
+
+		if (!wasOnFloorBeforeMove)
+		{
+			if (fallSpeedBeforeMove >= LandingParticleThreshold)
 			{
-				// Land animation finished, transition to appropriate state
-				if (Mathf.Abs(Velocity.X) > 10f)
-				{
-					newState = _isSprinting ? State.Run : State.Walk;
-				}
-				else
-				{
-					newState = State.Idle;
-				}
+				PlayLandingFeedback(fallSpeedBeforeMove);
 			}
-			else if (_currentState != State.Land && _currentState != State.Sliding && _currentState != State.Roll && !_isInteractingWithPushable)
+
+			_landingAnimActive = true;
+			_stateLockTimer = Mathf.Abs(Velocity.X) > 15f ? 0.04f : 0.08f;
+			_wallClimbInputInverted = false;
+		}
+	}
+
+	private void UpdatePower(float deltaTime)
+	{
+		bool drainedPower = false;
+		if (_isSprinting)
+		{
+			SpendPower(SprintPowerDrainPerSecond * deltaTime);
+			drainedPower = true;
+		}
+
+		if (drainedPower)
+		{
+			_powerRegenTimer = PowerRegenDelay;
+			return;
+		}
+
+		if (_powerRegenTimer > 0f)
+		{
+			_powerRegenTimer -= deltaTime;
+			return;
+		}
+
+		AddPower(PowerRegenPerSecond * deltaTime);
+	}
+
+	private void HandleAnimations(Vector2 inputDir, float facingBeforeMove, float velocityXBeforeMove)
+	{
+		if (_interaction.IsInteracting)
+		{
+			_turnaroundActive = false;
+			_landingAnimActive = false;
+			_flipAnimActive = false;
+			HandleInteractionAnimation(inputDir);
+			return;
+		}
+
+		if (_isSliding)
+		{
+			_turnaroundActive = false;
+			_flipAnimActive = false;
+			if (_slideWindupActive)
 			{
-				if (_isCrouching)
-				{
-					if (Mathf.Abs(Velocity.X) > 10f)
-					{
-						newState = State.CrouchWalk;
-					}
-					else
-					{
-						newState = State.CrouchIdle;
-					}
-				}
-				else if (Mathf.Abs(Velocity.X) > 10f && !_isSliding)
-				{
-					newState = _isSprinting ? State.Run : State.Walk;
-				}
-				else if (!_isSliding)
-				{
-					newState = State.Idle;
-				}
+				SetState(State.Slide, "SlideIn", SlideInPlaybackSpeed);
+			}
+			else
+			{
+				SetState(State.Slide, "Slide");
+			}
+			return;
+		}
+
+		if (IsWallSlideCandidate())
+		{
+			_turnaroundActive = false;
+			_flipAnimActive = false;
+			SetState(State.WallSlide, "Wallslide");
+			return;
+		}
+
+		// Dash flip follow-through: the clip keeps playing to completion
+		// (grounded or airborne) well after the 0.16s dash physics ended,
+		// with movement fully responsive underneath — same philosophy as
+		// Turnaround. Cleared by AnimationFinished or any branch above.
+		if (_flipAnimActive)
+		{
+			SetState(State.Roll, "Flip", FlipPlaybackSpeed);
+			return;
+		}
+
+if (!IsOnFloor())
+{
+	_turnaroundActive = false;
+	_landingAnimActive = false;
+	if (_airRollTimer > 0f)
+	{
+		SetState(State.AirRoll, "AirRoll");
+	}
+	else if (Mathf.Abs(Velocity.Y) < ApexThreshold)
+	{
+		// Apex/hang reads as a continuation of rising, not a separate pose —
+		// only 2 real frames exist (jumping, falling).
+		SetPinnedFrameState(State.Float, "Jump", 0);
+	}
+	else if (Velocity.Y < 0f)
+	{
+		SetPinnedFrameState(State.Jump, "Jump", 0);
+	}
+	else
+	{
+		_stateLockTimer = Mathf.Max(_stateLockTimer, 0.08f);
+		SetPinnedFrameState(State.Fall, "Jump", 1);
+	}
+	return;
+}
+
+		// Landing recovery: plays out its full clip while standing still, but
+		// any horizontal input cancels it instantly — landing into a run
+		// keeps the run, only a standstill landing shows the recovery.
+		if (_landingAnimActive)
+		{
+			if (Mathf.Abs(inputDir.X) > 0.01f)
+			{
+				_landingAnimActive = false;
+			}
+			else
+			{
+				_turnaroundActive = false;
+				SetState(State.Land, "Land");
+				return;
+			}
+		}
+
+		if (_isCrawling)
+		{
+			bool isMoving = Mathf.Abs(inputDir.X) > 0.01f;
+			State crawlState = isMoving ? State.Crawl : State.CrawlIdle;
+			if (_crawlEntryActive)
+			{
+				SetState(crawlState, "CrawlEntry", CrawlEntryPlaybackSpeed);
+			}
+			else
+			{
+				SetState(crawlState, isMoving ? "Crawl" : "CrawlIdle");
+			}
+		}
+		else if (Mathf.Abs(inputDir.X) > 0.01f)
+		{
+			float inputSign = Mathf.Sign(inputDir.X);
+			if (!HandleTurnaround(facingBeforeMove, velocityXBeforeMove, inputSign))
+			{
+				SetState(_isSprinting ? State.Run : State.Walk, _isSprinting ? "Run" : "Walk");
 			}
 		}
 		else
 		{
-			// Air states - strict priority
-			if (_currentState == State.Land)
-			{
-				// Land animation must complete, can't be interrupted by air states
-				// The animation finished signal will handle transitioning out of Land
-				return;
-			}
-			else if (_currentState == State.WallLand)
-			{
-				// WallLand animation must complete first
-				return;
-			}
-			else if (_isWallSliding && _currentState != State.WallSlide)
-			{
-				newState = State.WallLand;
-			}
-			else if (_currentState == State.WallSlide && !_isWallSliding)
-			{
-				newState = State.Fall;
-			}
-			else if (_currentState == State.WallSlide && !IsOnWallOnly())
-			{
-				// Force exit wall slide state if not actually on wall
-				newState = State.Fall;
-			}
-			else if (_currentState == State.AirRoll)
-			{
-				// AirRoll animation must complete fully, only interrupted by landing on floor
-				// Don't transition to other states while AirRoll is playing
-				if (_animatedSprite.Animation == "AirRoll" && !_animatedSprite.IsPlaying())
-				{
-					newState = Velocity.Y > 0 ? State.Fall : State.Jump;
-				}
-			}
-			else if (_currentState == State.Jump && Velocity.Y > 0)
-			{
-				newState = State.Fall;
-			}
-			else if (_currentState == State.Sliding)
-			{
-				// Sliding continues until it naturally stops
-			}
-			else if (_currentState == State.Roll)
-			{
-				// Roll continues until animation finishes
-			}
-			else if (_velocityBeforeStop != Vector2.Zero && Mathf.Abs(Velocity.X) < 50f && Velocity.Y > 0 && _currentState != State.AirRoll)
-			{
-				// Only float as fallback when sliding stops and we're falling slowly
-				newState = State.Float;
-				_velocityBeforeStop = Vector2.Zero;
-			}
-			else if (Velocity.Y > 0 && _currentState != State.Fall && _currentState != State.Float && _currentState != State.AirRoll)
-			{
-				newState = State.Fall;
-			}
-		}
-
-		// Prevent state changes while hurt or dead (unless animations finish)
-		if ((_currentState == State.Hurt && newState != State.Hurt) ||
-			(_currentState == State.Death && newState != State.Death))
-		{
-			return;
-		}
-
-		if (_currentState != newState)
-		{
-			_currentState = newState;
+			SetState(State.Idle, "Idle");
 		}
 	}
 
-	private void UpdateState_Old(float deltaTime)
+	// A direction reversal while still carrying real speed plays a brief
+	// pivot clip instead of snapping straight into Walk/Run facing the new
+	// way. This never touches Velocity or acceleration — it's a pure sprite
+	// overlay on top of the existing (already-tuned) movement physics, so
+	// input responsiveness is unaffected either way; only which frames are
+	// shown changes. Returns true if a turnaround is starting or still
+	// playing, so the caller should skip its own Walk/Run selection.
+	private bool HandleTurnaround(float facingBeforeMove, float velocityXBeforeMove, float inputSign)
 	{
-		State newState = _currentState;
+		if (_turnaroundActive) return true;
 
-		if (IsOnFloor())
+		bool isReversal = facingBeforeMove != 0f
+			&& inputSign == -facingBeforeMove
+			&& Mathf.Sign(velocityXBeforeMove) == facingBeforeMove
+			&& Mathf.Abs(velocityXBeforeMove) > TurnaroundSpeedThreshold;
+
+		if (!isReversal) return false;
+
+		// Tied to actual Sprint input/state rather than carried speed — a
+		// reversal while genuinely sprinting plays TurnaroundRun, everything
+		// else (including a fast walk) plays the plain Turnaround.
+		string clip = _isSprinting ? "TurnaroundRun" : "Turnaround";
+
+		// Turnaround/TurnaroundRun have no separate left-facing art — turning
+		// to face left plays the clip forward, turning to face right plays it
+		// backward from its last frame. Tune this if it reads mirrored from
+		// what the art actually shows.
+		bool playReversed = inputSign > 0f;
+		StartTurnaround(clip, playReversed);
+		return true;
+	}
+
+	private void StartTurnaround(string clip, bool playReversed)
+	{
+		_turnaroundActive = true;
+		// Safety net: AnimationFinished is the normal way this clears, but
+		// anything that interrupts the sprite mid-clip (jumping, landing,
+		// sliding, grabbing an object — none of which wait on a cosmetic
+		// pivot) would otherwise never fire it, permanently stuck-locking
+		// Walk/Run out of HandleAnimations forever after. Every one of those
+		// interrupt points also clears the flag directly, but this timeout
+		// guarantees it can never wedge open even if some path doesn't.
+		_turnaroundTimer = TurnaroundMaxDuration;
+		_currentState = State.Walk;
+		_animatedSprite.FlipH = false;
+		if (playReversed)
 		{
-			_jumpCount = 0; // Reset jump count when on ground
+			_animatedSprite.Play(clip, -TurnaroundPlaybackSpeed, true);
+		}
+		else
+		{
+			_animatedSprite.Play(clip, TurnaroundPlaybackSpeed, false);
+		}
+	}
 
-			if (_currentState == State.Fall || _currentState == State.Jump || _currentState == State.Float || _currentState == State.AirRoll)
-			{
-				bool isSprinting = _isSprinting || Mathf.Abs(Velocity.X) > Speed * 1.2f;
+	private void HandleInteractionAnimation(Vector2 inputDir)
+	{
+		if (_interaction.CurrentPushable == null || Mathf.Abs(inputDir.X) < 0.01f)
+		{
+			SetState(State.Idle, "Idle");
+			return;
+		}
 
-				if (isSprinting)
-				{
-					newState = State.Run;
-					_landAnimationFinished = true;
-				}
-				else
-				{
-					if (_currentState != State.Land)
-					{
-						newState = State.Land;
-						_landAnimationFinished = false;
-						_landParticles.Restart();
-						// Play landing sound
-						_jumpPlayer.Stream = GD.Load<AudioStream>("res://Sound/Footsteps/45_Landing_01.wav");
-						_jumpPlayer.Play();
-					}
-				}
-			}
-			else if (_currentState == State.Sliding && !_isSliding)
+		if (_interaction.IsPushing)
+		{
+			if (_interaction.IsWindingUpPush)
 			{
-				newState = State.Float; // Sliding stops, go to float
+				SetState(State.Push, "PushWindup", PushWindupPlaybackSpeed);
 			}
-			else if (_currentState == State.Land && _landAnimationFinished)
+			else
 			{
-				// Land animation finished, transition to appropriate state
-				if (Mathf.Abs(Velocity.X) > 10f)
-				{
-					newState = _isSprinting ? State.Run : State.Walk;
-				}
-				else
-				{
-					newState = State.Idle;
-				}
-			}
-			else if (_currentState != State.Land && _currentState != State.Sliding && _currentState != State.Roll)
-			{
-				if (_isCrouching)
-				{
-					if (Mathf.Abs(Velocity.X) > 10f)
-					{
-						newState = State.CrouchWalk;
-					}
-					else
-					{
-						newState = State.CrouchIdle;
-					}
-				}
-				else if (Mathf.Abs(Velocity.X) > 10f && !_isSliding)
-				{
-					newState = _isSprinting ? State.Run : State.Walk;
-				}
-				else if (!_isSliding)
-				{
-					newState = State.Idle;
-				}
+				SetState(State.Push, "Push");
 			}
 		}
 		else
 		{
-			// Air states - strict priority
-			if (_currentState == State.Land)
-			{
-				// Land animation must complete, can't be interrupted by air states
-				// The animation finished signal will handle transitioning out of Land
-				return;
-			}
-			else if (_currentState == State.WallLand)
-			{
-				// WallLand animation must complete first
-				return;
-			}
-			else if (_isWallSliding && _currentState != State.WallSlide)
-			{
-				newState = State.WallLand;
-			}
-			else if (_currentState == State.WallSlide && !_isWallSliding)
-			{
-				newState = State.Fall;
-			}
-			else if (_currentState == State.WallSlide && !IsOnWallOnly())
-			{
-				// Force exit wall slide state if not actually on wall
-				newState = State.Fall;
-			}
-			else if (_currentState == State.AirRoll)
-			{
-				// AirRoll animation must complete fully, only interrupted by landing on floor
-				// Don't transition to other states while AirRoll is playing
-				if (_animatedSprite.Animation == "AirRoll" && !_animatedSprite.IsPlaying())
-				{
-					newState = Velocity.Y > 0 ? State.Fall : State.Jump;
-				}
-			}
-			else if (_currentState == State.Jump && Velocity.Y > 0)
-			{
-				newState = State.Fall;
-			}
-			else if (_currentState == State.Sliding)
-			{
-				// Sliding continues until it naturally stops
-			}
-			else if (_currentState == State.Roll)
-			{
-				// Roll continues until animation finishes
-			}
-			else if (_velocityBeforeStop != Vector2.Zero && Mathf.Abs(Velocity.X) < 50f && Velocity.Y > 0 && _currentState != State.AirRoll)
-			{
-				// Only float as fallback when sliding stops and we're falling slowly
-				newState = State.Float;
-				_velocityBeforeStop = Vector2.Zero;
-			}
-			else if (Velocity.Y > 0 && _currentState != State.Fall && _currentState != State.Float && _currentState != State.AirRoll)
-			{
-				newState = State.Fall;
-			}
-		}
-
-		// Prevent state changes while hurt or dead (unless animations finish)
-		if ((_currentState == State.Hurt && newState != State.Hurt) ||
-			(_currentState == State.Death && newState != State.Death))
-		{
-			return;
-		}
-
-		if (_currentState != newState)
-		{
-			_currentState = newState;
+			SetState(State.Pull, "Pull");
 		}
 	}
 
 	private void HandleFootsteps(float deltaTime)
 	{
-		// Only play footsteps when on ground and moving, and not in sliding/rolling states
-		if (!IsOnFloor() || _isDead || _isSliding || _currentState == State.Roll) return;
-
-		// Determine footstep interval based on speed (faster overall)
-		float currentInterval = _footstepInterval;
-		if (_isSprinting)
+		if (!IsOnFloor() || Mathf.Abs(Velocity.X) < 25f || _isSliding || _interaction.IsInteracting)
 		{
-			currentInterval *= 0.8f; // Faster footsteps when sprinting
-		}
-		else if (_isCrouching)
-		{
-			currentInterval *= 1.4f; // Slightly slower footsteps when crouching
-		}
-		else
-		{
-			currentInterval *= 1.0f; // Base speed for normal walking
+			_footstepTimer = 0f;
+			return;
 		}
 
-		// Only play footsteps if moving horizontally
-		if (Mathf.Abs(Velocity.X) > 10f)
+		float interval = _isSprinting ? 0.23f : _isCrawling ? 0.55f : 0.34f;
+		_footstepTimer -= deltaTime;
+		if (_footstepTimer <= 0f)
 		{
-			_footstepTimer += deltaTime;
-			if (_footstepTimer >= currentInterval)
+			_footstepTimer = interval;
+			PlaySound(_footstepPlayer, _isSprinting ? 1.05f : 0.82f, _isSprinting ? 1.22f : 1.0f);
+		}
+	}
+
+	private void SetState(State state, string animation, float animationSpeed = 1.0f)
+	{
+		_currentState = state;
+		PlayAnimation(animation, animationSpeed);
+	}
+
+	private void SetPinnedFrameState(State state, string animation, int frame)
+	{
+		_currentState = state;
+		PlayPinnedFrame(animation, frame);
+	}
+
+	// Distinct left-facing clips (see DirectionalAnimations) replace FlipH
+	// mirroring rather than combining with it — mirroring an already-correct
+	// left-facing frame would flip it right back into looking wrong.
+	private string ResolveDirectionalAnimation(string animation)
+	{
+		if (FacingDirection < 0f && DirectionalAnimations.Contains(animation))
+		{
+			string leftVariant = animation + "Left";
+			if (_animatedSprite.SpriteFrames.HasAnimation(leftVariant))
 			{
-				_footstepTimer = 0f;
-				PlayFootstepSound(_isSprinting);
+				return leftVariant;
+			}
+		}
+		return animation;
+	}
+
+	private void PlayAnimation(string animation, float speed = 1.0f)
+	{
+		string resolved = ResolveDirectionalAnimation(animation);
+		_animatedSprite.FlipH = FacingDirection < 0f && resolved == animation;
+
+		// Also (re)plays when the sprite is stopped on this same clip — a
+		// fresh dash Stop()s a still-running Flip so it restarts from frame
+		// 0 here instead of being skipped as "already the current animation".
+		bool needsPlay = _animatedSprite.Animation != resolved || !_animatedSprite.IsPlaying();
+		if (_animatedSprite.SpriteFrames.HasAnimation(resolved) && needsPlay)
+		{
+			_animatedSprite.Play(resolved, speed);
+		}
+	}
+
+	// Used for the unified 4-frame Jump clip: the frame is pinned directly
+	// to the current physics phase (rise/apex/fall) instead of free-running
+	// on the AnimatedSprite2D's own timer, so it stays in sync with actual
+	// vertical velocity rather than looping independently of it.
+	private void PlayPinnedFrame(string animation, int frame)
+	{
+		string resolved = ResolveDirectionalAnimation(animation);
+		_animatedSprite.FlipH = FacingDirection < 0f && resolved == animation;
+
+		if (!_animatedSprite.SpriteFrames.HasAnimation(resolved)) return;
+
+		if (_animatedSprite.Animation != resolved)
+		{
+			_animatedSprite.Animation = resolved;
+		}
+		if (_animatedSprite.IsPlaying())
+		{
+			_animatedSprite.Pause();
+		}
+		int frameCount = _animatedSprite.SpriteFrames.GetFrameCount(resolved);
+		_animatedSprite.Frame = Mathf.Clamp(frame, 0, frameCount - 1);
+	}
+
+	private void SetFacing(float direction)
+	{
+		if (Mathf.Abs(direction) < 0.01f) return;
+
+		FacingDirection = Mathf.Sign(direction);
+	}
+
+	// playEntryAnimation is false wherever crawling starts as a continuation
+	// of something that already reads as "low" — sliding, most notably —
+	// where a stand-to-prone windup on top would look redundant rather than
+	// like an actual transition.
+	private void SetCrawling(bool crawling, bool playEntryAnimation = true)
+	{
+		if (_isCrawling == crawling) return;
+
+		_isCrawling = crawling;
+		if (crawling && playEntryAnimation) _crawlEntryActive = true;
+		SetCrawlCollider(crawling);
+	}
+
+	private void SetCrawlCollider(bool crawling)
+	{
+		if (_normalCollision != null) _normalCollision.Disabled = crawling;
+		if (_crawlCollision != null) _crawlCollision.Disabled = !crawling;
+	}
+
+	private bool CanStand()
+	{
+		if (_normalCollision == null || _crawlCollision == null) return true;
+
+		bool normalWasDisabled = _normalCollision.Disabled;
+		bool crawlWasDisabled = _crawlCollision.Disabled;
+		_normalCollision.Disabled = false;
+		_crawlCollision.Disabled = true;
+		bool blocked = TestMove(GlobalTransform, new Vector2(0f, -0.5f));
+		_normalCollision.Disabled = normalWasDisabled;
+		_crawlCollision.Disabled = crawlWasDisabled;
+		return !blocked;
+	}
+
+	private void UpdateStatusEffects(float deltaTime)
+	{
+		if (_movementSlowTimer <= 0f) return;
+
+		_movementSlowTimer -= deltaTime;
+		if (_movementSlowTimer <= 0f)
+		{
+			_movementSlowMultiplier = 1f;
+		}
+	}
+
+	private void UpdateDashTrail(float deltaTime)
+	{
+		// Clear trail when dash is not active
+		if (!_isDashing && _dashTrailFrames.Count > 0)
+		{
+			_dashTrailFrames.Clear();
+		}
+
+		if (!_isDashing) return;
+
+		_dashTrailTimer -= deltaTime;
+		if (_dashTrailTimer <= 0f)
+		{
+			_dashTrailTimer = DashTrailInterval;
+			
+			// Store current frame data with the actual texture
+			if (_animatedSprite != null && _dashTrailFrames.Count < 25) // Max 25 frames to prevent memory issues
+			{
+				// Get the current frame's texture directly from SpriteFrames
+				Texture2D frameTexture = null;
+				if (_animatedSprite.SpriteFrames != null)
+				{
+					frameTexture = _animatedSprite.SpriteFrames.GetFrameTexture(_animatedSprite.Animation, _animatedSprite.Frame);
+				}
+				
+				var frame = new DashTrailFrame
+				{
+					Position = GlobalPosition,
+					Texture = frameTexture,
+					FlipH = _animatedSprite.FlipH
+				};
+				_dashTrailFrames.Add(frame);
 			}
 		}
 	}
 
-	private void PlayFootstepSound(bool isSprinting = false)
+	private void PlayJumpFeedback(bool usedExtraJump)
 	{
-		// Use only floor sounds for all movement types
-		int soundIndex = _rng.RandiRange(1, 5);
-		string soundPath = $"res://Sound/Footsteps/floor{soundIndex}.ogg";
-
-		_footstepPlayer.Stream = GD.Load<AudioStream>(soundPath);
-
-		// Adjust pitch and speed based on movement state
-		if (_isCrouching)
+		CpuParticles2D particles = usedExtraJump ? _doubleJumpParticles : _jumpParticles;
+		if (particles != null)
 		{
-			_footstepPlayer.PitchScale = 0.7f; // Lower pitch for crouching
-		}
-		else if (isSprinting)
-		{
-			_footstepPlayer.PitchScale = 1.4f; // Higher pitch for sprinting
-		}
-		else
-		{
-			_footstepPlayer.PitchScale = 1.0f; // Normal pitch for walking
+			particles.Emitting = false;
+			particles.Restart();
+			particles.Emitting = true;
 		}
 
-		_footstepPlayer.Play();
+		PlaySound(_jumpPlayer, usedExtraJump ? 1.15f : 0.95f, usedExtraJump ? 1.35f : 1.1f);
 	}
 
-	private void PlayAnimation()
+	private void PlayLandingFeedback(float impactSpeed)
 	{
-		string animationName = _currentState switch
+		if (_landParticles != null)
 		{
-			State.Idle => "Idle",
-			State.Walk => "Walk",
-			State.Run => "Run",
-			State.Jump => "Jump",
-			State.Fall => "Fall",
-			State.Float => "Float",
-			State.Land => "Land",
-			State.AirRoll => "AirRoll",
-			State.Sliding => "Slide",
-			State.CrouchIdle => "CrouchIdle",
-			State.CrouchWalk => "CrouchWalk",
-			State.Roll => "Roll",
-			State.Hurt => "Hurt",
-			State.Death => "Death",
-			State.WallLand => "Wallland",
-			State.WallSlide => "Wallslide",
-			State.Push => "Push",
-			State.Pull => "Pull",
-			_ => "Idle"
+			_landParticles.Emitting = false;
+			_landParticles.Restart();
+			_landParticles.Emitting = true;
+		}
+
+		float pitch = Mathf.Clamp(0.85f + impactSpeed / 700f, 0.85f, 1.25f);
+		PlaySound(_landPlayer, pitch, pitch);
+		EmitSignal(SignalName.Landed, impactSpeed);
+	}
+
+private AudioStreamPlayer2D GetOrCreateAudioPlayer(string nodeName)
+{
+	AudioStreamPlayer2D player = GetNodeOrNull<AudioStreamPlayer2D>(nodeName);
+	if (player != null) return player;
+
+	player = new AudioStreamPlayer2D { Name = nodeName };
+	AddChild(player);
+	return player;
+}
+
+private AudioStream GetRandomHurtSound()
+{
+	if (HurtSounds == null || HurtSounds.Length == 0) return null;
+	int idx = (int)GD.RandRange(0, HurtSounds.Length - 1);
+	return HurtSounds[idx];
+}
+
+	private void PlaySound(AudioStreamPlayer2D player, float minPitch = 1f, float maxPitch = 1f)
+	{
+		if (player?.Stream == null) return;
+
+		player.PitchScale = Mathf.Lerp(minPitch, maxPitch, (float)GD.Randf());
+		player.Play();
+	}
+
+	private void OnTookDamage(int amount, Vector2 knockbackDirection)
+	{
+		StopSlide();
+		SetCrawling(false);
+		// The Hurt clip replaces whatever was playing, so follow-through
+		// flags waiting on AnimationFinished would wedge open without this.
+		_flipAnimActive = false;
+		_turnaroundActive = false;
+		_landingAnimActive = false;
+		_currentState = State.Hurt;
+		Velocity = knockbackDirection * 100f;
+		PlayAnimation("Hurt");
+		FlashHurt();
+		_hurtPlayer.Stream = GetRandomHurtSound();
+		PlaySound(_hurtPlayer, 0.95f, 1.05f);
+
+		SceneTreeTimer recoveryTimer = GetTree().CreateTimer(0.25f);
+		recoveryTimer.Timeout += () =>
+		{
+			if (IsInstanceValid(this) && _currentState != State.Dead) _currentState = State.Idle;
 		};
+	}
 
-		// Only change animation if it's actually different or if we're in a death state (force restart)
-		if (_animatedSprite.Animation != animationName || _currentState == State.Death)
+	// The new Hurt sprite doesn't have a pain flash baked into its frames
+	// the way the old one did, so the damage feedback is recreated here as
+	// a quick red tint on the sprite itself, fading back to normal.
+	private void FlashHurt()
+	{
+		if (_hurtFlashTween != null && _hurtFlashTween.IsValid())
 		{
-			_animatedSprite.Play(animationName);
-			GD.Print($"Playing animation: {animationName} for state: {_currentState}");
+			_hurtFlashTween.Kill();
+		}
 
-			// Play death sound when death animation starts
-			if (animationName == "Death" && !_deathSoundPlayed)
-			{
-				_hurtPlayer.Stream = GD.Load<AudioStream>("res://Sound/voice/human_female_preburst1.ogg");
-				_hurtPlayer.Play();
-				_deathSoundPlayed = true;
-			}
+		_animatedSprite.Modulate = new Color(1f, 0.35f, 0.35f, 1f);
+		_hurtFlashTween = CreateTween();
+		_hurtFlashTween.TweenProperty(_animatedSprite, "modulate", Colors.White, 0.3f)
+			.SetTrans(Tween.TransitionType.Sine)
+			.SetEase(Tween.EaseType.Out);
+	}
+
+	// Chains the one-shot windup clips (SlideIn, CrawlEntry) into their
+	// respective loops once the windup finishes playing, rather than
+	// snapping straight into the loop the instant the state is entered.
+	// Also clears the Turnaround/TurnaroundRun lock once that pivot clip
+	// (played forward or backward — see StartTurnaround) finishes.
+	private void OnAnimationFinished()
+	{
+		string finished = _animatedSprite.Animation;
+		string baseName = finished.EndsWith("Left") ? finished[..^4] : finished;
+
+		switch (baseName)
+		{
+			case "SlideIn":
+				_slideWindupActive = false;
+				break;
+			case "CrawlEntry":
+				_crawlEntryActive = false;
+				break;
+			case "Turnaround":
+			case "TurnaroundRun":
+				_turnaroundActive = false;
+				break;
+			case "Land":
+				_landingAnimActive = false;
+				break;
+			case "Flip":
+				_flipAnimActive = false;
+				break;
 		}
 	}
 
-	private void PlayAnimation_Old()
+private void OnDied()
+{
+	StopSlide();
+	SetCrawling(false);
+	_currentState = State.Dead;
+	Velocity = Vector2.Zero;
+	if (_hurtFlashTween != null && _hurtFlashTween.IsValid()) _hurtFlashTween.Kill();
+	_animatedSprite.Modulate = Colors.White;
+	PlayAnimation("Death");
+
+	_hurtPlayer.Stream = DeathSound;
+	PlaySound(_hurtPlayer, 0.95f, 1.05f);
+
+	// Let the death animation/sound read, then respawn at the last
+	// checkpoint (or reload the scene if none was reached yet) — dying
+	// used to just leave Sam stuck in the Dead state forever with no
+	// recovery path.
+	SceneTreeTimer respawnTimer = GetTree().CreateTimer(DeathRespawnDelay);
+	respawnTimer.Timeout += () =>
 	{
-		string animationName = _currentState switch
+		if (IsInstanceValid(this))
+			GetNode<CheckpointManager>("/root/CheckpointManager").RespawnPlayer();
+	};
+}
+
+// Pooled dash-ghost sprites — reused instead of allocated fresh every
+// dash. A player spamming dash used to spawn up to 5 new Sprite2D nodes
+// plus Tweens per dash with nothing capping how fast old ones cleared out.
+private const int DashGhostPoolSize = 5;
+private readonly List<Sprite2D> _dashGhostPool = new();
+private readonly List<Tween> _dashGhostTweens = new();
+
+private Sprite2D GetDashGhost(int index)
+{
+	while (_dashGhostPool.Count <= index)
+	{
+		var ghost = new Sprite2D { ZIndex = 10, Visible = false };
+		GetTree().CurrentScene.AddChild(ghost);
+		_dashGhostPool.Add(ghost);
+		_dashGhostTweens.Add(null);
+	}
+	return _dashGhostPool[index];
+}
+
+private void FireDashGhost(int poolIndex, Texture2D texture, Vector2 globalPosition, bool flipH, float alpha, float scale, float fadeDuration)
+{
+	if (texture == null) return;
+
+	Sprite2D ghost = GetDashGhost(poolIndex);
+	Tween existingTween = _dashGhostTweens[poolIndex];
+	if (existingTween != null && existingTween.IsValid())
+		existingTween.Kill();
+
+	ghost.Texture = texture;
+	ghost.GlobalPosition = globalPosition;
+	ghost.FlipH = flipH;
+	ghost.Scale = Vector2.One * scale;
+	ghost.Modulate = new Color(1, 1, 1, alpha);
+	ghost.Visible = true;
+
+	Tween tween = GetTree().CreateTween();
+	_dashGhostTweens[poolIndex] = tween;
+	tween.TweenProperty(ghost, "modulate:a", 0, fadeDuration);
+	tween.TweenCallback(Callable.From(() =>
+	{
+		if (IsInstanceValid(ghost)) ghost.Visible = false;
+	}));
+}
+
+public void SpawnDashEffect()
+{
+	if (_dashParticles != null)
+	{
+		// Exhaust kicks backward out of the dash, whichever way it went.
+		_dashParticles.Direction = new Vector2(-FacingDirection, 0f);
+		_dashParticles.Emitting = true;
+		SceneTreeTimer particleTimer = GetTree().CreateTimer(0.35f);
+		particleTimer.Timeout += () =>
 		{
-			State.Idle => "Idle",
-			State.Walk => "Walk",
-			State.Run => "Run",
-			State.Jump => "Jump",
-			State.Fall => "Fall",
-			State.Float => "Float",
-			State.Land => "Land",
-			State.AirRoll => "AirRoll",
-			State.Sliding => "Slide",
-			State.CrouchIdle => "CrouchIdle",
-			State.CrouchWalk => "CrouchWalk",
-			State.Roll => "Roll",
-			State.Hurt => "Hurt",
-			State.Death => "Death",
-			State.WallLand => "Wallland",
-			State.WallSlide => "Wallslide",
-			_ => "Idle"
+			if (IsInstanceValid(this) && _dashParticles != null) _dashParticles.Emitting = false;
 		};
+	}
 
-		// Only change animation if it's actually different or if we're in a death state (force restart)
-		if (_animatedSprite.Animation != animationName || _currentState == State.Death)
+	Texture2D fallbackTexture = null;
+	if (_animatedSprite != null && _animatedSprite.SpriteFrames != null)
+		fallbackTexture = _animatedSprite.SpriteFrames.GetFrameTexture(_animatedSprite.Animation, _animatedSprite.Frame);
+
+	// Spawn up to 5 clones from the dash trail, evenly distributed
+	int framesToSpawn = Mathf.Min(DashGhostPoolSize, _dashTrailFrames.Count);
+	if (framesToSpawn <= 0)
+	{
+		// No trail frames yet (e.g., dash started immediately) — a single fallback ghost at the player's position.
+		FireDashGhost(0, fallbackTexture, GlobalPosition, _animatedSprite?.FlipH ?? false, 0.8f, 0.96f, 0.35f);
+		return;
+	}
+
+	for (int i = 0; i < framesToSpawn; i++)
+	{
+		// Select frames evenly distributed across the trail (oldest first, newest last)
+		int frameIndex = (i * _dashTrailFrames.Count) / framesToSpawn;
+		if (frameIndex >= _dashTrailFrames.Count) frameIndex = _dashTrailFrames.Count - 1;
+		DashTrailFrame trailFrame = _dashTrailFrames[frameIndex];
+
+		Texture2D texture = trailFrame.Texture != null ? trailFrame.Texture : fallbackTexture;
+		float alpha = 0.8f - (i * 0.16f);
+		float scale = 1f - i * 0.04f;
+		float fadeDuration = 0.35f + (i * 0.1f);
+
+		FireDashGhost(i, texture, trailFrame.Position, trailFrame.FlipH, alpha, scale, fadeDuration);
+	}
+}
+
+	public void SetExtraJumpCapacity(int extraJumps)
+	{
+		_extraJumpCapacity = Mathf.Max(0, extraJumps);
+		_extraJumpsUsed = Mathf.Min(_extraJumpsUsed, _extraJumpCapacity);
+	}
+
+	// Teleports to a checkpoint and resets everything death/falling would
+	// otherwise leave broken: health, velocity, animation state, and the
+	// timers that gate movement.
+	public void RespawnAt(Vector2 position)
+	{
+		GlobalPosition = position;
+		Velocity = Vector2.Zero;
+		_currentState = State.Idle;
+		_stateLockTimer = 0f;
+		_coyoteTimer = 0f;
+		_jumpBufferTimer = 0f;
+		_isSliding = false;
+		_slideWindupActive = false;
+		_isCrawling = false;
+		_crawlEntryActive = false;
+		_turnaroundActive = false;
+		_landingAnimActive = false;
+		_flipAnimActive = false;
+		_isDashing = false;
+		_dashTrailFrames.Clear();
+		SetCrawlCollider(false);
+		if (_hurtFlashTween != null && _hurtFlashTween.IsValid()) _hurtFlashTween.Kill();
+		_animatedSprite.Modulate = Colors.White;
+		_health.Revive();
+		PlayAnimation("Idle");
+	}
+
+	public void BeginAbilityLock(float duration)
+	{
+		_stateLockTimer = Mathf.Max(_stateLockTimer, duration);
+	}
+
+	public void ApplyMovementSlow(float multiplier, float duration)
+	{
+		_movementSlowMultiplier = Mathf.Clamp(multiplier, 0.1f, 1f);
+		_movementSlowTimer = Mathf.Max(_movementSlowTimer, duration);
+	}
+
+	public bool TrySpendPower(float amount)
+	{
+		if (amount <= 0f) return true;
+		if (CurrentPower < amount) return false;
+
+		SpendPower(amount);
+		_powerRegenTimer = PowerRegenDelay;
+		return true;
+	}
+
+	private void SpendPower(float amount)
+	{
+		float previous = CurrentPower;
+		CurrentPower = Mathf.Max(0f, CurrentPower - amount);
+		if (!Mathf.IsEqualApprox(previous, CurrentPower))
 		{
-			_animatedSprite.Play(animationName);
-			GD.Print($"Playing animation: {animationName} for state: {_currentState}");
-
-			// Play death sound when death animation starts
-			if (animationName == "Death" && !_deathSoundPlayed)
-			{
-				_hurtPlayer.Stream = GD.Load<AudioStream>("res://Sound/voice/human_female_preburst1.ogg");
-				_hurtPlayer.Play();
-				_deathSoundPlayed = true;
-			}
+			EmitSignal(SignalName.PowerChanged, CurrentPower, MaxPower);
 		}
 	}
 
-	public void TakeDamage(int damage, Vector2 knockbackDirection)
+	private void AddPower(float amount)
 	{
-		if (_isInvulnerable || _isDead || _damageCooldownTimer > 0) return; // Check all damage prevention conditions
-
-		_currentHealth -= damage;
-		_currentHealth = Mathf.Max(0, _currentHealth);
-
-		// Set damage cooldown to prevent spam damage
-		_damageCooldownTimer = _damageCooldownDuration;
-
-		GD.Print($"Player took {damage} damage. Health: {_currentHealth}");
-
-		if (_currentHealth <= 0)
+		float previous = CurrentPower;
+		CurrentPower = Mathf.Min(MaxPower, CurrentPower + amount);
+		if (!Mathf.IsEqualApprox(previous, CurrentPower))
 		{
-			_isDead = true; // Mark player as dead
-			_currentState = State.Death; // Immediately set death state
-			Velocity = Vector2.Zero; // Stop all movement
-			GD.Print("Player died - entering death state");
+			EmitSignal(SignalName.PowerChanged, CurrentPower, MaxPower);
 		}
-		else
-		{
-			// Play hurt sounds with cooldown
-			if (_painCooldownTimer <= 0)
-			{
-				// Randomly choose between the two pain sounds
-				string painSound = _rng.RandiRange(0, 1) == 0 ?
-					"res://Sound/voice/human_female_pain_4.ogg" :
-					"res://Sound/voice/human_female_pain_5.ogg";
-				_hurtPlayer.Stream = GD.Load<AudioStream>(painSound);
-				_hurtPlayer.Play();
-
-				_painCooldownTimer = _painCooldownDuration;
-			}
-
-			Velocity = knockbackDirection * 200f; // Apply knockback
-			_currentState = State.Hurt; // Set hurt state
-			_isInvulnerable = true; // Enable temporary invulnerability
-			_hurtTimer = _invulnerabilityDuration;
-		}
-	}
-
-	public int GetHealth()
-	{
-		return _currentHealth;
-	}
-
-
-	private void StartWallSlide()
-	{
-		_isWallSliding = true;
-		// Set facing direction away from the wall
-		if (Velocity.X > 0) // Wall to the right, face left
-		{
-			_facingRight = false;
-			_animatedSprite.FlipH = true;
-		}
-		else if (Velocity.X < 0) // Wall to the left, face right
-		{
-			_facingRight = true;
-			_animatedSprite.FlipH = false;
-		}
-		// Wall sliding logic is handled in physics process
-	}
-
-	private void StopWallSlide()
-	{
-		_isWallSliding = false;
-		if (_currentState == State.WallSlide)
-		{
-			_currentState = State.Fall;
-		}
-	}
-
-	private void OnGrabEntered(Node2D body)
-	{
-		if (body is RigidBody2D rb && rb.IsInGroup("pushable"))
-		{
-			_objectInRange = rb;
-			GD.Print($"Object entered grab area: {body.Name}");
-		}
-	}
-
-	private void OnGrabExited(Node2D body)
-	{
-		if (body is RigidBody2D rb && rb == _objectInRange)
-		{
-			_objectInRange = null;
-			GD.Print($"Object exited grab area: {body.Name}");
-		}
-	}
-
-	private void HandlePushableInteraction(float deltaTime)
-	{
-		bool interactPressed = Input.IsActionPressed("Interact");
-		Vector2 inputDir = Input.GetVector("Left", "Right", "Jump", "Crawl");
-
-		// STOP INTERACTION (restore damping + reset state)
-		if (!interactPressed || _objectInRange == null)
-		{
-			if (_wasAdjustingObjectDamping && _objectInRange != null)
-				RestoreObjectDamping(_objectInRange);
-
-			_isInteractingWithPushable = false;
-			_currentPushable = null;
-
-			return;
-		}
-
-		// Must be horizontally aligned
-		float yDifference = Mathf.Abs(_objectInRange.GlobalPosition.Y - GlobalPosition.Y);
-		if (yDifference > 20f)
-		{
-			if (_wasAdjustingObjectDamping)
-				RestoreObjectDamping(_objectInRange);
-
-			_isInteractingWithPushable = false;
-			_currentPushable = null;
-			return;
-		}
-
-		// Start interacting
-		_isInteractingWithPushable = true;
-		_currentPushable = _objectInRange;
-
-		// Wake object and tune damping for responsiveness
-		WakeAndTuneObjectForInteraction(_objectInRange);
-
-		// Required variables
-		float playerMoveSpeed = 39f;       // slow movement while dragging
-		float objectTargetSpeed = 55f;     // desired rigidbody speed
-		float velGain = 200f;              // force multiplier
-		float maxForce = 2000f;            // safety clamp
-
-		float dir = Mathf.Sign(inputDir.X);
-		float relativeX = _objectInRange.GlobalPosition.X - GlobalPosition.X;
-
-		bool pushing =
-			(relativeX > 0 && inputDir.X > 0) ||
-			(relativeX < 0 && inputDir.X < 0);
-
-		bool pulling =
-			(relativeX > 0 && inputDir.X < 0) ||
-			(relativeX < 0 && inputDir.X > 0);
-
-		// No horizontal input = stop
-		if (Mathf.Abs(inputDir.X) < 0.1f)
-		{
-			// stop player
-			Velocity = new Vector2(0, Velocity.Y);
-
-			// gently brake object
-			Vector2 brake = -_objectInRange.LinearVelocity * (_objectInRange.Mass * 4f);
-			_objectInRange.ApplyCentralForce(brake);
-
-			_objectInRange.AngularVelocity = 0;
-			_currentState = State.Idle;
-			return;
-		}
-
-		// Set correct animation state
-		if (pushing) _currentState = State.Push;
-		else if (pulling) _currentState = State.Pull;
-		else _currentState = State.Idle;
-
-		// Player movement
-		Velocity = new Vector2(dir * playerMoveSpeed, Velocity.Y);
-
-		// OBJECT VELOCITY CONTROLLER
-		float desiredVx = dir * objectTargetSpeed;
-		float velError = desiredVx - _objectInRange.LinearVelocity.X;
-
-		float force = velError * _objectInRange.Mass * velGain;
-		force = Mathf.Clamp(force, -maxForce, maxForce);
-
-		_objectInRange.ApplyCentralForce(new Vector2(force, 0));
-
-		// No rotation during interaction
-		_objectInRange.AngularVelocity = 0f;
-		_objectInRange.ApplyTorque(0f);
-
-		// Safety clamp
-		float vx = _objectInRange.LinearVelocity.X;
-		float limit = objectTargetSpeed + 10f;
-		if (vx > limit)
-			_objectInRange.LinearVelocity = new Vector2(limit, _objectInRange.LinearVelocity.Y);
-		if (vx < -limit)
-			_objectInRange.LinearVelocity = new Vector2(-limit, _objectInRange.LinearVelocity.Y);
-	}
-
-	private void WakeAndTuneObjectForInteraction(RigidBody2D obj)
-	{
-		if (obj == null) return;
-
-		obj.Sleeping = false;
-
-		if (!_wasAdjustingObjectDamping)
-		{
-			_savedObjectLinearDamp = obj.LinearDamp;
-			_savedObjectAngularDamp = obj.AngularDamp;
-			_wasAdjustingObjectDamping = true;
-		}
-
-		// temporarily reduced damp = responsive
-		obj.LinearDamp = 0.3f;
-		obj.AngularDamp = 12f;
-	}
-
-	private void RestoreObjectDamping(RigidBody2D obj)
-	{
-		if (obj == null) return;
-
-		if (_savedObjectLinearDamp >= 0)
-			obj.LinearDamp = _savedObjectLinearDamp;
-
-		if (_savedObjectAngularDamp >= 0)
-			obj.AngularDamp = _savedObjectAngularDamp;
-
-		_savedObjectLinearDamp = -1;
-		_savedObjectAngularDamp = -1;
-		_wasAdjustingObjectDamping = false;
 	}
 }

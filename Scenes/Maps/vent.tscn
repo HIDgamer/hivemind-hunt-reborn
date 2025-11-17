@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://5jsiqccy7mk6"]
+
+[ext_resource type="Script" uid="uid://c4hof5sd5hltq" path="res://Code/Props/VentComponent.cs" id="1_4tpjd"]
+
+[node name="Vent" type="Area2D" unique_id=1278803596]
+script = ExtResource("1_4tpjd")

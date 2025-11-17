@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://fx703038j0hv"]
+[gd_scene format=3 uid="uid://fx703038j0hv"]
 
 [ext_resource type="Texture2D" uid="uid://cserkghc74pqy" path="res://Assets/Tiles/Platform.png" id="1_0towb"]
 [ext_resource type="Texture2D" uid="uid://cqpfa133x7ya0" path="res://Assets/Tiles/Platform_n.png" id="2_aiw26"]
@@ -12,12 +12,12 @@ specular_texture = ExtResource("3_jkj2f")
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_53r27"]
 size = Vector2(42, 8)
 
-[node name="Platform" type="StaticBody2D"]
+[node name="Platform" type="StaticBody2D" unique_id=1263528588]
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=886452260]
 texture = SubResource("CanvasTexture_7qdk8")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=122953124]
 position = Vector2(0, 1)
 shape = SubResource("RectangleShape2D_53r27")
 one_way_collision = true

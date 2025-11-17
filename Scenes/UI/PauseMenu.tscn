@@ -1,0 +1,80 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Code/UI/PauseMenu.gd" id="1_pause"]
+[ext_resource type="Theme" path="res://Scenes/UI/SciFiButtonTheme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/SettingsPanel.tscn" id="3_settingspanel"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/CRTOverlay.tscn" id="4_crt"]
+[ext_resource type="FontFile" path="res://Assets/Font/alienleaguebold.ttf" id="5_alienbold"]
+
+[node name="PauseMenu" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_pause")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.03, 0.05, 0.75)
+
+[node name="MenuRoot" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource("2_theme")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MenuRoot"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -110.0
+offset_right = 160.0
+offset_bottom = 110.0
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Title" type="Label" parent="MenuRoot/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
+theme_override_fonts/font = ExtResource("5_alienbold")
+theme_override_font_sizes/font_size = 42
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="MenuRoot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "RESUME"
+
+[node name="SettingsButton" type="Button" parent="MenuRoot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "SETTINGS"
+
+[node name="QuitButton" type="Button" parent="MenuRoot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "QUIT TO MAIN MENU"
+
+[node name="SettingsPanelInstance" parent="MenuRoot" instance=ExtResource("3_settingspanel")]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -200.0
+offset_right = 230.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="CRTOverlay" parent="MenuRoot" instance=ExtResource("4_crt")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0

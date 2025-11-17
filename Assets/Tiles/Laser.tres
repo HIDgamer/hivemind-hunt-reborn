@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://ch6rifkapaie7"]
+[gd_resource type="CanvasTexture" format=3 uid="uid://ch6rifkapaie7"]
 
 [ext_resource type="Texture2D" uid="uid://8muuv2xh0v3c" path="res://Assets/Tiles/laser.png" id="1_31eix"]
 [ext_resource type="Texture2D" uid="uid://difgxfdk0x2iw" path="res://Assets/Tiles/laser_n.png" id="2_xce3e"]

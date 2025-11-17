@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" load_steps=4 format=3 uid="uid://d4hq5ffafn8w1"]
+[gd_resource type="CanvasTexture" format=3 uid="uid://d4hq5ffafn8w1"]
 
 [ext_resource type="Texture2D" uid="uid://hoi85wkcsae5" path="res://Assets/Tiles/Buildings.png" id="1_g7wt6"]
 [ext_resource type="Texture2D" uid="uid://cavc5eu04k67s" path="res://Assets/Tiles/Buildings_n.png" id="2_sw1qm"]

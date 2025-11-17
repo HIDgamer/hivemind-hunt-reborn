@@ -1,0 +1,37 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" uid="uid://buyjpg8ga81xg" path="res://Scenes/Characters/Sam.tscn" id="1_sam"]
+[ext_resource type="Script" path="res://Code/Networking/NameTag.cs" id="2_nametag"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_net"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:NetAnimationName")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:NetFlipH")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:DisplayName")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+
+[node name="NetworkPlayer" instance=ExtResource("1_sam")]
+IsNetworked = true
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_net")
+
+[node name="NameTag" type="Node2D" parent="."]
+script = ExtResource("2_nametag")
+
+[node name="Label" type="Label" parent="NameTag"]
+offset_left = -60.0
+offset_top = -12.0
+offset_right = 60.0
+offset_bottom = 12.0
+theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+text = "PLAYER"

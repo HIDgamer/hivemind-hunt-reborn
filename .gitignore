@@ -1,2 +1,14 @@
+# Godot 4+ editor/import cache — regenerated automatically, shouldn't be versioned.
+.godot/
+
+# Mono/.NET build output
+.mono/
+data_*/
+bin/
+obj/
+
+# Godot export artifacts
+export.cfg
+
 /icon.svg
 /icon.svg.import

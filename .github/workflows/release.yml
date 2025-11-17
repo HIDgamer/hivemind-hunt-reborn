@@ -1,0 +1,75 @@
+# Builds and publishes a Windows release whenever a version tag (v1.0.0,
+# v1.2.3, etc.) is pushed, or on demand via the Actions tab.
+#
+# Uses firebelley/godot-export, a community action built specifically for
+# exporting Godot 4 projects (including C#/.NET ones like this one) in CI —
+# it handles downloading the matching Godot editor + export templates and
+# driving the actual export, which is fiddlier to get right by hand than it
+# looks (asset re-import, .NET solution build, and the export step itself
+# all have to happen in the right order).
+#
+# Only "Windows Desktop" is exported because that's the only preset defined
+# in export_presets.cfg right now (see that file — it also has a Windows-only
+# local export path left over from manual exports on this machine, which
+# this workflow does not touch or depend on). Adding Linux/Mac later is just
+# another export_presets.cfg preset plus a copy of the export step below
+# pointed at a different preset name and platform-matching Godot download.
+#
+# Godot version note: pinned to 4.7-stable to match config/features in
+# project.godot. If the project moves to a later 4.7.x patch or a new minor
+# version, update GODOT_VERSION below to match.
+
+name: Release Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.7-stable
+
+jobs:
+  export-windows:
+    name: Export Windows build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Export Windows Desktop build
+        id: export
+        uses: firebelley/godot-export@v6.1.0
+        with:
+          godot_executable_download_url: https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
+          godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz
+          relative_project_path: ./
+          archive_output: true
+          archive_output_name: Hivemind-Hunt-Reborn-Windows.zip
+          export_debug: false
+          preset: "Windows Desktop"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hivemind-Hunt-Reborn-Windows
+          path: ${{ steps.export.outputs.archive_directory }}/*
+          retention-days: 30
+
+      # Only turns into an actual GitHub Release when triggered by a tag
+      # push — a manual workflow_dispatch run just produces the artifact
+      # above, useful for testing the pipeline without publishing anything.
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.export.outputs.archive_directory }}/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,74 @@
+[gd_scene format=3 uid="uid://dkdkecbaht2d7"]
+
+[ext_resource type="Script" uid="uid://c6r6o7hd5nm6s" path="res://Code/UI/SamHUD.cs" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://c058dnfiodxh0" path="res://Assets/Sam/HealthBar.png" id="2_healthbar"]
+[ext_resource type="FontFile" uid="uid://ccu6qdavb3rm0" path="res://Assets/Font/AlteHaasGroteskBold.ttf" id="3_haas_bold"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hudframe"]
+bg_color = Color(0.06, 0.09, 0.08, 0.82)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.85, 0.55, 0.9)
+shadow_color = Color(0.3, 1, 0.5, 0.15)
+shadow_size = 3
+
+[node name="SamHUD" type="CanvasLayer" unique_id=645091165]
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="." unique_id=573986418]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 250.0
+offset_bottom = 98.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_hudframe")
+
+[node name="HeaderLabel" type="Label" parent="Panel" unique_id=1021907698]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 2.0
+offset_right = 222.0
+offset_bottom = 18.0
+theme_override_colors/font_color = Color(0.5, 0.75, 0.65, 0.75)
+theme_override_fonts/font = ExtResource("3_haas_bold")
+theme_override_font_sizes/font_size = 11
+text = "OPERATOR STATUS"
+
+[node name="HPLabel" type="Label" parent="Panel" unique_id=2006274545]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 22.0
+offset_right = 36.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(0.75, 1, 0.85, 1)
+theme_override_fonts/font = ExtResource("3_haas_bold")
+theme_override_font_sizes/font_size = 14
+text = "HP"
+vertical_alignment = 1
+
+[node name="HealthBar" type="Sprite2D" parent="Panel" unique_id=1221844617]
+position = Vector2(76, 36.000004)
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("2_healthbar")
+hframes = 11
+
+[node name="PWRLabel" type="Label" parent="Panel" unique_id=997848774]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 54.0
+offset_right = 36.0
+offset_bottom = 76.0
+theme_override_colors/font_color = Color(0.75, 1, 0.85, 1)
+theme_override_fonts/font = ExtResource("3_haas_bold")
+theme_override_font_sizes/font_size = 14
+text = "PWR"
+vertical_alignment = 1
+
+[node name="PowerSegments" type="Control" parent="Panel" unique_id=515845448]
+anchors_preset = 0
+offset_left = 40.0
+offset_top = 58.0
+offset_right = 222.0
+offset_bottom = 72.0
+mouse_filter = 2

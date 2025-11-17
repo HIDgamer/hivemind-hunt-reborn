@@ -1,0 +1,78 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Code/UI/CRTOverlay.gd" id="1_script"]
+[ext_resource type="Shader" path="res://Assets/Materials/crt_overlay.gdshader" id="2_shader"]
+[ext_resource type="FontFile" path="res://Assets/Font/AlteHaasGroteskRegular.ttf" id="3_haas"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("2_shader")
+shader_parameter/tint_color = Color(0.65, 1, 0.75, 1)
+shader_parameter/tint_amount = 0.16
+shader_parameter/scanline_intensity = 0.5
+shader_parameter/scanline_spacing_px = 3.0
+shader_parameter/vignette_strength = 0.55
+shader_parameter/noise_amount = 0.05
+shader_parameter/flicker_amount = 0.05
+shader_parameter/flicker_speed = 5.0
+
+[node name="CRTOverlay" type="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="ScanlineRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+material = SubResource("ShaderMaterial_crt")
+color = Color(0, 0, 0, 1)
+
+[node name="HUDText" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -44.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+alignment = 2
+
+[node name="RecRow" type="HBoxContainer" parent="HUDText"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="RecDot" type="ColorRect" parent="HUDText/RecRow"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.9, 0.15, 0.1, 1)
+
+[node name="RecLabel" type="Label" parent="HUDText/RecRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.9, 0.3, 0.25, 0.85)
+theme_override_fonts/font = ExtResource("3_haas")
+theme_override_font_sizes/font_size = 14
+text = "REC"
+
+[node name="FeedLabel" type="Label" parent="HUDText"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.5, 0.75, 0.65, 0.65)
+theme_override_fonts/font = ExtResource("3_haas")
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 2
+text = "SEC-CAM 04 // FEED ACTIVE // 00:00:00"

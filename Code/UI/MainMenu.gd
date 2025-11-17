@@ -1,64 +1,61 @@
-extends Control
+extends MenuBase
 
 @onready var singleplayer_button = $VBoxContainer/SingleplayerButton
 @onready var multiplayer_button = $VBoxContainer/MultiplayerButton
 @onready var settings_button = $VBoxContainer/SettingsButton
 @onready var quit_button = $VBoxContainer/QuitButton
+@onready var reborn_label = $VBoxContainer/RebornLabel
 
-var fade_tween: Tween
-var button_tweens: Dictionary = {}
+func _ready() -> void:
+	super._ready()
+	_connect_menu_button(singleplayer_button, Callable(self, "_on_singleplayer_pressed"))
+	_connect_menu_button(multiplayer_button, Callable(self, "_on_multiplayer_pressed"))
+	_connect_menu_button(settings_button, Callable(self, "_on_settings_pressed"))
+	_connect_menu_button(quit_button, Callable(self, "_on_quit_pressed"))
+	_start_reborn_pulse()
 
-func _ready():
-	# Connect button signals
-	singleplayer_button.connect("pressed", Callable(self, "_on_singleplayer_pressed"))
-	multiplayer_button.connect("pressed", Callable(self, "_on_multiplayer_pressed"))
-	settings_button.connect("pressed", Callable(self, "_on_settings_pressed"))
-	quit_button.connect("pressed", Callable(self, "_on_quit_pressed"))
+# The REBORN sign behaves like the ship's other dying fixtures: mostly
+# steady with a barely-there energy surge, and every so often a quick
+# tube-flicker — not a constant deep breathing loop.
+func _start_reborn_pulse() -> void:
+	if reborn_label == null:
+		return
+	_run_reborn_cycle()
 
-	# Connect hover signals for animations
-	for button in [singleplayer_button, multiplayer_button, settings_button, quit_button]:
-		button.connect("mouse_entered", Callable(self, "_on_button_hover").bind(button))
-		button.connect("mouse_exited", Callable(self, "_on_button_exit").bind(button))
+func _run_reborn_cycle() -> void:
+	var surge := create_tween()
+	surge.tween_property(reborn_label, "modulate", Color(1.12, 0.96, 0.94, 1.0), 1.7) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	surge.tween_property(reborn_label, "modulate", Color(0.9, 0.82, 0.8, 0.96), 1.7) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	surge.tween_callback(_maybe_flicker_reborn)
 
-	# Fade in animation using tween
-	modulate = Color(1, 1, 1, 0)
-	fade_tween = create_tween()
-	fade_tween.tween_property(self, "modulate", Color(1, 1, 1, 1), 0.5)
+func _maybe_flicker_reborn() -> void:
+	if randf() > 0.35:
+		_run_reborn_cycle()
+		return
+
+	# A failing neon tube: dark blip, overbright snap, dark blip, settle.
+	var flick := create_tween()
+	flick.tween_property(reborn_label, "modulate", Color(0.25, 0.16, 0.15, 0.7), 0.05)
+	flick.tween_property(reborn_label, "modulate", Color(1.5, 1.2, 1.15, 1.0), 0.06)
+	flick.tween_property(reborn_label, "modulate", Color(0.4, 0.26, 0.24, 0.8), 0.04)
+	flick.tween_property(reborn_label, "modulate", Color(1, 1, 1, 1), 0.12)
+	flick.tween_callback(_run_reborn_cycle)
 
 func _on_singleplayer_pressed():
-	# Singleplayer is null for now
-	print("Singleplayer pressed - not implemented")
+	# A prior multiplayer session (hosted or joined, then backed out to this
+	# menu) leaves a live MultiplayerPeer behind — without tearing it down
+	# here, the tutorial level would see IsNetworked still true and try to
+	# spawn networked players instead of just using the plain single Sam.
+	get_node("/root/NetworkManager").Disconnect()
+	_fade_out_and_change_scene("uid://dpo7v6ksd0n07") # Level_00_Tutorial.tscn
 
 func _on_multiplayer_pressed():
-	# Transition to multiplayer menu
-	_fade_out_and_change_scene("res://Scenes/UI/MultiplayerUI.tscn")
+	_fade_out_and_change_scene("res://Scenes/UI/Lobby.tscn")
 
 func _on_settings_pressed():
-	# Transition to settings menu
-	_fade_out_and_change_scene("res://Scenes/UI/SettingsMenu.tscn")
+	_fade_out_and_change_scene("uid://ddehdkr23m4qr")
 
 func _on_quit_pressed():
 	get_tree().quit()
-
-func _on_button_hover(button: Button):
-	# Simple scale up effect - use per-button tweens
-	if button_tweens.has(button) and button_tweens[button] and button_tweens[button].is_valid():
-		button_tweens[button].kill()
-	button_tweens[button] = create_tween()
-	button_tweens[button].tween_property(button, "scale", Vector2(1.1, 1.1), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-
-func _on_button_exit(button: Button):
-	# Simple scale back effect - use per-button tweens
-	if button_tweens.has(button) and button_tweens[button] and button_tweens[button].is_valid():
-		button_tweens[button].kill()
-	button_tweens[button] = create_tween()
-	button_tweens[button].tween_property(button, "scale", Vector2(1, 1), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-
-func _fade_out_and_change_scene(scene_path: String):
-	# Fade out and change scene using tween
-	if fade_tween and fade_tween.is_valid():
-		fade_tween.kill()
-	fade_tween = create_tween()
-	fade_tween.tween_property(self, "modulate", Color(1, 1, 1, 0), 0.5)
-	await fade_tween.finished
-	get_tree().change_scene_to_file(scene_path)

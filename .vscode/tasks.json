@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "dotnet",
+			"task": "build",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "dotnet: build"
+		},
+		{
+			"type": "dotnet",
+			"task": "watch Hivemind-Hunt_Reborn",
+			"file": "C:\\Users\\HIDga\\Documents\\hivemind-hunt-reborn\\Hivemind-Hunt_Reborn.csproj",
+			"problemMatcher": [],
+			"label": "dotnet: watch Hivemind-Hunt_Reborn"
+		}
+	]
+}

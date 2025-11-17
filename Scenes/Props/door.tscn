@@ -1,7 +1,8 @@
-[gd_scene load_steps=20 format=3 uid="uid://cbi3p44vh5cba"]
+[gd_scene format=3 uid="uid://cbi3p44vh5cba"]
 
 [ext_resource type="Script" uid="uid://ddp4lasmq25lb" path="res://Code/Props/door.cs" id="2_door_script"]
 [ext_resource type="Texture2D" uid="uid://bnl0bajxu6qs4" path="res://Assets/Tiles/Airlock.tres" id="2_sc646"]
+[ext_resource type="AudioStream" uid="uid://c4ma3ypirj7om" path="res://Sound/UI/Flashpoint001b.ogg" id="3_doorsound"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bplwt"]
 atlas = ExtResource("2_sc646")
@@ -80,7 +81,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_apc2o")
 }],
-"loop": false,
+"loop": 0,
 "name": &"Close",
 "speed": 10.0
 }, {
@@ -88,7 +89,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_2456p")
 }],
-"loop": true,
+"loop": 1,
 "name": &"IdleClose",
 "speed": 5.0
 }, {
@@ -96,7 +97,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_koe7n")
 }],
-"loop": true,
+"loop": 1,
 "name": &"IdleOpen",
 "speed": 5.0
 }, {
@@ -119,7 +120,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_vy1va")
 }],
-"loop": false,
+"loop": 0,
 "name": &"Open",
 "speed": 10.0
 }]
@@ -130,23 +131,24 @@ size = Vector2(48, 32)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vy1va"]
 size = Vector2(32, 32)
 
-[node name="Door" type="StaticBody2D"]
+[node name="Door" type="StaticBody2D" unique_id=134012080]
 script = ExtResource("2_door_script")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1947808860]
 sprite_frames = SubResource("SpriteFrames_2l0oy")
 animation = &"Open"
 autoplay = "IdleClose"
 frame = 5
 frame_progress = 1.0
 
-[node name="Area2D" type="Area2D" parent="."]
+[node name="Area2D" type="Area2D" parent="." unique_id=336485589]
 collision_layer = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=953705038]
 shape = SubResource("RectangleShape2D_4m525")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1934577276]
 shape = SubResource("RectangleShape2D_vy1va")
 
-[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="."]
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=520692883]
+stream = ExtResource("3_doorsound")
