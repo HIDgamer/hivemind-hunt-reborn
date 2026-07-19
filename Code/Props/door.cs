@@ -3,6 +3,11 @@ using Godot;
 public partial class Door : StaticBody2D
 {
     [Export] public float CloseDelay = 3.0f;
+    // When true, walking up to the door does nothing — it only opens while
+    // externally powered (a pressure plate calling Powered(true)). This is
+    // what lets a door act as an actual lock in a puzzle instead of a
+    // courtesy door that slides open for anyone who approaches.
+    [Export] public bool RequireExternalPower = false;
 
     private AnimatedSprite2D animatedSprite;
     private AudioStreamPlayer2D audioPlayer;
@@ -55,6 +60,7 @@ public partial class Door : StaticBody2D
     {
         if (body == this || !(body is CharacterBody2D)) return;
         bodiesInArea++;
+        if (RequireExternalPower && !pressurePlateActive) return;
         if (currentState == State.Closed || currentState == State.Closing)
         {
             StartOpening();

@@ -1,0 +1,10 @@
+[gd_resource type="CanvasTexture" format=3 uid="uid://dlq2m2jv5j4in"]
+
+[ext_resource type="Texture2D" uid="uid://pddme8v3upff" path="res://Assets/Decals/Sign 2 Glow - ORANGE.png" id="1_43rv5"]
+[ext_resource type="Texture2D" uid="uid://57sbor33hkew" path="res://Assets/Decals/Sign 2 Glow - ORANGE_n.png" id="2_0deto"]
+[ext_resource type="Texture2D" uid="uid://b0i7g22ui2qhq" path="res://Assets/Decals/Sign 2 Glow - ORANGE_s.png" id="3_vsb3w"]
+
+[resource]
+diffuse_texture = ExtResource("1_43rv5")
+normal_texture = ExtResource("2_0deto")
+specular_texture = ExtResource("3_vsb3w")

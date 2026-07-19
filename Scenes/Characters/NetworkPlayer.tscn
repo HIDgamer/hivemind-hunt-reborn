@@ -16,6 +16,9 @@ properties/2/replication_mode = 1
 properties/3/path = NodePath(".:DisplayName")
 properties/3/spawn = true
 properties/3/replication_mode = 1
+properties/4/path = NodePath(".:NetFrame")
+properties/4/spawn = true
+properties/4/replication_mode = 1
 
 [node name="NetworkPlayer" instance=ExtResource("1_sam")]
 IsNetworked = true
@@ -27,11 +30,11 @@ replication_config = SubResource("SceneReplicationConfig_net")
 script = ExtResource("2_nametag")
 
 [node name="Label" type="Label" parent="NameTag"]
-offset_left = -60.0
-offset_top = -12.0
-offset_right = 60.0
-offset_bottom = 12.0
+offset_left = -40.0
+offset_top = -8.0
+offset_right = 40.0
+offset_bottom = 8.0
 theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 10
 horizontal_alignment = 1
 text = "PLAYER"

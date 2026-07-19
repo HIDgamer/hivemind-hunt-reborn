@@ -19,11 +19,15 @@ public partial class Sam : CharacterBody2D
 	// skipped entirely — position and visual state instead arrive verbatim
 	// from the authority via MultiplayerSynchronizer and are applied as-is.
 	[Export] public bool IsNetworked { get; set; } = false;
-	// Mirrors _animatedSprite.Animation/FlipH on the authority each frame;
-	// a remote copy just plays back whatever arrives rather than re-running
-	// the state machine, so it can never disagree with what the authority
-	// actually decided to show.
+	// Mirrors _animatedSprite.Animation/Frame/FlipH on the authority each
+	// frame; a remote copy is a PAUSED puppet that shows exactly this clip +
+	// frame index rather than re-running the state machine or even letting
+	// the clip self-advance. Replicating the frame (not a "play" command) is
+	// what keeps every animation trick in sync for free: pinned jump/fall
+	// frames, sped-up windups, reversed turnarounds, and one-shot restarts
+	// all reduce to "which frame is the authority showing right now".
 	[Export] public string NetAnimationName { get; set; } = "Idle";
+	[Export] public int NetFrame { get; set; } = 0;
 	[Export] public bool NetFlipH { get; set; } = false;
 	[Export] public string DisplayName { get; set; } = "PLAYER";
 
@@ -41,17 +45,16 @@ public partial class Sam : CharacterBody2D
 	[Export] public float Friction { get; set; } = 1400f;
 	[Export] public float AirFriction { get; set; } = 240f;
 	[Export] public float TurnAroundAccelMultiplier { get; set; } = 1.6f;
-	// Minimum carried speed for a direction reversal to play the Turnaround/
-	// TurnaroundRun flourish at all — a light tap of the opposite key while
-	// nearly stopped shouldn't trigger a full pivot animation. Kept well
-	// below WalkSpeed's own target (Speed) — a brief input gap
-	// during a real key-swap (releasing one direction and pressing the
-	// other is never perfectly instantaneous) lets friction decay velocity
-	// for a frame or two, and at walking speed a 60+ threshold dropped
-	// below that constantly, silently missing the reversal half the time.
-	// Sprinting has far more headroom above either threshold, which is why
-	// it read as far more reliable than walking before this was lowered.
-	[Export] public float TurnaroundSpeedThreshold { get; set; } = 25f;
+	// How recently the opposite direction must have actually been held for a
+	// new reversal to count as a Turnaround trigger, rather than a stray tap
+	// while basically stationary. This replaced a raw carried-speed check
+	// (velocity magnitude > threshold): under fast alternating taps (spam
+	// clicking) friction can decay velocity below any fixed speed threshold
+	// within a frame or two of releasing a key, so gating on velocity missed
+	// the reversal about half the time no matter how low the threshold was
+	// set. Gating on recent held-input direction instead survives that gap
+	// since it isn't affected by how fast Friction decays Velocity.
+	[Export] public float TurnaroundInputGraceTime { get; set; } = 0.2f;
 	// Hard cap on how long the Turnaround/TurnaroundRun lock can hold, in
 	// case something interrupts the clip in a way that isn't one of the
 	// explicit resets in HandleAnimations — should comfortably exceed the
@@ -187,6 +190,11 @@ private CpuParticles2D _dashParticles;
 	// mirrored motion without needing a second drawn version.
 	private bool _turnaroundActive = false;
 	private float _turnaroundTimer = 0f;
+	// Tracks the last direction that actually had input held, and how long
+	// ago that was — independent of Velocity/Friction (see
+	// TurnaroundInputGraceTime for why that matters).
+	private float _lastHeldInputSign = 0f;
+	private float _lastHeldInputAge = 999f;
 	// Landing recovery plays until its clip finishes (or input cancels it) —
 	// it used to be tied to the 0.04-0.08s landing state-lock timer, which
 	// cut the 0.6s Land clip off after barely one frame, so it read as
@@ -196,6 +204,8 @@ private CpuParticles2D _dashParticles;
 	// finishes, well after the dash physics itself (0.16s) has ended.
 	private bool _flipAnimActive = false;
 	private Tween _hurtFlashTween;
+	private Tween _dashFlashTween;
+	private static CanvasItemMaterial _dashGhostAdditiveMaterial;
 
 	// Animations with genuinely distinct left-facing art (not just a mirror
 	// of the right-facing clip — asymmetric details like the ponytail don't
@@ -212,11 +222,6 @@ private CpuParticles2D _dashParticles;
 	private float _dashTrailTimer = 0f;
 	private const float DashTrailInterval = 0.02f;
 	private bool _isDashing = false;
-	// Toggled by each wall jump so consecutive jumps off alternating walls
-	// read as a deliberate zigzag climb: while active, horizontal input is
-	// mirrored so pressing toward the wall you just left pushes off it
-	// again instead of pinning you against it. See DoWallJump/HandleHorizontalMovement.
-	private bool _wallClimbInputInverted = false;
 
 	public float FacingDirection { get; private set; } = 1f;
 	public float CurrentPower { get; private set; }
@@ -261,13 +266,80 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		_health.Died += OnDied;
 		_extraJump?.ApplyToPlayer(this);
 
+		if (IsNetworked)
+		{
+			// PlayerSpawner.SetMultiplayerAuthority() only runs on the server,
+			// at the moment it decides to spawn this node — that call is
+			// local to the server's own process and never gets replicated,
+			// so every OTHER peer's copy of this same node still defaults to
+			// authority = 1 (the server) unless it independently reaches the
+			// same conclusion itself. PlayerSpawner names each instance after
+			// the owning peer's id (see SpawnPlayer), which — unlike
+			// authority — *is* part of normal node replication, so every
+			// peer can derive the same authority from it here. Without this,
+			// a joining (non-host) client's own player never satisfies
+			// IsMultiplayerAuthority() on their own machine: input/physics
+			// stay gated off (see the early-return below), and their own
+			// camera/HUD get disabled by the check that follows, believing
+			// itself to be a remote puppet of someone else.
+			if (int.TryParse(Name, out int ownerId))
+			{
+				SetMultiplayerAuthority(ownerId);
+			}
+
+			if (IsMultiplayerAuthority())
+			{
+				// Broadcast my own chosen name — I'm the authority over my
+				// own DisplayName, so this replicates out to every other
+				// peer's NameTag via MultiplayerSynchronizer automatically.
+				var localManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+				if (localManager != null && !string.IsNullOrEmpty(localManager.LocalPlayerName))
+				{
+					DisplayName = localManager.LocalPlayerName;
+				}
+			}
+
+			// Players never collide with each other — everyone spawns at
+			// the same pad, and CharacterBody2D-vs-CharacterBody2D contact
+			// at the same spot shoves the later arrival through the floor.
+			// Layer stays "Player" (checkpoints/doors/boundary detect it);
+			// only the mask bit that would make players solid to each other
+			// goes away.
+			CollisionMask &= ~2u;
+		}
+
 		// Only the local authority's own copy should have an active camera
 		// or visible HUD — every other connected player's Sam is just a
 		// remote puppet on screen, not something whose "point of view"
-		// this client is watching from.
-		if (IsNetworked && !IsMultiplayerAuthority())
+		// this client is watching from. PlayerCamera's scene default is
+		// disabled specifically so this is the only place that ever turns
+		// one on.
+		//
+		// Two multiplayer-only wrinkles beyond the authority check:
+		//  - The pre-placed single-player Sam still runs _Ready before
+		//    PlayerSpawner QueueFrees it. If it claimed the camera, the
+		//    viewport's current camera died with it at end of frame and
+		//    rendering fell back to the world origin until something else
+		//    claimed current (toggling the pause menu happened to do that,
+		//    which is why pausing "fixed" it). It must never take the
+		//    camera when a session is active or pending.
+		//  - Enabling a Camera2D does NOT steal "current" from whichever
+		//    camera briefly held it first — MakeCurrent() must be explicit.
+		var sessionManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+		bool doomedPreplacedCopy = !IsNetworked && sessionManager != null
+			&& (sessionManager.IsNetworked || sessionManager.HasPendingJoin);
+		bool shouldHaveCamera = (!IsNetworked || IsMultiplayerAuthority()) && !doomedPreplacedCopy;
+		var playerCamera = GetNodeOrNull<Camera2D>("PlayerCamera");
+		if (playerCamera != null)
 		{
-			GetNodeOrNull<Camera2D>("PlayerCamera")?.Set("enabled", false);
+			playerCamera.Enabled = shouldHaveCamera;
+			if (shouldHaveCamera)
+			{
+				playerCamera.MakeCurrent();
+			}
+		}
+		if ((IsNetworked && !IsMultiplayerAuthority()) || doomedPreplacedCopy)
+		{
 			GetNodeOrNull<CanvasLayer>("SamHUD")?.Set("visible", false);
 		}
 	}
@@ -297,6 +369,17 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		// actually facing/moving a moment ago, not the already-updated value.
 		float facingBeforeMove = FacingDirection;
 		float velocityXBeforeMove = Velocity.X;
+		float heldInputSignBeforeMove = _lastHeldInputSign;
+		float heldInputAgeBeforeMove = _lastHeldInputAge;
+		if (Mathf.Abs(inputDir.X) > 0.01f)
+		{
+			_lastHeldInputSign = Mathf.Sign(inputDir.X);
+			_lastHeldInputAge = 0f;
+		}
+		else
+		{
+			_lastHeldInputAge += deltaTime;
+		}
 
 		UpdateTimers(deltaTime);
 		UpdateStatusEffects(deltaTime);
@@ -315,6 +398,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 				// in its follow-through — Stop() so Play() restarts the clip
 				// from frame 0 instead of being skipped as "already playing".
 				_animatedSprite.Stop();
+				FlashDashStart();
 			}
 			StopSlide();
 			SetState(State.Roll, "Flip", FlipPlaybackSpeed);
@@ -365,28 +449,64 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
 		if (!dashActive && _currentState != State.Hurt && _currentState != State.Dead)
 		{
-			HandleAnimations(inputDir, facingBeforeMove, velocityXBeforeMove);
+			HandleAnimations(inputDir, facingBeforeMove, heldInputSignBeforeMove, heldInputAgeBeforeMove);
 			HandleFootsteps(deltaTime);
 		}
 
 		if (IsNetworked && IsMultiplayerAuthority())
 		{
 			NetAnimationName = _animatedSprite.Animation;
+			NetFrame = _animatedSprite.Frame;
 			NetFlipH = _animatedSprite.FlipH;
 		}
 	}
 
-	// A remote peer's copy never runs the state machine above — it just
-	// shows whatever the authority's own sprite is actually doing.
+	// A remote peer's copy never runs the state machine above — and never
+	// even plays its own sprite. It is held paused and told exactly which
+	// clip + frame the authority is showing this tick. Letting the remote
+	// Play() on its own (the old approach) desynced everything that isn't a
+	// plain 1x forward loop: pinned jump/fall frames played through as full
+	// clips, sped-up windups ran at the wrong rate, reversed turnarounds
+	// played forwards, and a repeated one-shot (re-dash) never restarted
+	// because the clip name hadn't changed.
 	private void ApplyRemoteVisualState()
 	{
-		if (_animatedSprite.SpriteFrames != null
-			&& _animatedSprite.SpriteFrames.HasAnimation(NetAnimationName)
-			&& _animatedSprite.Animation != NetAnimationName)
+		if (_animatedSprite.SpriteFrames == null) return;
+
+		if (_animatedSprite.IsPlaying())
 		{
-			_animatedSprite.Play(NetAnimationName);
+			_animatedSprite.Pause();
+		}
+
+		if (_animatedSprite.SpriteFrames.HasAnimation(NetAnimationName))
+		{
+			if (_animatedSprite.Animation != NetAnimationName)
+			{
+				_animatedSprite.Animation = NetAnimationName;
+			}
+			// Name and frame can arrive from different sync ticks — clamp so
+			// a stale frame index from the previous (longer) clip can't point
+			// past the end of the new one.
+			int frameCount = _animatedSprite.SpriteFrames.GetFrameCount(NetAnimationName);
+			int frame = Mathf.Clamp(NetFrame, 0, Mathf.Max(0, frameCount - 1));
+			if (_animatedSprite.Frame != frame)
+			{
+				_animatedSprite.Frame = frame;
+			}
 		}
 		_animatedSprite.FlipH = NetFlipH;
+
+		// Continuous (non-one-shot) effects derive from the synced clip
+		// instead of needing their own replication: slide dust runs exactly
+		// while a Slide/SlideIn clip is showing.
+		if (_slideParticles != null)
+		{
+			bool sliding = NetAnimationName.StartsWith("Slide");
+			if (_slideParticles.Emitting != sliding)
+			{
+				_slideParticles.Emitting = sliding;
+			}
+		}
 	}
 
 	private void UpdateTimers(float deltaTime)
@@ -424,6 +544,19 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 			StopSlide();
 			SetCrawling(false);
 			PlaySound(_interactionPlayer, 0.9f, 1.1f);
+
+			// Grabbing an object while still carrying sprint-speed momentum
+			// let that momentum bleed off gradually through the normal
+			// MoveToward easing in HandleInteractionMovement — brief, but
+			// enough of a window (~150ms from sprint to push speed) to
+			// noticeably speed-boost a push every time, cheesable by
+			// sprinting into a grab repeatedly. Push/pull speed is fixed
+			// regardless of Sprint, so carried speed should never exceed it.
+			float maxCarrySpeed = _interaction.PushSpeed;
+			if (Mathf.Abs(Velocity.X) > maxCarrySpeed)
+			{
+				Velocity = new Vector2(Mathf.Sign(Velocity.X) * maxCarrySpeed, Velocity.Y);
+			}
 		}
 
 		_wasInteracting = _interaction.IsInteracting;
@@ -454,19 +587,14 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		bool canSprint = CanSprint(inputDir);
 		_isSprinting = canSprint;
 
-		// When wallJumpInvertInput is active, invert the input direction so pressing
-		// towards the wall pushes the player away, creating smooth back-and-forth wall climbing.
-		float effectiveInputX = _wallClimbInputInverted ? -inputDir.X : inputDir.X;
-		Vector2 effectiveInputDir = new(effectiveInputX, inputDir.Y);
-
-		float targetSpeed = GetTargetHorizontalSpeed(effectiveInputDir, canSprint);
+		float targetSpeed = GetTargetHorizontalSpeed(inputDir, canSprint);
 		float accel = IsOnFloor() ? Acceleration : AirAcceleration;
 		float friction = IsOnFloor() ? Friction : AirFriction;
 
 		Vector2 newVelocity = Velocity;
-		if (Mathf.Abs(effectiveInputX) > 0.01f && _stateLockTimer <= 0f)
+		if (Mathf.Abs(inputDir.X) > 0.01f && _stateLockTimer <= 0f)
 		{
-			float directionMultiplier = Mathf.Sign(effectiveInputX);
+			float directionMultiplier = Mathf.Sign(inputDir.X);
 			float speedDifference = Mathf.Abs(targetSpeed - newVelocity.X);
 			float adjustedAccel = accel * (speedDifference > 50f ? 1.1f : 0.95f);
 
@@ -481,7 +609,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 			}
 
 			newVelocity.X = Mathf.MoveToward(newVelocity.X, targetSpeed, adjustedAccel * deltaTime);
-			SetFacing(effectiveInputX);
+			SetFacing(inputDir.X);
 		}
 		else
 		{
@@ -489,13 +617,6 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		}
 
 		Velocity = newVelocity;
-
-		// Reset wallJumpInvertInput when the player releases all horizontal input
-		// and is no longer in contact with a wall
-		if (_wallClimbInputInverted && !IsOnWallOnly() && Mathf.Abs(inputDir.X) < 0.01f)
-		{
-			_wallClimbInputInverted = false;
-		}
 	}
 
 	private float GetTargetHorizontalSpeed(Vector2 inputDir, bool canSprint)
@@ -515,6 +636,14 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
 	private void HandleInteractionMovement(Vector2 inputDir, float deltaTime)
 	{
+		// _isSprinting is only ever updated in HandleHorizontalMovement, which
+		// doesn't run while interacting — left stale (true) from sprinting
+		// right up to the grab, it would otherwise keep draining sprint power
+		// and playing sprint-speed footsteps for the entire push/pull, even
+		// though push/pull always move at their own fixed speed regardless of
+		// Sprint. Interaction has no sprint concept, so force it off.
+		_isSprinting = false;
+
 		// Mirror the exact velocity InteractionComponent is driving into the
 		// held object, rather than computing our own independent push/pull
 		// speed here — two separately-tuned speeds fighting each other is
@@ -655,7 +784,6 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		_jumpBufferTimer = 0f;
 		_stateLockTimer = 0.05f;
 		_airRollTimer = 0f;
-		_wallClimbInputInverted = !_wallClimbInputInverted;
 		PlayJumpFeedback(false);
 	}
 
@@ -696,7 +824,6 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
 			_landingAnimActive = true;
 			_stateLockTimer = Mathf.Abs(Velocity.X) > 15f ? 0.04f : 0.08f;
-			_wallClimbInputInverted = false;
 		}
 	}
 
@@ -724,7 +851,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		AddPower(PowerRegenPerSecond * deltaTime);
 	}
 
-	private void HandleAnimations(Vector2 inputDir, float facingBeforeMove, float velocityXBeforeMove)
+	private void HandleAnimations(Vector2 inputDir, float facingBeforeMove, float heldInputSignBeforeMove, float heldInputAgeBeforeMove)
 	{
 		if (_interaction.IsInteracting)
 		{
@@ -827,7 +954,7 @@ if (!IsOnFloor())
 		else if (Mathf.Abs(inputDir.X) > 0.01f)
 		{
 			float inputSign = Mathf.Sign(inputDir.X);
-			if (!HandleTurnaround(facingBeforeMove, velocityXBeforeMove, inputSign))
+			if (!HandleTurnaround(facingBeforeMove, heldInputSignBeforeMove, heldInputAgeBeforeMove, inputSign))
 			{
 				SetState(_isSprinting ? State.Run : State.Walk, _isSprinting ? "Run" : "Walk");
 			}
@@ -838,21 +965,22 @@ if (!IsOnFloor())
 		}
 	}
 
-	// A direction reversal while still carrying real speed plays a brief
-	// pivot clip instead of snapping straight into Walk/Run facing the new
-	// way. This never touches Velocity or acceleration — it's a pure sprite
-	// overlay on top of the existing (already-tuned) movement physics, so
-	// input responsiveness is unaffected either way; only which frames are
-	// shown changes. Returns true if a turnaround is starting or still
-	// playing, so the caller should skip its own Walk/Run selection.
-	private bool HandleTurnaround(float facingBeforeMove, float velocityXBeforeMove, float inputSign)
+	// A direction reversal while the opposite direction was genuinely held a
+	// moment ago plays a brief pivot clip instead of snapping straight into
+	// Walk/Run facing the new way. This never touches Velocity or
+	// acceleration — it's a pure sprite overlay on top of the existing
+	// (already-tuned) movement physics, so input responsiveness is
+	// unaffected either way; only which frames are shown changes. Returns
+	// true if a turnaround is starting or still playing, so the caller
+	// should skip its own Walk/Run selection.
+	private bool HandleTurnaround(float facingBeforeMove, float heldInputSignBeforeMove, float heldInputAgeBeforeMove, float inputSign)
 	{
 		if (_turnaroundActive) return true;
 
 		bool isReversal = facingBeforeMove != 0f
 			&& inputSign == -facingBeforeMove
-			&& Mathf.Sign(velocityXBeforeMove) == facingBeforeMove
-			&& Mathf.Abs(velocityXBeforeMove) > TurnaroundSpeedThreshold;
+			&& heldInputSignBeforeMove == facingBeforeMove
+			&& heldInputAgeBeforeMove <= TurnaroundInputGraceTime;
 
 		if (!isReversal) return false;
 
@@ -931,8 +1059,15 @@ if (!IsOnFloor())
 		if (_footstepTimer <= 0f)
 		{
 			_footstepTimer = interval;
-			PlaySound(_footstepPlayer, _isSprinting ? 1.05f : 0.82f, _isSprinting ? 1.22f : 1.0f);
+			RemoteFootstep(_isSprinting);
+			BroadcastEffect(MethodName.RemoteFootstep, _isSprinting);
 		}
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	private void RemoteFootstep(bool sprinting)
+	{
+		PlaySound(_footstepPlayer, sprinting ? 1.05f : 0.82f, sprinting ? 1.22f : 1.0f);
 	}
 
 	private void SetState(State state, string animation, float animationSpeed = 1.0f)
@@ -1088,7 +1223,27 @@ if (!IsOnFloor())
 		}
 	}
 
+	// One-shot action effects (particles + sounds) only ever fire inside
+	// authority-only code paths — remote copies skip the whole state machine
+	// — so each one is broadcast as a cosmetic RPC and replayed verbatim on
+	// every other peer's copy of this player. RpcMode.Authority means only
+	// this player's owner can trigger their effects remotely.
+	private void BroadcastEffect(StringName method, params Variant[] args)
+	{
+		if (IsNetworked && IsMultiplayerAuthority())
+		{
+			Rpc(method, args);
+		}
+	}
+
 	private void PlayJumpFeedback(bool usedExtraJump)
+	{
+		RemoteJumpFeedback(usedExtraJump);
+		BroadcastEffect(MethodName.RemoteJumpFeedback, usedExtraJump);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	private void RemoteJumpFeedback(bool usedExtraJump)
 	{
 		CpuParticles2D particles = usedExtraJump ? _doubleJumpParticles : _jumpParticles;
 		if (particles != null)
@@ -1103,6 +1258,16 @@ if (!IsOnFloor())
 
 	private void PlayLandingFeedback(float impactSpeed)
 	{
+		RemoteLandFeedback(impactSpeed);
+		BroadcastEffect(MethodName.RemoteLandFeedback, impactSpeed);
+		// Signal stays authority-side only — its listeners (camera shake
+		// etc.) belong to the owning player's presentation, not puppets.
+		EmitSignal(SignalName.Landed, impactSpeed);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	private void RemoteLandFeedback(float impactSpeed)
+	{
 		if (_landParticles != null)
 		{
 			_landParticles.Emitting = false;
@@ -1112,7 +1277,6 @@ if (!IsOnFloor())
 
 		float pitch = Mathf.Clamp(0.85f + impactSpeed / 700f, 0.85f, 1.25f);
 		PlaySound(_landPlayer, pitch, pitch);
-		EmitSignal(SignalName.Landed, impactSpeed);
 	}
 
 private AudioStreamPlayer2D GetOrCreateAudioPlayer(string nodeName)
@@ -1152,15 +1316,22 @@ private AudioStream GetRandomHurtSound()
 		_currentState = State.Hurt;
 		Velocity = knockbackDirection * 100f;
 		PlayAnimation("Hurt");
-		FlashHurt();
-		_hurtPlayer.Stream = GetRandomHurtSound();
-		PlaySound(_hurtPlayer, 0.95f, 1.05f);
+		RemoteHurtFeedback();
+		BroadcastEffect(MethodName.RemoteHurtFeedback);
 
 		SceneTreeTimer recoveryTimer = GetTree().CreateTimer(0.25f);
 		recoveryTimer.Timeout += () =>
 		{
 			if (IsInstanceValid(this) && _currentState != State.Dead) _currentState = State.Idle;
 		};
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	private void RemoteHurtFeedback()
+	{
+		FlashHurt();
+		_hurtPlayer.Stream = GetRandomHurtSound();
+		PlaySound(_hurtPlayer, 0.95f, 1.05f);
 	}
 
 	// The new Hurt sprite doesn't have a pain flash baked into its frames
@@ -1177,6 +1348,32 @@ private AudioStream GetRandomHurtSound()
 		_hurtFlashTween = CreateTween();
 		_hurtFlashTween.TweenProperty(_animatedSprite, "modulate", Colors.White, 0.3f)
 			.SetTrans(Tween.TransitionType.Sine)
+			.SetEase(Tween.EaseType.Out);
+	}
+
+	// The instant "whoosh" a dash starts with — an overbright cyan-white pop
+	// on Sam's own sprite (values above 1 read as a hot flash rather than a
+	// tint, same trick the additive dash-ghost trail below uses) that snaps
+	// back to normal almost immediately. Pairs with the trailing afterimages
+	// so the dash reads as a sudden burst of speed, not just a fast slide.
+	private void FlashDashStart()
+	{
+		RemoteDashFlash();
+		BroadcastEffect(MethodName.RemoteDashFlash);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	private void RemoteDashFlash()
+	{
+		if (_dashFlashTween != null && _dashFlashTween.IsValid())
+		{
+			_dashFlashTween.Kill();
+		}
+
+		_animatedSprite.Modulate = new Color(1.6f, 1.75f, 1.9f, 1f);
+		_dashFlashTween = CreateTween();
+		_dashFlashTween.TweenProperty(_animatedSprite, "modulate", Colors.White, 0.16f)
+			.SetTrans(Tween.TransitionType.Expo)
 			.SetEase(Tween.EaseType.Out);
 	}
 
@@ -1243,11 +1440,21 @@ private const int DashGhostPoolSize = 5;
 private readonly List<Sprite2D> _dashGhostPool = new();
 private readonly List<Tween> _dashGhostTweens = new();
 
+// Hot-to-cool energy gradient the ghosts fade through, freshest to oldest —
+// the same "thruster" language as the dash/double-jump particles' own
+// Gradient_thruster_fade, so the trail reads as part of the same visual
+// vocabulary rather than a generic grey afterimage. Values above 1 combined
+// with the additive material below are what actually make it read as a hot
+// glow instead of a tinted copy.
+private static readonly Color DashGhostHotColor = new Color(1.5f, 1.7f, 1.9f, 1f);
+private static readonly Color DashGhostCoolColor = new Color(0.3f, 0.55f, 0.85f, 1f);
+
 private Sprite2D GetDashGhost(int index)
 {
 	while (_dashGhostPool.Count <= index)
 	{
-		var ghost = new Sprite2D { ZIndex = 10, Visible = false };
+		_dashGhostAdditiveMaterial ??= new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
+		var ghost = new Sprite2D { ZIndex = 10, Visible = false, Material = _dashGhostAdditiveMaterial };
 		GetTree().CurrentScene.AddChild(ghost);
 		_dashGhostPool.Add(ghost);
 		_dashGhostTweens.Add(null);
@@ -1255,7 +1462,7 @@ private Sprite2D GetDashGhost(int index)
 	return _dashGhostPool[index];
 }
 
-private void FireDashGhost(int poolIndex, Texture2D texture, Vector2 globalPosition, bool flipH, float alpha, float scale, float fadeDuration)
+private void FireDashGhost(int poolIndex, Texture2D texture, Vector2 globalPosition, bool flipH, Color tint, float alpha, float scale, float fadeDuration)
 {
 	if (texture == null) return;
 
@@ -1267,13 +1474,20 @@ private void FireDashGhost(int poolIndex, Texture2D texture, Vector2 globalPosit
 	ghost.Texture = texture;
 	ghost.GlobalPosition = globalPosition;
 	ghost.FlipH = flipH;
-	ghost.Scale = Vector2.One * scale;
-	ghost.Modulate = new Color(1, 1, 1, alpha);
+	// Slight stretch along the travel axis reads as a motion smear rather
+	// than a stack of static duplicate poses.
+	ghost.Scale = new Vector2(scale * 1.12f, scale * 0.94f);
+	ghost.Modulate = new Color(tint.R, tint.G, tint.B, alpha);
 	ghost.Visible = true;
 
 	Tween tween = GetTree().CreateTween();
 	_dashGhostTweens[poolIndex] = tween;
-	tween.TweenProperty(ghost, "modulate:a", 0, fadeDuration);
+	// Expo-out front-loads the fade — a quick bright flash that falls away
+	// fast rather than a slow, even linear dissolve — reading as a snap of
+	// speed instead of a lingering ghost.
+	tween.TweenProperty(ghost, "modulate:a", 0, fadeDuration)
+		.SetTrans(Tween.TransitionType.Expo)
+		.SetEase(Tween.EaseType.Out);
 	tween.TweenCallback(Callable.From(() =>
 	{
 		if (IsInstanceValid(ghost)) ghost.Visible = false;
@@ -1282,17 +1496,8 @@ private void FireDashGhost(int poolIndex, Texture2D texture, Vector2 globalPosit
 
 public void SpawnDashEffect()
 {
-	if (_dashParticles != null)
-	{
-		// Exhaust kicks backward out of the dash, whichever way it went.
-		_dashParticles.Direction = new Vector2(-FacingDirection, 0f);
-		_dashParticles.Emitting = true;
-		SceneTreeTimer particleTimer = GetTree().CreateTimer(0.35f);
-		particleTimer.Timeout += () =>
-		{
-			if (IsInstanceValid(this) && _dashParticles != null) _dashParticles.Emitting = false;
-		};
-	}
+	EmitDashExhaust(FacingDirection);
+	BroadcastEffect(MethodName.RemoteDashEffect, FacingDirection);
 
 	Texture2D fallbackTexture = null;
 	if (_animatedSprite != null && _animatedSprite.SpriteFrames != null)
@@ -1303,7 +1508,7 @@ public void SpawnDashEffect()
 	if (framesToSpawn <= 0)
 	{
 		// No trail frames yet (e.g., dash started immediately) — a single fallback ghost at the player's position.
-		FireDashGhost(0, fallbackTexture, GlobalPosition, _animatedSprite?.FlipH ?? false, 0.8f, 0.96f, 0.35f);
+		FireDashGhost(0, fallbackTexture, GlobalPosition, _animatedSprite?.FlipH ?? false, DashGhostHotColor, 0.95f, 0.96f, 0.22f);
 		return;
 	}
 
@@ -1315,12 +1520,46 @@ public void SpawnDashEffect()
 		DashTrailFrame trailFrame = _dashTrailFrames[frameIndex];
 
 		Texture2D texture = trailFrame.Texture != null ? trailFrame.Texture : fallbackTexture;
-		float alpha = 0.8f - (i * 0.16f);
+		float t = framesToSpawn > 1 ? (float)i / (framesToSpawn - 1) : 0f;
+		Color tint = DashGhostHotColor.Lerp(DashGhostCoolColor, t);
+		float alpha = 0.95f - (i * 0.15f);
 		float scale = 1f - i * 0.04f;
-		float fadeDuration = 0.35f + (i * 0.1f);
+		// Quick throughout — even the oldest ghost is gone well under half a
+		// second, so the trail reads as a flash rather than lingering smoke.
+		float fadeDuration = 0.16f + (i * 0.045f);
 
-		FireDashGhost(i, texture, trailFrame.Position, trailFrame.FlipH, alpha, scale, fadeDuration);
+		FireDashGhost(i, texture, trailFrame.Position, trailFrame.FlipH, tint, alpha, scale, fadeDuration);
 	}
+}
+
+private void EmitDashExhaust(float facing)
+{
+	if (_dashParticles == null) return;
+
+	// Exhaust kicks backward out of the dash, whichever way it went. The
+	// facing arrives as an argument because remote copies never update
+	// their own FacingDirection.
+	_dashParticles.Direction = new Vector2(-facing, 0f);
+	_dashParticles.Emitting = true;
+	SceneTreeTimer particleTimer = GetTree().CreateTimer(0.35f);
+	particleTimer.Timeout += () =>
+	{
+		if (IsInstanceValid(this) && _dashParticles != null) _dashParticles.Emitting = false;
+	};
+}
+
+// Puppet copies have no dash-trail history, so they get the exhaust plus a
+// single afterimage of the current (frame-synced) pose — enough to sell the
+// blink without shipping the whole trail across the network.
+[Rpc(MultiplayerApi.RpcMode.Authority)]
+private void RemoteDashEffect(float facing)
+{
+	EmitDashExhaust(facing);
+
+	Texture2D texture = null;
+	if (_animatedSprite != null && _animatedSprite.SpriteFrames != null)
+		texture = _animatedSprite.SpriteFrames.GetFrameTexture(_animatedSprite.Animation, _animatedSprite.Frame);
+	FireDashGhost(0, texture, GlobalPosition, _animatedSprite?.FlipH ?? false, DashGhostHotColor, 0.95f, 0.96f, 0.22f);
 }
 
 	public void SetExtraJumpCapacity(int extraJumps)

@@ -15,13 +15,13 @@
 [ext_resource type="PackedScene" uid="uid://b4enw542fqjmu" path="res://Scenes/Maps/boundary.tscn" id="14_yd5pu"]
 [ext_resource type="PackedScene" uid="uid://dlyyo6jvl8okw" path="res://Scenes/PowerUps/DashPickup.tscn" id="15_dashpu"]
 [ext_resource type="PackedScene" uid="uid://b1ab4r2a157uv" path="res://Scenes/PowerUps/ExtraJumpPickup.tscn" id="16_jumppu"]
-[ext_resource type="PackedScene" path="res://Scenes/Props/Checkpoint.tscn" id="17_checkpoint"]
+[ext_resource type="PackedScene" uid="uid://dgmovisfog3fm" path="res://Scenes/Props/Checkpoint.tscn" id="17_checkpoint"]
 [ext_resource type="AudioStream" uid="uid://cjq15kqn3bd6i" path="res://Sound/BackgroundMusic/tutorial theme.ogg" id="17_hm2kv"]
 [ext_resource type="PackedScene" path="res://Scenes/Props/GasVolume.tscn" id="18_gasvol"]
 [ext_resource type="PackedScene" path="res://Scenes/Props/FireEmitter.tscn" id="19_firefx"]
-[ext_resource type="PackedScene" uid="uid://buyjpg8ga81xg" path="res://Scenes/Characters/Sam.tscn" id="sam"]
 [ext_resource type="PackedScene" path="res://Scenes/Characters/NetworkPlayer.tscn" id="20_netplayer"]
-[ext_resource type="Script" path="res://Code/Networking/PlayerSpawner.cs" id="21_playerspawner"]
+[ext_resource type="Script" uid="uid://cnu5qbxyx6af8" path="res://Code/Networking/PlayerSpawner.cs" id="21_playerspawner"]
+[ext_resource type="PackedScene" uid="uid://buyjpg8ga81xg" path="res://Scenes/Characters/Sam.tscn" id="sam"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_08va7"]
 
@@ -1445,7 +1445,7 @@ position = Vector2(1678, 112)
 [node name="Checkpoints" type="Node2D" parent="." unique_id=956015474]
 
 [node name="Checkpoint1" parent="Checkpoints" unique_id=1279396864 instance=ExtResource("17_checkpoint")]
-position = Vector2(1696, 288)
+position = Vector2(1438, 224)
 
 [node name="Props" type="Node2D" parent="." unique_id=1944815842]
 
@@ -1502,14 +1502,14 @@ parameters/looping = true
 [node name="Sam" parent="." unique_id=342503648 instance=ExtResource("sam")]
 position = Vector2(1, -24.000002)
 
-[node name="PlayersRoot" type="Node2D" parent="."]
+[node name="PlayersRoot" type="Node2D" parent="." unique_id=1212249153]
 
-[node name="PlayerSpawner" type="Node" parent="."]
+[node name="PlayerSpawner" type="Node" parent="." unique_id=1029105458]
 script = ExtResource("21_playerspawner")
 NetworkPlayerScene = ExtResource("20_netplayer")
 SpawnPosition = Vector2(1, -24.000002)
 
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="PlayerSpawner"]
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="PlayerSpawner" unique_id=1002014200]
 
 [node name="Runner" parent="." unique_id=1395910727 instance=ExtResource("13_fiap2")]
 position = Vector2(1664, -128)

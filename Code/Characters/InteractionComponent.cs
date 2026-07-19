@@ -51,7 +51,23 @@ public partial class InteractionComponent : Node2D
 	private bool _wasPushingLastFrame = false;
 	private float _pushWindupTimer = 0f;
 
-	public bool IsInteracting => _currentPushable != null;
+	// In a networked session only the server simulates crate physics —
+	// clients' crates are frozen puppets that mirror the server's transform.
+	// A joining client therefore can't move a crate by writing to its local
+	// LinearVelocity (it's frozen); instead the intended hold velocity is
+	// forwarded to the server each tick (see Box_Big.ServerApplyHold) and
+	// the result comes back through the crate's position sync.
+	private bool IsPhysicsOwner()
+	{
+		var networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+		return networkManager == null || !networkManager.IsClientSession;
+	}
+
+	// IsInstanceValid matters: a held crate can be destroyed mid-push (laser
+	// burn). A freed-but-non-null reference here kept IsInteracting true
+	// forever — and IsControlLocked includes IsInteracting — locking the
+	// player permanently while every access to the corpse object threw.
+	public bool IsInteracting => _currentPushable != null && GodotObject.IsInstanceValid(_currentPushable);
 	public RigidBody2D CurrentPushable => _currentPushable;
 	public bool IsPushing { get; private set; }
 	// True for the first PushWindupDuration seconds of a fresh push — Sam.cs
@@ -99,6 +115,22 @@ public partial class InteractionComponent : Node2D
 
 	public void ProcessInteraction(Vector2 inputDir, Vector2 userGlobalPosition, float deltaTime)
 	{
+		// The held/nearby object may have been freed since last frame (a
+		// burned crate) — drop the dead references before touching them.
+		if (_currentPushable != null && !GodotObject.IsInstanceValid(_currentPushable))
+		{
+			_currentPushable = null;
+			IsPushing = false;
+			CurrentTargetVelocityX = 0f;
+			_wasAdjustingObjectDamping = false;
+			_wasPushingLastFrame = false;
+			_pushWindupTimer = 0f;
+		}
+		if (_objectInRange != null && !GodotObject.IsInstanceValid(_objectInRange))
+		{
+			_objectInRange = null;
+		}
+
 		// If no input, release grip immediately
 		if (Mathf.Abs(inputDir.X) < 0.1f)
 		{
@@ -136,7 +168,11 @@ public partial class InteractionComponent : Node2D
 			return;
 		}
 
-		WakeAndTuneObjectForInteraction(_currentPushable);
+		bool physicsOwner = IsPhysicsOwner();
+		if (physicsOwner)
+		{
+			WakeAndTuneObjectForInteraction(_currentPushable);
+		}
 
 		// Determine if the player is pushing or pulling based on relative positions.
 		float offset = _currentPushable.GlobalPosition.X - userGlobalPosition.X;
@@ -159,7 +195,7 @@ public partial class InteractionComponent : Node2D
 		{
 			_pushWindupTimer -= deltaTime;
 			CurrentTargetVelocityX = 0f;
-			_currentPushable.LinearVelocity = new Vector2(0f, _currentPushable.LinearVelocity.Y);
+			DriveObjectVelocity(physicsOwner, 0f);
 			return;
 		}
 
@@ -189,12 +225,29 @@ public partial class InteractionComponent : Node2D
 		// other child effects already track the object's live transform
 		// (position + rotation) automatically since they're regular child
 		// nodes, so no separate "reposition the particles" step is needed.
-		_currentPushable.LinearVelocity = new Vector2(objectVelocityX, _currentPushable.LinearVelocity.Y);
+		DriveObjectVelocity(physicsOwner, objectVelocityX);
+	}
+
+	// Server/singleplayer: write straight into the body. Networked client:
+	// the local body is a frozen puppet — forward the intent to the server's
+	// authoritative copy instead (unreliable stream at physics rate; the
+	// server self-releases the hold if the stream stops, so a lost packet or
+	// a sudden disconnect can't wedge a crate in "held" tuning forever).
+	private void DriveObjectVelocity(bool physicsOwner, float velocityX)
+	{
+		if (physicsOwner)
+		{
+			_currentPushable.LinearVelocity = new Vector2(velocityX, _currentPushable.LinearVelocity.Y);
+		}
+		else if (_currentPushable.HasMethod("ServerApplyHold"))
+		{
+			_currentPushable.RpcId(1, "ServerApplyHold", velocityX);
+		}
 	}
 
 	public void StopInteraction()
 	{
-		if (_wasAdjustingObjectDamping && _currentPushable != null)
+		if (_wasAdjustingObjectDamping && _currentPushable != null && GodotObject.IsInstanceValid(_currentPushable))
 		{
 			RestoreObjectDamping(_currentPushable);
 		}
@@ -222,6 +275,14 @@ public partial class InteractionComponent : Node2D
 		if (!obj.IsInGroup(RollingGroup))
 		{
 			obj.AngularDamp = HeldAngularDamp;
+
+			// Snap to the nearest axis-aligned angle before locking. Grabbing
+			// an object that settled with even a slight stray tilt (common
+			// after any fall/collision) and then freezing that exact tilt via
+			// LockRotation left its corner persistently digging into the
+			// ground while being pushed, reading as "stuck on nothing" since
+			// nothing was visibly in the way.
+			obj.Rotation = Mathf.Round(obj.Rotation / (Mathf.Pi / 2f)) * (Mathf.Pi / 2f);
 
 			// Forcing a RigidBody2D's horizontal velocity every frame while
 			// it's in ground contact fights the floor-friction contact

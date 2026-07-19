@@ -5,8 +5,8 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/CRTOverlay.tscn" id="3_crt"]
 [ext_resource type="PackedScene" uid="uid://cwkxtm0y5wvxk" path="res://Scenes/Background/ParallaxBackground.tscn" id="4_parallax"]
 [ext_resource type="AudioStream" uid="uid://b23jjrawbaong" path="res://Sound/BackgroundMusic/Lost signal main theme.ogg" id="5_k8um8"]
-[ext_resource type="FontFile" path="res://Assets/Font/alienleaguebold.ttf" id="6_alienbold"]
-[ext_resource type="FontFile" path="res://Assets/Font/alienleague.ttf" id="7_alien"]
+[ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="6_alienbold"]
+[ext_resource type="FontFile" uid="uid://k0g07rd7xou" path="res://Assets/Font/alienleague3d.ttf" id="7_alien"]
 
 [node name="MainMenu" type="Control" unique_id=1603301812]
 layout_mode = 3
@@ -75,8 +75,9 @@ layout_mode = 2
 text = "QUIT"
 
 [node name="CRTOverlay" parent="." unique_id=1320928123 instance=ExtResource("3_crt")]
-layout_mode = 0
-anchors_preset = 0
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=1828789632]
 stream = ExtResource("5_k8um8")

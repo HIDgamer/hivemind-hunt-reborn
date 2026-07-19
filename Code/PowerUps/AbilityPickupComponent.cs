@@ -37,6 +37,61 @@ public partial class AbilityPickupComponent : Area2D
 	{
 		if (body is not Sam player) return;
 
+		var networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+		// Networked: the server alone decides a pickup was collected (its
+		// Area sees every player's synced body), then tells every peer to
+		// grant the upgrade to THEIR local player — upgrades are squad-wide,
+		// so one player grabbing dash unlocks dash for everyone, and the
+		// pickup disappears for everyone at the same moment.
+		if (networkManager != null && networkManager.IsClientSession) return;
+		if (networkManager != null && networkManager.IsServerSession)
+		{
+			Rpc(MethodName.RemoteCollect);
+			RemoteCollect();
+			return;
+		}
+
+		// Single-player: grant directly to whoever touched it.
+		GrantTo(player);
+		EmitSignal(SignalName.AbilityCollected, player, Ability.ToString());
+		if (ConsumeOnPickup)
+		{
+			Consume();
+		}
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	private void RemoteCollect()
+	{
+		Sam localPlayer = FindLocalPlayer();
+		if (localPlayer != null)
+		{
+			GrantTo(localPlayer);
+			EmitSignal(SignalName.AbilityCollected, localPlayer, Ability.ToString());
+		}
+
+		if (ConsumeOnPickup)
+		{
+			Consume();
+		}
+	}
+
+	// The copy of Sam this machine actually controls — every other player in
+	// the group is a remote puppet whose components don't drive anything.
+	private Sam FindLocalPlayer()
+	{
+		foreach (Node node in GetTree().GetNodesInGroup("Player"))
+		{
+			if (node is Sam sam && sam.IsMultiplayerAuthority())
+			{
+				return sam;
+			}
+		}
+		return null;
+	}
+
+	private void GrantTo(Sam player)
+	{
 		switch (Ability)
 		{
 			case AbilityKind.ExtraJump:
@@ -51,13 +106,6 @@ public partial class AbilityPickupComponent : Area2D
 				}
 				dash.UnlockDash();
 				break;
-		}
-
-		EmitSignal(SignalName.AbilityCollected, player, Ability.ToString());
-
-		if (ConsumeOnPickup)
-		{
-			Consume();
 		}
 	}
 

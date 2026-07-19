@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cbi3p44vh5cba"]
 
-[ext_resource type="Script" uid="uid://ddp4lasmq25lb" path="res://Code/Props/door.cs" id="2_door_script"]
+[ext_resource type="Script" uid="uid://br8liqjdjeacf" path="res://Code/Props/Door.cs" id="2_door_script"]
 [ext_resource type="Texture2D" uid="uid://bnl0bajxu6qs4" path="res://Assets/Tiles/Airlock.tres" id="2_sc646"]
 [ext_resource type="AudioStream" uid="uid://c4ma3ypirj7om" path="res://Sound/UI/Flashpoint001b.ogg" id="3_doorsound"]
 

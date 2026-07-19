@@ -269,7 +269,7 @@ round_precision = 32
 antialiased = true
 
 [node name="GlowLight" type="PointLight2D" parent="." unique_id=300000004]
-light_mask = 4
+light_mask = 1
 visibility_layer = 4
 scale = Vector2(0.16, 0.16)
 enabled = false
@@ -279,7 +279,7 @@ texture = SubResource("GradientTexture2D_warn")
 height = 40.0
 
 [node name="WarnLight" type="PointLight2D" parent="." unique_id=300000002]
-light_mask = 4
+light_mask = 1
 visibility_layer = 4
 position = Vector2(-1.0000001, -4.9999995)
 scale = Vector2(0.18, 0.18)
@@ -302,7 +302,7 @@ target_position = Vector2(0, 0)
 collision_mask = 5
 
 [node name="BeamArea" type="Area2D" parent="." unique_id=262144000]
-collision_mask = 10
+collision_mask = 14
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="BeamArea" unique_id=921235416]
 shape = SubResource("RectangleShape2D_beam")

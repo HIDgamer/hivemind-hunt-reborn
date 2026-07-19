@@ -6,7 +6,10 @@ using Godot;
 public partial class NameTag : Node2D
 {
 	[Export] public NodePath PlayerPath = "..";
-	[Export] public Vector2 Offset = new Vector2(0, -70);
+	// Local-space offset — gets multiplied by the parent's own Scale (1.3x on
+	// Sam, see below), so -70 here actually rendered ~91px above a ~62px-tall
+	// character: far too high. -24 lands it just above the head.
+	[Export] public Vector2 Offset = new Vector2(0, -24);
 
 	private Sam _player;
 	private Label _label;

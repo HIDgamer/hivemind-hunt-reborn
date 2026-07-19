@@ -11,7 +11,9 @@ public partial class Laser : Node2D
 
 	// ── Damage ────────────────────────────────────────────────────────────────
 	[ExportGroup("Damage")]
-	[Export] public int    Damage         = 20;
+	// Two-shots a 3 HP player (3 - 2 = 1, second hit finishes them) — deliberately
+	// harsh so tanking through the beam isn't a viable way to skip the section.
+	[Export] public int    Damage         = 2;
 	[Export] public double DamageCooldown = 0.15; // Seconds between hit ticks
 
 	// ── Beam ──────────────────────────────────────────────────────────────────
@@ -102,9 +104,68 @@ public partial class Laser : Node2D
 
 		_timer.WaitTime  = OffTime;
 		_timer.Timeout  += OnTimerTimeout;
-		_timer.Start();
+		// Cycle timing is server-authoritative in a networked session: each
+		// peer's timer starts whenever ITS scene finished loading, so
+		// independently-run cycles are permanently phase-shifted between
+		// host and clients — a beam one player sees as safe is live on the
+		// other's screen (and burns/damage judged against different beams).
+		// Clients never tick their own cycle; the server mirrors every
+		// transition via RemoteCycle below.
+		if (!IsNetClient())
+		{
+			_timer.Start();
+		}
+
+		// Late joiners shouldn't have to wait for the next cycle edge to
+		// agree with the server — hand each newly connected peer the current
+		// state immediately. (With the deferred-join flow, a peer is already
+		// in the scene by the time PeerConnected fires, so this lands.)
+		if (IsNetServer())
+		{
+			Multiplayer.PeerConnected += OnPeerConnectedSnapshot;
+			_snapshotSubscribed = true;
+		}
 
 		TransitionTo(LaserState.Off, instant: true);
+	}
+
+	private bool _snapshotSubscribed;
+
+	public override void _ExitTree()
+	{
+		if (_snapshotSubscribed)
+		{
+			Multiplayer.PeerConnected -= OnPeerConnectedSnapshot;
+			_snapshotSubscribed = false;
+		}
+	}
+
+	private void OnPeerConnectedSnapshot(long peerId)
+	{
+		RpcId(peerId, MethodName.RemoteSnapshot, (int)_state);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	private void RemoteSnapshot(int state)
+	{
+		TransitionTo((LaserState)state, instant: state == (int)LaserState.Off);
+	}
+
+	// IsClientSession (not raw IsNetworked) is load-bearing here: this is
+	// called from _Ready, which on a joining client runs BEFORE the deferred
+	// connection opens. Checking IsNetworked alone read false there, so
+	// client lasers started their own local cycle timers and permanently
+	// disagreed with the host about which beams were live.
+	private bool IsNetClient()
+	{
+		var networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+		return networkManager != null && networkManager.IsClientSession;
+	}
+
+	private bool IsNetServer()
+	{
+		var networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+		return networkManager != null && networkManager.IsServerSession;
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -135,7 +196,10 @@ public partial class Laser : Node2D
 
 		_timeSinceLastDamage += delta;
 		if (active)
+		{
 			CheckBeamDamage();
+			CheckBeamBurn((float)delta);
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -274,7 +338,13 @@ public partial class Laser : Node2D
 
 	private void OnTimerTimeout()
 	{
-		if (_state is LaserState.Active or LaserState.Warning)
+		bool turningOff = _state is LaserState.Active or LaserState.Warning;
+		if (IsNetServer())
+		{
+			Rpc(MethodName.RemoteCycle, turningOff);
+		}
+
+		if (turningOff)
 		{
 			TransitionTo(LaserState.Off);
 			_sprite.Play("Off");
@@ -286,6 +356,23 @@ public partial class Laser : Node2D
 			TransitionTo(LaserState.Warning);
 		}
 		_timer.Start();
+	}
+
+	// Mirrors the server's cycle edges on clients. The Warning->Active step
+	// still runs locally through EnterWarning's own WarnTime timer, so only
+	// the two authoritative edges need the network.
+	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	private void RemoteCycle(bool turningOff)
+	{
+		if (turningOff)
+		{
+			TransitionTo(LaserState.Off);
+			_sprite.Play("Off");
+		}
+		else
+		{
+			TransitionTo(LaserState.Warning);
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -394,7 +481,14 @@ public partial class Laser : Node2D
 		if (!shouldEnable) return;
 
 		Vector2 dir = BeamDir;
-		_beamRect.Size = new Vector2(MaxLineWidth * 2.5f, length);
+		// Track the beam's actual current rendered width (which tweens in/out
+		// over GrowthTime, see BeamAppear/BeamDisappear) rather than the fully
+		// charged MaxLineWidth — using the fixed max meant the hitbox snapped
+		// to full width instantly while the visible beam was still a thin
+		// sliver mid-growth, hitting the player well outside the visible
+		// beam. 1.6x (matching GlowLine2D's own 1.5x bleed) keeps the hitbox
+		// tied to the visible glow instead of an arbitrary fixed pad.
+		_beamRect.Size = new Vector2(_beamLine.Width * 1.6f, length);
 		_beamCollision.Position = dir * (StartDistance + length * 0.5f);
 		_beamCollision.Rotation = dir.Angle() - Mathf.Pi * 0.5f;
 	}
@@ -464,6 +558,17 @@ public partial class Laser : Node2D
 				_timeSinceLastDamage = 0.0;
 				return;
 			}
+		}
+	}
+
+	// Runs every tick the beam is active, independent of DamageCooldown —
+	// burning is a continuous accumulation toward BurnableComponent's own
+	// threshold, not a discrete hit like player/enemy damage.
+	private void CheckBeamBurn(float deltaTime)
+	{
+		foreach (Node2D body in _beamArea.GetOverlappingBodies())
+		{
+			body.GetNodeOrNull<BurnableComponent>("BurnableComponent")?.ApplyBurn(deltaTime);
 		}
 	}
 

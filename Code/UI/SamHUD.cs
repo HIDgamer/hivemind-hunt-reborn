@@ -1,32 +1,53 @@
 using Godot;
 
-// One combined CCTV-style status panel instead of two separately floating
-// bars — same segmented-meter language for Power as before, the existing
-// hand-drawn HealthBar sprite kept as-is (real authored art, not worth
-// throwing away for a generated meter), both framed together under one
-// "OPERATOR STATUS" header.
+// One combined CCTV-style status panel: HP and Power both use the same
+// segmented-meter language (no more hand-drawn HealthBar sprite), plus an
+// upgrades row that lights up as Sam collects ability pickups (dash, extra
+// jump, ...), all framed together under one "OPERATOR STATUS" header.
 public partial class SamHUD : CanvasLayer
 {
 	[Export] public Sam Player { get; set; }
+	[Export] public int HealthSegmentCount = 10;
 	[Export] public int PowerSegmentCount = 14;
-	[Export] public Vector2 PowerSegmentSize = new Vector2(9f, 14f);
-	[Export] public float PowerSegmentGap = 3f;
+	[Export] public Vector2 SegmentSize = new Vector2(9f, 14f);
+	[Export] public float SegmentGap = 3f;
+	[Export] public Color HealthLitColor = new Color(0.95f, 0.35f, 0.3f, 1f);
+	[Export] public Color HealthLitColorLow = new Color(1f, 0.75f, 0.2f, 1f);
 	[Export] public Color PowerLitColor = new Color(0.45f, 1f, 0.6f, 1f);
 	[Export] public Color PowerLitColorLow = new Color(1f, 0.35f, 0.3f, 1f);
-	[Export] public Color PowerUnlitColor = new Color(0.1f, 0.2f, 0.15f, 0.85f);
+	[Export] public Color SegmentUnlitColor = new Color(0.1f, 0.2f, 0.15f, 0.85f);
+	[Export] public Color UpgradeLitColor = new Color(0.45f, 1f, 0.6f, 1f);
+	[Export] public Color UpgradeUnlitColor = new Color(0.35f, 0.4f, 0.38f, 0.5f);
 
-	private Sprite2D _healthBar;
 	private HealthComponent _playerHealth;
+	private DashComponent _dashComponent;
+	private ExtraJumpComponent _extraJumpComponent;
+
+	private Control _healthSegmentRoot;
 	private Control _powerSegmentRoot;
+	private ColorRect[] _healthSegments;
 	private ColorRect[] _powerSegments;
+
+	private Panel _dashSlot;
+	private Label _dashSlotLabel;
+	private Panel _extraJumpSlot;
+	private Label _extraJumpSlotLabel;
+
+	private bool _lowHealth;
 	private bool _lowPower;
 	private float _pulseTime;
 
 	public override void _Ready()
 	{
-		_healthBar = GetNode<Sprite2D>("Panel/HealthBar");
+		_healthSegmentRoot = GetNode<Control>("Panel/HealthSegments");
 		_powerSegmentRoot = GetNode<Control>("Panel/PowerSegments");
-		BuildPowerSegments();
+		_healthSegments = BuildSegments(_healthSegmentRoot, HealthSegmentCount);
+		_powerSegments = BuildSegments(_powerSegmentRoot, PowerSegmentCount);
+
+		_dashSlot = GetNode<Panel>("Panel/UpgradeSlots/DashSlot");
+		_dashSlotLabel = _dashSlot.GetNode<Label>("Label");
+		_extraJumpSlot = GetNode<Panel>("Panel/UpgradeSlots/ExtraJumpSlot");
+		_extraJumpSlotLabel = _extraJumpSlot.GetNode<Label>("Label");
 
 		if (Player == null)
 		{
@@ -37,15 +58,29 @@ public partial class SamHUD : CanvasLayer
 		_playerHealth = Player.GetNode<HealthComponent>("HealthComponent");
 		_playerHealth.HealthChanged += OnHealthChanged;
 		_playerHealth.Died += OnPlayerDied;
-		UpdateHealthBar(_playerHealth.CurrentHealth, _playerHealth.MaxHealth);
+		UpdateHealth(_playerHealth.CurrentHealth, _playerHealth.MaxHealth);
 
 		Player.PowerChanged += OnPowerChanged;
 		UpdatePower(Player.CurrentPower, Player.MaxPower);
+
+		_dashComponent = Player.GetNodeOrNull<DashComponent>("DashComponent");
+		if (_dashComponent != null)
+		{
+			_dashComponent.DashUnlocked += () => SetUpgradeSlotState(_dashSlot, _dashSlotLabel, true);
+			SetUpgradeSlotState(_dashSlot, _dashSlotLabel, _dashComponent.IsUnlocked);
+		}
+
+		_extraJumpComponent = Player.GetNodeOrNull<ExtraJumpComponent>("ExtraJumpComponent");
+		if (_extraJumpComponent != null)
+		{
+			_extraJumpComponent.ExtraJumpsChanged += _ => SetUpgradeSlotState(_extraJumpSlot, _extraJumpSlotLabel, true);
+			SetUpgradeSlotState(_extraJumpSlot, _extraJumpSlotLabel, _extraJumpComponent.IsUnlocked);
+		}
 	}
 
 	public override void _Process(double delta)
 	{
-		if (!_lowPower)
+		if (!_lowHealth && !_lowPower)
 		{
 			return;
 		}
@@ -53,54 +88,63 @@ public partial class SamHUD : CanvasLayer
 		_pulseTime += (float)delta;
 		float pulse = Mathf.Sin(_pulseTime * 6f) * 0.5f + 0.5f;
 		float brightness = Mathf.Lerp(0.55f, 1.15f, pulse);
-		_powerSegmentRoot.Modulate = new Color(brightness, brightness, brightness, 1f);
+		Color pulseColor = new Color(brightness, brightness, brightness, 1f);
+
+		if (_lowHealth)
+		{
+			_healthSegmentRoot.Modulate = pulseColor;
+		}
+		if (_lowPower)
+		{
+			_powerSegmentRoot.Modulate = pulseColor;
+		}
 	}
 
-	private void BuildPowerSegments()
+	private ColorRect[] BuildSegments(Control root, int count)
 	{
-		_powerSegments = new ColorRect[PowerSegmentCount];
-		for (int i = 0; i < PowerSegmentCount; i++)
+		var segments = new ColorRect[count];
+		for (int i = 0; i < count; i++)
 		{
 			var segment = new ColorRect
 			{
-				Size = PowerSegmentSize,
-				Position = new Vector2(i * (PowerSegmentSize.X + PowerSegmentGap), 0f),
-				Color = PowerUnlitColor,
+				Size = SegmentSize,
+				Position = new Vector2(i * (SegmentSize.X + SegmentGap), 0f),
+				Color = SegmentUnlitColor,
 				MouseFilter = Control.MouseFilterEnum.Ignore,
 			};
-			_powerSegmentRoot.AddChild(segment);
-			_powerSegments[i] = segment;
+			root.AddChild(segment);
+			segments[i] = segment;
 		}
+		return segments;
 	}
 
 	private void OnHealthChanged(int currentHealth, int maxHealth)
 	{
-		UpdateHealthBar(currentHealth, maxHealth);
+		UpdateHealth(currentHealth, maxHealth);
 	}
 
 	private void OnPlayerDied()
 	{
-		_healthBar.Frame = 10;
+		UpdateHealth(0, _playerHealth?.MaxHealth ?? 1);
 	}
 
-	private void UpdateHealthBar(int currentHealth, int maxHealth)
+	private void UpdateHealth(int currentHealth, int maxHealth)
 	{
-		int frame;
-		if (currentHealth <= 0)
+		float normalized = maxHealth > 0 ? Mathf.Clamp((float)currentHealth / maxHealth, 0f, 1f) : 0f;
+		bool critical = maxHealth > 0 && currentHealth <= maxHealth * 0.25f;
+		Color lit = critical ? HealthLitColorLow : HealthLitColor;
+
+		int litCount = Mathf.RoundToInt(normalized * HealthSegmentCount);
+		for (int i = 0; i < HealthSegmentCount; i++)
 		{
-			frame = 10;
-		}
-		else
-		{
-			// 10 segments (frames 0-9) span the full health pool, whatever
-			// MaxHealth happens to be, rather than a hardcoded per-segment
-			// amount that silently desyncs if MaxHealth ever changes.
-			float segmentSize = maxHealth / 10f;
-			frame = Mathf.FloorToInt((maxHealth - currentHealth) / segmentSize);
-			frame = Mathf.Clamp(frame, 0, 9);
+			_healthSegments[i].Color = i < litCount ? lit : SegmentUnlitColor;
 		}
 
-		_healthBar.Frame = frame;
+		_lowHealth = critical;
+		if (!_lowHealth)
+		{
+			_healthSegmentRoot.Modulate = Colors.White;
+		}
 	}
 
 	private void OnPowerChanged(float currentPower, float maxPower)
@@ -117,7 +161,7 @@ public partial class SamHUD : CanvasLayer
 		int litCount = Mathf.RoundToInt(normalized * PowerSegmentCount);
 		for (int i = 0; i < PowerSegmentCount; i++)
 		{
-			_powerSegments[i].Color = i < litCount ? lit : PowerUnlitColor;
+			_powerSegments[i].Color = i < litCount ? lit : SegmentUnlitColor;
 		}
 
 		_lowPower = !canSprint;
@@ -125,5 +169,14 @@ public partial class SamHUD : CanvasLayer
 		{
 			_powerSegmentRoot.Modulate = Colors.White;
 		}
+	}
+
+	private void SetUpgradeSlotState(Panel slot, Label label, bool unlocked)
+	{
+		var style = (StyleBoxFlat)slot.GetThemeStylebox("panel").Duplicate();
+		style.BgColor = unlocked ? new Color(UpgradeLitColor, 0.18f) : new Color(UpgradeUnlitColor, 0.1f);
+		style.BorderColor = unlocked ? UpgradeLitColor : UpgradeUnlitColor;
+		slot.AddThemeStyleboxOverride("panel", style);
+		label.Modulate = unlocked ? Colors.White : new Color(1f, 1f, 1f, 0.35f);
 	}
 }

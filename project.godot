@@ -13,7 +13,7 @@ config_version=5
 config/name="Hivemind-Hunt_Reborn"
 run/main_scene="uid://cnw6i1v1qt1rh"
 config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="uid://c8f4qbslwchqf"
 
 [autoload]
 

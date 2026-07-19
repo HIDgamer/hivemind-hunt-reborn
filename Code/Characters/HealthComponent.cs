@@ -3,7 +3,7 @@ using System;
 
 public partial class HealthComponent : Node
 {
-	[Export] public int MaxHealth { get; set; } = 200;
+	[Export] public int MaxHealth { get; set; } = 3;
 	[Export] public float InvulnerabilityDuration { get; set; } = 0.5f;
 	[Export] public float DamageCooldownDuration { get; set; } = 0.3f;
 

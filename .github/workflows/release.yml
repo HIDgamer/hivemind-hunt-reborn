@@ -27,6 +27,13 @@ on:
       - "v*"
   workflow_dispatch:
 
+# Creating a GitHub Release requires write access to repo contents; without
+# this block the job inherits the repository's default token permissions,
+# which on many repos are read-only — the export would succeed but the
+# release step would die with a 403.
+permissions:
+  contents: write
+
 env:
   GODOT_VERSION: 4.7-stable
 

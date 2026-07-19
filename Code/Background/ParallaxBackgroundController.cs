@@ -67,11 +67,21 @@ public partial class ParallaxBackgroundController : CanvasLayer
     {
         _ambientTime += (float)delta;
 
-        // Lazy camera lookup — handles cameras that spawn after this node.
+        // Lazy camera lookup — handles cameras that spawn after this node,
+        // and re-checks even once a camera was already found: the cached
+        // reference can be freed later (e.g. a multiplayer player
+        // disconnecting, or a scene transition tearing down the previous
+        // scene's camera) or superseded by a different one becoming current
+        // (multiple player cameras during multiplayer spawn). Reading
+        // GlobalPosition on a freed Camera2D throws ObjectDisposedException,
+        // and a stale-but-still-alive reference to a camera that's no longer
+        // "current" silently drifts the background out of sync with what's
+        // actually on screen — so re-resolve whenever the cached one isn't
+        // both alive and still the viewport's actual current camera.
         // A menu screen has no gameplay camera at all, ever — that's fine,
         // it just means travel stays zero; ambient drift and rotation below
         // don't depend on a camera existing and should keep animating there.
-        if (_camera == null)
+        if (_camera == null || !IsInstanceValid(_camera) || !_camera.Enabled)
         {
             _camera = GetViewport().GetCamera2D();
             if (_camera != null)

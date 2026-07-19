@@ -1,8 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://c0irqm7n43qu7"]
 
-[ext_resource type="Script" path="res://Code/UI/CRTOverlay.gd" id="1_script"]
-[ext_resource type="Shader" path="res://Assets/Materials/crt_overlay.gdshader" id="2_shader"]
-[ext_resource type="FontFile" path="res://Assets/Font/AlteHaasGroteskRegular.ttf" id="3_haas"]
+[ext_resource type="Script" uid="uid://bellv4cdv4h64" path="res://Code/UI/CRTOverlay.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://cgr6rdri2brxe" path="res://Assets/Materials/crt_overlay.gdshader" id="2_shader"]
+[ext_resource type="FontFile" uid="uid://u386rb0ghw82" path="res://Assets/Font/AlteHaasGroteskRegular.ttf" id="3_haas"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
 shader = ExtResource("2_shader")
@@ -15,24 +15,30 @@ shader_parameter/noise_amount = 0.05
 shader_parameter/flicker_amount = 0.05
 shader_parameter/flicker_speed = 5.0
 
-[node name="CRTOverlay" type="Control"]
-layout_mode = 1
+[node name="CRTOverlay" type="Control" unique_id=1525145186]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("1_script")
 
-[node name="ScanlineRect" type="ColorRect" parent="."]
+[node name="ScanlineRect" type="ColorRect" parent="." unique_id=637257817]
+material = SubResource("ShaderMaterial_crt")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-material = SubResource("ShaderMaterial_crt")
 color = Color(0, 0, 0, 1)
 
-[node name="HUDText" type="VBoxContainer" parent="."]
+[node name="HUDText" type="VBoxContainer" parent="." unique_id=1340406468]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -48,31 +54,29 @@ grow_vertical = 0
 mouse_filter = 2
 alignment = 2
 
-[node name="RecRow" type="HBoxContainer" parent="HUDText"]
+[node name="RecRow" type="HBoxContainer" parent="HUDText" unique_id=664775509]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="RecDot" type="ColorRect" parent="HUDText/RecRow"]
+[node name="RecDot" type="ColorRect" parent="HUDText/RecRow" unique_id=623169238]
 custom_minimum_size = Vector2(8, 8)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 color = Color(0.9, 0.15, 0.1, 1)
 
-[node name="RecLabel" type="Label" parent="HUDText/RecRow"]
+[node name="RecLabel" type="Label" parent="HUDText/RecRow" unique_id=741983316]
 layout_mode = 2
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.9, 0.3, 0.25, 0.85)
 theme_override_fonts/font = ExtResource("3_haas")
 theme_override_font_sizes/font_size = 14
 text = "REC"
 
-[node name="FeedLabel" type="Label" parent="HUDText"]
+[node name="FeedLabel" type="Label" parent="HUDText" unique_id=1069286449]
 layout_mode = 2
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.5, 0.75, 0.65, 0.65)
 theme_override_fonts/font = ExtResource("3_haas")
 theme_override_font_sizes/font_size = 12
-horizontal_alignment = 2
 text = "SEC-CAM 04 // FEED ACTIVE // 00:00:00"
+horizontal_alignment = 2
