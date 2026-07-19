@@ -52,15 +52,22 @@ jobs:
 
       - name: Export Windows Desktop build
         id: export
-        uses: firebelley/godot-export@v6.1.0
+        uses: firebelley/godot-export@v8.0.0
         with:
           godot_executable_download_url: https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
           godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz
           relative_project_path: ./
           archive_output: true
-          archive_output_name: Hivemind-Hunt-Reborn-Windows.zip
+          cache: true
           export_debug: false
-          preset: "Windows Desktop"
+          presets_to_export: "Windows Desktop"
+
+      # v8 names archives after the preset ("Windows Desktop.zip") — give the
+      # download a proper name before publishing.
+      - name: Rename archive
+        run: |
+          cd "${{ steps.export.outputs.archive_directory }}"
+          for f in *.zip; do mv "$f" "Hivemind-Hunt-Reborn-Windows.zip"; done
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
