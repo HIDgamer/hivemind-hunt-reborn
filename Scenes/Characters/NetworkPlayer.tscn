@@ -47,22 +47,22 @@ text = "PLAYER"
 visible = false
 
 [node name="Bar1" type="ColorRect" parent="NameTag/SpeakingIcon"]
-offset_left = -62.0
+offset_left = -14.0
 offset_top = -3.0
-offset_right = -58.0
+offset_right = -10.0
 offset_bottom = 6.0
 color = Color(0.55, 1, 0.7, 1)
 
 [node name="Bar2" type="ColorRect" parent="NameTag/SpeakingIcon"]
-offset_left = -57.0
+offset_left = -9.0
 offset_top = -6.0
-offset_right = -53.0
+offset_right = -5.0
 offset_bottom = 6.0
 color = Color(0.55, 1, 0.7, 1)
 
 [node name="Bar3" type="ColorRect" parent="NameTag/SpeakingIcon"]
-offset_left = -52.0
+offset_left = -4.0
 offset_top = -8.0
-offset_right = -48.0
+offset_right = 0.0
 offset_bottom = 6.0
 color = Color(0.55, 1, 0.7, 1)

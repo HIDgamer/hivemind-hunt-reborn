@@ -192,13 +192,24 @@ public partial class VoiceChatManager : Node
 		return playersRoot?.GetNodeOrNull(Multiplayer.GetUniqueId().ToString()) as Sam;
 	}
 
+	// Raw mic input captured via AudioEffectCapture sits far below full scale
+	// under normal speaking volume (typical speech peaks land around -20dB
+	// to -6dB, i.e. roughly 0.1-0.5 amplitude) — without a baseline boost,
+	// the signal actually being sent is just quiet, and no amount of
+	// receiver-side Voice bus volume (which only ever multiplies DOWN from
+	// unity at 100%) can fix that after the fact. This is applied before the
+	// user's own MicGainLinear (0-2x fine-tune on top), matching the ~+10 to
+	// +12dB boosts this project's own SFX players already use for one-shot
+	// sounds (e.g. Sam's JumpPlayer/LandPlayer volume_db).
+	private const float BaseCaptureGain = 6f;
+
 	private void PullCapturedFrames()
 	{
 		int available = _captureEffect.GetFramesAvailable();
 		if (available <= 0) return;
 
 		Vector2[] frames = _captureEffect.GetBuffer(available);
-		float gain = GetNodeOrNull<GameSettings>("/root/GameSettings")?.MicGainLinear ?? 1f;
+		float gain = BaseCaptureGain * (GetNodeOrNull<GameSettings>("/root/GameSettings")?.MicGainLinear ?? 1f);
 
 		float peak = 0f;
 		for (int i = 0; i < frames.Length; i++)

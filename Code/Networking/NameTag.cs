@@ -10,6 +10,11 @@ public partial class NameTag : Node2D
 	// Sam, see below), so -70 here actually rendered ~91px above a ~62px-tall
 	// character: far too high. -24 lands it just above the head.
 	[Export] public Vector2 Offset = new Vector2(0, -24);
+	// Gap between the speaking icon and the actual left edge of the name
+	// text — was previously a fixed offset sized for an assumed name width,
+	// which left it floating far away from short names and could overlap
+	// long ones. Now measured against the real rendered text width instead.
+	private const float SpeakingIconGap = 6f;
 
 	private Sam _player;
 	private Label _label;
@@ -55,6 +60,7 @@ public partial class NameTag : Node2D
 		{
 			_lastText = _player.DisplayName;
 			_label.Text = _lastText;
+			RepositionSpeakingIcon();
 		}
 
 		if (_player.NetIsSpeaking != _wasSpeaking)
@@ -79,5 +85,19 @@ public partial class NameTag : Node2D
 		// Player sprite flips for facing, but the tag above their head
 		// shouldn't mirror with it.
 		GlobalRotation = 0f;
+	}
+
+	// The Label is centered in NameTag's local space (see NetworkPlayer.tscn),
+	// so its text's left edge sits at -textWidth/2 regardless of the Label's
+	// own fixed box width. The icon's bars are authored ending at its own
+	// local x=0 (see NetworkPlayer.tscn), so moving the whole icon Control to
+	// that left edge minus a small gap makes it hug the actual name text —
+	// short or long — instead of a fixed guess sized for one name length.
+	private void RepositionSpeakingIcon()
+	{
+		Font font = _label.GetThemeFont("font");
+		int fontSize = _label.GetThemeFontSize("font_size");
+		float textWidth = font.GetStringSize(_lastText, HorizontalAlignment.Left, -1, fontSize).X;
+		_speakingIcon.Position = new Vector2(-textWidth * 0.5f - SpeakingIconGap, 0f);
 	}
 }

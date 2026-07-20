@@ -47,6 +47,14 @@ public partial class ChatBox : CanvasLayer
 		// Scrolling to actually read history counts as activity too — it
 		// shouldn't fade away out from under someone mid-scroll.
 		_logScroll.GetVScrollBar().ValueChanged += _ => RevealLog();
+
+		// A CallDeferred from AppendLine risked firing before the VBoxContainer
+		// had actually finished resizing to include the new (possibly
+		// multi-line, FitContent) label, landing one message short of the
+		// real bottom — Resized fires exactly when the container's true final
+		// size is known, whether that's this frame or a later one, so this is
+		// never stale.
+		_log.Resized += ScrollToBottom;
 	}
 
 	public override void _Process(double delta)
@@ -191,11 +199,9 @@ public partial class ChatBox : CanvasLayer
 			_log.GetChild(0).QueueFree();
 		}
 
-		// Scroll follows fresh messages to the bottom — matches normal chat
-		// UX. Deferred because the ScrollContainer's content size hasn't
-		// updated to include the new label yet this frame.
-		CallDeferred(MethodName.ScrollToBottom);
-
+		// Scroll-to-bottom itself is handled by the _log.Resized hook in
+		// _Ready — adding this label always changes the VBoxContainer's
+		// height, so that signal is guaranteed to fire after this.
 		RevealLog();
 	}
 

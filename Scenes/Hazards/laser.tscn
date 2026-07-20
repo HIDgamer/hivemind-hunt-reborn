@@ -224,9 +224,21 @@ size = Vector2(0, 0)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_laser_spark"]
 shader = ExtResource("7_gas_smoke")
+shader_parameter/distortion_strength = 0.12
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 1
+shader_parameter/v_frames = 1
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_laser_smoke"]
 shader = ExtResource("7_gas_smoke")
+shader_parameter/distortion_strength = 0.12
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 1
+shader_parameter/v_frames = 1
 
 [sub_resource type="Gradient" id="Gradient_smoke_ramp"]
 colors = PackedColorArray(0.14, 0.04, 0.04, 0.55, 0.07, 0.02, 0.02, 0)
@@ -342,6 +354,7 @@ anim_offset_max = 0.99
 
 [node name="SmokeParticles" type="CPUParticles2D" parent="." unique_id=300000003]
 material = SubResource("ShaderMaterial_laser_smoke")
+emitting = false
 texture = ExtResource("6_5nxcb")
 lifetime = 2.0
 randomness = 0.8

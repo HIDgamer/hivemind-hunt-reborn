@@ -11,9 +11,11 @@ config_version=5
 [application]
 
 config/name="Hivemind-Hunt_Reborn"
-run/main_scene="uid://cnw6i1v1qt1rh"
+run/main_scene="res://Scenes/UI/BootSplash.tscn"
 config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
 config/icon="uid://c8f4qbslwchqf"
+boot_splash/image="res://Assets/UI/boot_splash.png"
+boot_splash/bg_color=Color(0.02, 0.02, 0.03, 1)
 
 [audio]
 

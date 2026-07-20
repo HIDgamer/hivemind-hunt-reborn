@@ -11,6 +11,12 @@ size = Vector2(64, 64)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_boxdust_smoke"]
 shader = ExtResource("5_gas_smoke")
+shader_parameter/distortion_strength = 0.12
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 1
+shader_parameter/v_frames = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_boxsync"]
 properties/0/path = NodePath(".:position")
@@ -34,6 +40,7 @@ shape = SubResource("RectangleShape2D_8rpua")
 [node name="DustParticles" type="CPUParticles2D" parent="." unique_id=1517522701]
 material = SubResource("ShaderMaterial_boxdust_smoke")
 position = Vector2(0, 32)
+emitting = false
 amount = 10
 texture = ExtResource("4_843dm")
 lifetime = 0.5
