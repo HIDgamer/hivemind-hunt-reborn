@@ -81,7 +81,7 @@ jobs:
       # above, useful for testing the pipeline without publishing anything.
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ steps.export.outputs.archive_directory }}/*
           generate_release_notes: true
