@@ -17,6 +17,12 @@ public partial class Checkpoint : Area2D
 	private AudioStreamPlayer2D _audioPlayer;
 	private bool _activated = false;
 
+	// Fired once, the first time this checkpoint is actually reached (not on
+	// every re-entry) — Narrator.gd hooks this to bark a line the moment a
+	// checkpoint is hit, same event other systems only had polling access to
+	// before (CheckpointManager itself has no signals, only state).
+	[Signal] public delegate void ActivatedEventHandler();
+
 	public override void _Ready()
 	{
 		BodyEntered += OnBodyEntered;
@@ -47,6 +53,7 @@ public partial class Checkpoint : Area2D
 
 		var manager = GetNode<CheckpointManager>("/root/CheckpointManager");
 		manager.SetCheckpoint(GlobalPosition, GetTree().CurrentScene.SceneFilePath);
+		HealLocalPlayer();
 
 		if (_activated) return;
 
@@ -56,6 +63,26 @@ public partial class Checkpoint : Area2D
 		{
 			_audioPlayer.Stream = ActivateSound;
 			_audioPlayer.Play();
+		}
+		EmitSignal(SignalName.Activated);
+	}
+
+	// Heals every player, not just whoever physically touched the checkpoint.
+	// Remote players' bodies are still physically present here (position is
+	// copied straight onto GlobalPosition each frame — see Sam.cs's
+	// ApplyRemoteVisualState), so this Area2D's overlap check fires locally
+	// on EVERY peer whenever ANY player crosses it, local or remote. Each
+	// peer just heals its own local player in response — no RPC needed, the
+	// per-peer local heals add up to the whole squad getting healed at once.
+	private void HealLocalPlayer()
+	{
+		foreach (Node node in GetTree().GetNodesInGroup("Player"))
+		{
+			if (node is Sam sam && (!sam.IsNetworked || sam.IsMultiplayerAuthority()))
+			{
+				sam.GetNodeOrNull<HealthComponent>("HealthComponent")?.Revive();
+				break;
+			}
 		}
 	}
 

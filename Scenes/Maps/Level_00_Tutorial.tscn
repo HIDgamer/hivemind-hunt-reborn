@@ -11,9 +11,9 @@
 [ext_resource type="PackedScene" uid="uid://bchqabnvy3dup" path="res://Scenes/Props/light.tscn" id="9_fiap2"]
 [ext_resource type="PackedScene" uid="uid://cbi3p44vh5cba" path="res://Scenes/Props/door.tscn" id="9_puvsm"]
 [ext_resource type="PackedScene" uid="uid://cwkxtm0y5wvxk" path="res://Scenes/Background/ParallaxBackground.tscn" id="12_ur3ik"]
-[ext_resource type="PackedScene" uid="uid://c3s5txu7d1m4x" path="res://Scenes/Characters/Runner.tscn" id="13_fiap2"]
 [ext_resource type="PackedScene" uid="uid://b4enw542fqjmu" path="res://Scenes/Maps/boundary.tscn" id="14_yd5pu"]
 [ext_resource type="PackedScene" uid="uid://dlyyo6jvl8okw" path="res://Scenes/PowerUps/DashPickup.tscn" id="15_dashpu"]
+[ext_resource type="PackedScene" uid="uid://bhealthpk01hh" path="res://Scenes/PowerUps/HealthPickup.tscn" id="16_healthpu"]
 [ext_resource type="PackedScene" uid="uid://b1ab4r2a157uv" path="res://Scenes/PowerUps/ExtraJumpPickup.tscn" id="16_jumppu"]
 [ext_resource type="PackedScene" uid="uid://dgmovisfog3fm" path="res://Scenes/Props/Checkpoint.tscn" id="17_checkpoint"]
 [ext_resource type="AudioStream" uid="uid://cjq15kqn3bd6i" path="res://Sound/BackgroundMusic/tutorial theme.ogg" id="17_hm2kv"]
@@ -21,6 +21,9 @@
 [ext_resource type="PackedScene" path="res://Scenes/Props/FireEmitter.tscn" id="19_firefx"]
 [ext_resource type="PackedScene" path="res://Scenes/Characters/NetworkPlayer.tscn" id="20_netplayer"]
 [ext_resource type="Script" uid="uid://cnu5qbxyx6af8" path="res://Code/Networking/PlayerSpawner.cs" id="21_playerspawner"]
+[ext_resource type="PackedScene" uid="uid://b338clvaxofqp" path="res://Scenes/Props/NpcTerminal.tscn" id="22_npcterminal"]
+[ext_resource type="Script" uid="uid://bivmkpmtwbny6" path="res://Code/Systems/NavLinkGenerator.gd" id="23_navlinkgen"]
+[ext_resource type="PackedScene" uid="uid://cdu4iwh3mj2b5" path="res://Scenes/Characters/Queen.tscn" id="27_13m0g"]
 [ext_resource type="PackedScene" uid="uid://buyjpg8ga81xg" path="res://Scenes/Characters/Sam.tscn" id="sam"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_08va7"]
@@ -1363,19 +1366,11 @@ color = Color(0, 0, 0, 1)
 [node name="Lights" type="Node2D" parent="." unique_id=467410300]
 
 [node name="Light_Spawn_A" parent="Lights" unique_id=1933420242 instance=ExtResource("9_fiap2")]
-position = Vector2(-16, -160)
+position = Vector2(128, -160)
 Profile = 0
 
 [node name="Light_Spawn_B" parent="Lights" unique_id=2015644859 instance=ExtResource("9_fiap2")]
-position = Vector2(-192, -160)
-Profile = 0
-
-[node name="Light_Spawn_C" parent="Lights" unique_id=2129870994 instance=ExtResource("9_fiap2")]
-position = Vector2(160, -160)
-Profile = 0
-
-[node name="Light_EntryCorridor" parent="Lights" unique_id=1083954193 instance=ExtResource("9_fiap2")]
-position = Vector2(424, 0)
+position = Vector2(-160, -160)
 Profile = 0
 
 [node name="Light_LaserGauntlet_A" parent="Lights" unique_id=340584657 instance=ExtResource("9_fiap2")]
@@ -1442,12 +1437,22 @@ position = Vector2(1708, 112)
 [node name="DashPickup" parent="PowerUps" unique_id=1453371396 instance=ExtResource("15_dashpu")]
 position = Vector2(1678, 112)
 
+[node name="HealthPickup" parent="PowerUps" unique_id=225636365 instance=ExtResource("16_healthpu")]
+position = Vector2(1648, 112)
+
 [node name="Checkpoints" type="Node2D" parent="." unique_id=956015474]
 
 [node name="Checkpoint1" parent="Checkpoints" unique_id=1279396864 instance=ExtResource("17_checkpoint")]
 position = Vector2(1438, 224)
 
 [node name="Props" type="Node2D" parent="." unique_id=1944815842]
+
+[node name="NpcTerminal" parent="Props" unique_id=687100305 instance=ExtResource("22_npcterminal")]
+position = Vector2(-213, -19)
+
+[node name="Sprite2D" parent="Props/NpcTerminal" index="0" unique_id=417395347]
+position = Vector2(-1, -4)
+flip_h = true
 
 [node name="Box_Big" parent="Props" unique_id=872767005 instance=ExtResource("7_ghf37")]
 position = Vector2(734, 128)
@@ -1491,13 +1496,16 @@ environment = SubResource("Environment_t4eiv")
 libraries/ = SubResource("AnimationLibrary_gjrm8")
 autoplay = &"Platform"
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=814550696]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=814550696 groups=["level_music"]]
 stream = ExtResource("17_hm2kv")
-volume_db = -5.0
+volume_db = -10.0
 autoplay = true
 parameters/looping = true
 
 [node name="NavigationRegion2D" type="NavigationRegion2D" parent="." unique_id=1656722584]
+
+[node name="NavLinkGenerator" type="Node" parent="NavigationRegion2D" unique_id=705598453]
+script = ExtResource("23_navlinkgen")
 
 [node name="Sam" parent="." unique_id=342503648 instance=ExtResource("sam")]
 position = Vector2(1, -24.000002)
@@ -1511,8 +1519,10 @@ SpawnPosition = Vector2(1, -24.000002)
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="PlayerSpawner" unique_id=1002014200]
 
-[node name="Runner" parent="." unique_id=1395910727 instance=ExtResource("13_fiap2")]
-position = Vector2(1664, -128)
-
 [node name="Boundary" parent="." unique_id=341290908 instance=ExtResource("14_yd5pu")]
 position = Vector2(712, 1152)
+
+[node name="Queen" parent="." unique_id=1485030172 instance=ExtResource("27_13m0g")]
+position = Vector2(1664, -133)
+
+[editable path="Props/NpcTerminal"]

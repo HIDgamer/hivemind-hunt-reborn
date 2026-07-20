@@ -1,4 +1,4 @@
-extends CharacterBody2D
+extends EnemyBase
 
 # Completely blind — hunts by sound alone.
 # Sounds it reacts to: player landing, sprinting, walking too close, dashing,
@@ -8,24 +8,21 @@ extends CharacterBody2D
 #   Runner occupies layer 4 ("Enemies") only, and its collision_mask is set
 #   to layer 1 ("World") only — it stands on the level geometry but never
 #   solid-body-collides with the player. All player-facing detection goes
-#   through the two Area2D children below instead:
+#   through the two Area2D children on EnemyBase instead:
 #     - ContactArea: wakes/alerts the Runner and gates the bite attack.
 #     - Hurtbox: where the *Runner* takes damage — currently a top-down
-#       stomp (Mario-style) from the player, and automatically vulnerable
-#       to anything else that finds its HealthComponent (e.g. Laser.cs).
+#       stomp (Mario-style) from the player, handled generically by
+#       EnemyBase._on_hurtbox_body_entered — and automatically vulnerable to
+#       anything else that finds its HealthComponent (e.g. Laser.cs).
 #
 # For laser-box detection to work, pushable RigidBody2D objects should be in
 # the group "pushable". They don't need a HealthComponent — see _on_laser_hit.
 # Laser nodes must be in the group "laser".
 #
-# Threading note: pathfinding queries go through NavigationAgent2D, which is
-# already resolved off the main thread by Godot's own NavigationServer2D —
-# there's nothing left here worth moving onto a manual Thread/WorkerThreadPool
-# job. With only one Runner in the level, hand-rolled threading would add
-# real risk (GDScript/Node access from worker threads is not safe by default)
-# for no measurable win. If the roster grows to many simultaneous enemies,
-# the sound-detection pass (_check_sounds_active) is the one loop worth
-# batching onto WorkerThreadPool — it's cheap per-enemy today, so left as is.
+# Health/hurtbox/contact-area wiring, voice playback, and the stomp-kill
+# interaction all live in EnemyBase now (see Code/Enemies/EnemyBase.gd) —
+# this script only owns what's actually specific to Runner: the sound-based
+# aggro state machine and its patrol/chase/bite behavior.
 
 enum State { DORMANT, PATROL, CHASE, ATTACK, STUNNED, FLEE, DEAD }
 
@@ -45,33 +42,21 @@ enum State { DORMANT, PATROL, CHASE, ATTACK, STUNNED, FLEE, DEAD }
 @export var sprint_threshold: float = 160.0
 @export var wake_run_speed: float = 120.0
 
-@export_group("Combat")
+@export_group("Bite")
 @export var bite_damage: int = 15
 @export var bite_cooldown: float = 1.1
 @export var attack_lunge_speed: float = 320.0
 @export var stun_duration: float = 1.4
-@export var stomp_damage: int = 40
-@export var stomp_bounce_force: float = 420.0
-@export var stomp_height_margin: float = 12.0
 
 @export_group("Tutorial")
 @export var tutorial_mode: bool = false
 
-@export_group("Voice")
-@export var alert_sound: AudioStream
-@export var attack_sound: AudioStream
-@export var hurt_sound: AudioStream
-@export var death_sound: AudioStream
-@export var death_pitch: float = 0.75
-
-const GRAVITY: float = 1200.0
 const INVESTIGATE_DURATION: float = 4.5
 const PATROL_PAUSE: float = 1.2
 const WAKE_PAUSE: float = 0.45
 const NAV_ARRIVE_DISTANCE: float = 12.0
 
 var current_state: State = State.DORMANT
-var _player: CharacterBody2D = null
 var _spawn_pos: Vector2
 var _last_heard_pos: Vector2
 var _investigate_timer: float = 0.0
@@ -80,52 +65,29 @@ var _wake_timer: float = 0.0
 var _attack_cooldown_timer: float = 0.0
 var _stun_timer: float = 0.0
 var _patrol_dir: int = 1
-var _face_dir: int = 1
 var _player_in_contact: bool = false
-var _contact_area: Area2D
-var _hurtbox: Area2D
 var _edge_ray: RayCast2D
 var _nav_agent: NavigationAgent2D
-var _health: Node
-var _voice: AudioStreamPlayer2D
 
 
 func _ready() -> void:
+	_enemy_base_ready()
+
 	_spawn_pos = global_position
 	_last_heard_pos = global_position
 
-	var players := get_tree().get_nodes_in_group("Player")
-	if players.size() > 0:
-		_player = players[0]
+	if is_instance_valid(_player):
 		_hook_player_signals()
 
 	_hook_laser_signals()
 	get_tree().node_added.connect(_on_node_added)
 
-	_contact_area = get_node_or_null("ContactArea")
-	if _contact_area:
-		_contact_area.body_entered.connect(_on_contact_entered)
-		_contact_area.body_exited.connect(_on_contact_exited)
-	else:
+	if _contact_area == null:
 		push_warning("Runner: ContactArea not found — touch detection won't work.")
-
-	_hurtbox = get_node_or_null("Hurtbox")
-	if _hurtbox:
-		_hurtbox.body_entered.connect(_on_hurtbox_body_entered)
-	else:
+	if _hurtbox == null:
 		push_warning("Runner: Hurtbox not found — the player won't be able to stomp this enemy.")
 
-	_health = get_node_or_null("HealthComponent")
-	if _health:
-		if _health.has_signal("took_damage"):
-			_health.took_damage.connect(_on_self_damaged)
-		if _health.has_signal("died"):
-			_health.died.connect(_on_self_died)
-	else:
-		push_warning("Runner: HealthComponent not found — this enemy cannot take damage.")
-
 	_edge_ray = get_node_or_null("EdgeRayCast2D")
-	_voice = get_node_or_null("VoiceAudio")
 
 	_nav_agent = get_node_or_null("NavigationAgent2D")
 	if _nav_agent:
@@ -144,16 +106,16 @@ func _ready() -> void:
 func _hook_player_signals() -> void:
 	if not is_instance_valid(_player):
 		return
-	if _player.has_signal("landed"):
-		_player.landed.connect(_on_player_landed)
+	if _player.has_signal("Landed"):
+		_player.Landed.connect(_on_player_landed)
 
 	var health := _player.get_node_or_null("HealthComponent")
-	if health and health.has_signal("took_damage"):
-		health.took_damage.connect(_on_player_hurt)
+	if health and health.has_signal("TookDamage"):
+		health.TookDamage.connect(_on_player_hurt)
 
 	var dash := _player.get_node_or_null("DashComponent")
-	if dash and dash.has_signal("dash_started"):
-		dash.dash_started.connect(_on_player_dashed)
+	if dash and dash.has_signal("DashStarted"):
+		dash.DashStarted.connect(_on_player_dashed)
 
 
 func _hook_laser_signals() -> void:
@@ -162,8 +124,8 @@ func _hook_laser_signals() -> void:
 
 
 func _try_connect_laser(node: Node) -> void:
-	if node.has_signal("laser_hit") and not node.laser_hit.is_connected(_on_laser_hit):
-		node.laser_hit.connect(_on_laser_hit)
+	if node.has_signal("LaserHit") and not node.LaserHit.is_connected(_on_laser_hit):
+		node.LaserHit.connect(_on_laser_hit)
 
 
 func _on_node_added(node: Node) -> void:
@@ -272,6 +234,10 @@ func _chase_tick(delta: float) -> void:
 		dir = sign(_last_heard_pos.x - global_position.x)
 
 	var desired_velocity := Vector2(dir * chase_speed, velocity.y)
+
+	if locomotion and locomotion.jump_this_frame() and is_on_floor():
+		velocity.y = locomotion.jump_velocity
+
 	if _nav_agent.avoidance_enabled:
 		_nav_agent.set_velocity(desired_velocity)
 	else:
@@ -398,32 +364,9 @@ func _on_contact_exited(body: Node2D) -> void:
 	_player_in_contact = false
 
 
-# Hurtbox — this is where the Runner *receives* damage, currently only from
-# a top-down stomp (the player falling onto it from above). Other damage
-# sources (e.g. Laser.cs) find HealthComponent directly and bypass this area
-# entirely, which is intentional — see the collision-layer note up top.
-
-func _on_hurtbox_body_entered(body: Node2D) -> void:
-	if body != _player or current_state == State.DEAD:
-		return
-	if not ("velocity" in body):
-		return
-
-	var is_stomp: bool = (
-		body.global_position.y < global_position.y - stomp_height_margin
-		and body.velocity.y > 0.0
-	)
-	if not is_stomp:
-		return
-
-	body.velocity.y = -stomp_bounce_force
-
-	if is_instance_valid(_health) and not _health.IsDead:
-		_health.Damage(stomp_damage, Vector2.UP)
-
-
 # Own-health signals — non-lethal hits stun (or, in the tutorial, make the
-# runner flee); a lethal hit kills it outright.
+# runner flee); a lethal hit kills it outright (handled by EnemyBase, see
+# _on_self_died below).
 
 func _on_self_damaged(_amount: int, _knockback: Vector2) -> void:
 	_play_voice(hurt_sound)
@@ -434,7 +377,7 @@ func _on_self_damaged(_amount: int, _knockback: Vector2) -> void:
 
 
 func _on_self_died() -> void:
-	_play_voice(death_sound, death_pitch)
+	super._on_self_died()
 	_change_state(State.DEAD)
 
 
@@ -445,7 +388,8 @@ func _on_self_died() -> void:
 func _alert(heard_at: Vector2) -> void:
 	if tutorial_mode:
 		return
-	if current_state == State.DEAD or current_state == State.STUNNED or current_state == State.ATTACK:
+	var busy := current_state == State.DEAD or current_state == State.STUNNED or current_state == State.ATTACK
+	if busy:
 		return
 
 	_last_heard_pos = heard_at
@@ -484,23 +428,6 @@ func _change_state(new_state: State) -> void:
 			$AnimatedSprite2D.play("Dead")
 			velocity = Vector2.ZERO
 			_set_combat_areas_enabled(false)
-
-
-func _play_voice(stream: AudioStream, pitch: float = 1.0) -> void:
-	if _voice == null or stream == null:
-		return
-	_voice.stream = stream
-	_voice.pitch_scale = pitch
-	_voice.play()
-
-
-func _set_combat_areas_enabled(enabled: bool) -> void:
-	if _contact_area:
-		_contact_area.monitoring = enabled
-		_contact_area.monitorable = enabled
-	if _hurtbox:
-		_hurtbox.monitoring = enabled
-		_hurtbox.monitorable = enabled
 
 
 func _update_sprite() -> void:

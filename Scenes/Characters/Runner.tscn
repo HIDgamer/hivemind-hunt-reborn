@@ -10,6 +10,7 @@
 [ext_resource type="AudioStream" uid="uid://caffr2oy4fefs" path="res://Sound/fx/alien-talk-2.ogg" id="8_attack"]
 [ext_resource type="AudioStream" uid="uid://coaokmgtn7jq" path="res://Sound/fx/alien-talk-1.ogg" id="9_hurt"]
 [ext_resource type="AudioStream" uid="uid://3j6bjw2xkvux" path="res://Sound/fx/alien-talk-3.ogg" id="10_death"]
+[ext_resource type="Script" uid="uid://bjn1201k26ew2" path="res://Code/Enemies/EnemyLocomotion.gd" id="11_locomotion"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6cvrf"]
 atlas = ExtResource("1_2ua81")
@@ -184,6 +185,7 @@ radius = 12.5
 height = 68.0
 
 [node name="Runner" type="CharacterBody2D" unique_id=1395910727]
+position = Vector2(0, -3)
 collision_layer = 8
 script = ExtResource("5_script")
 alert_sound = ExtResource("7_alert")
@@ -196,11 +198,16 @@ path_postprocessing = 1
 avoidance_enabled = true
 debug_enabled = true
 
+[node name="EnemyLocomotion" type="Node" parent="." unique_id=861849261]
+script = ExtResource("11_locomotion")
+jump_velocity = -380.0
+max_jump_gap = 110.0
+
 [node name="EdgeRayCast2D" type="RayCast2D" parent="." unique_id=853962445]
 target_position = Vector2(20, 0)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=14842068]
-position = Vector2(0, -32)
+position = Vector2(0, -28)
 sprite_frames = SubResource("SpriteFrames_xfclf")
 animation = &"Dormant"
 autoplay = "Idle"

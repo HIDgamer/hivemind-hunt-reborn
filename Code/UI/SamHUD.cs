@@ -7,7 +7,9 @@ using Godot;
 public partial class SamHUD : CanvasLayer
 {
 	[Export] public Sam Player { get; set; }
-	[Export] public int HealthSegmentCount = 10;
+	// One segment per hit point — the row grows as MaxHealth upgrades are
+	// collected instead of stretching a fixed bar (see UpdateHealth).
+	[Export] public Vector2 HealthSegmentSize = new Vector2(16f, 14f);
 	[Export] public int PowerSegmentCount = 14;
 	[Export] public Vector2 SegmentSize = new Vector2(9f, 14f);
 	[Export] public float SegmentGap = 3f;
@@ -41,8 +43,7 @@ public partial class SamHUD : CanvasLayer
 	{
 		_healthSegmentRoot = GetNode<Control>("Panel/HealthSegments");
 		_powerSegmentRoot = GetNode<Control>("Panel/PowerSegments");
-		_healthSegments = BuildSegments(_healthSegmentRoot, HealthSegmentCount);
-		_powerSegments = BuildSegments(_powerSegmentRoot, PowerSegmentCount);
+		_powerSegments = BuildSegments(_powerSegmentRoot, SegmentSize, PowerSegmentCount);
 
 		_dashSlot = GetNode<Panel>("Panel/UpgradeSlots/DashSlot");
 		_dashSlotLabel = _dashSlot.GetNode<Label>("Label");
@@ -100,15 +101,15 @@ public partial class SamHUD : CanvasLayer
 		}
 	}
 
-	private ColorRect[] BuildSegments(Control root, int count)
+	private ColorRect[] BuildSegments(Control root, Vector2 segmentSize, int count)
 	{
 		var segments = new ColorRect[count];
 		for (int i = 0; i < count; i++)
 		{
 			var segment = new ColorRect
 			{
-				Size = SegmentSize,
-				Position = new Vector2(i * (SegmentSize.X + SegmentGap), 0f),
+				Size = segmentSize,
+				Position = new Vector2(i * (segmentSize.X + SegmentGap), 0f),
 				Color = SegmentUnlitColor,
 				MouseFilter = Control.MouseFilterEnum.Ignore,
 			};
@@ -128,16 +129,30 @@ public partial class SamHUD : CanvasLayer
 		UpdateHealth(0, _playerHealth?.MaxHealth ?? 1);
 	}
 
+	// One pip per hit point rather than a fixed-count bar rescaled to fit —
+	// a MaxHealth upgrade visibly adds a new segment to the row instead of
+	// just changing how "full" a fixed bar reads, which otherwise made
+	// health upgrades invisible on the HUD.
+	private int _builtHealthSegmentCount = -1;
+
 	private void UpdateHealth(int currentHealth, int maxHealth)
 	{
-		float normalized = maxHealth > 0 ? Mathf.Clamp((float)currentHealth / maxHealth, 0f, 1f) : 0f;
-		bool critical = maxHealth > 0 && currentHealth <= maxHealth * 0.25f;
+		if (maxHealth != _builtHealthSegmentCount)
+		{
+			foreach (ColorRect segment in _healthSegments ?? [])
+			{
+				segment.QueueFree();
+			}
+			_healthSegments = BuildSegments(_healthSegmentRoot, HealthSegmentSize, maxHealth);
+			_builtHealthSegmentCount = maxHealth;
+		}
+
+		bool critical = maxHealth > 0 && currentHealth <= Mathf.Max(1, maxHealth / 4);
 		Color lit = critical ? HealthLitColorLow : HealthLitColor;
 
-		int litCount = Mathf.RoundToInt(normalized * HealthSegmentCount);
-		for (int i = 0; i < HealthSegmentCount; i++)
+		for (int i = 0; i < _healthSegments.Length; i++)
 		{
-			_healthSegments[i].Color = i < litCount ? lit : SegmentUnlitColor;
+			_healthSegments[i].Color = i < currentHealth ? lit : SegmentUnlitColor;
 		}
 
 		_lowHealth = critical;

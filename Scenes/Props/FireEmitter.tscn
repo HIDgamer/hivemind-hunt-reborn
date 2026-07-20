@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://qqmoqitjel4u" path="res://Code/Props/FlickeringLight.cs" id="1_flicker"]
 [ext_resource type="Texture2D" uid="uid://bbks3dwy5e52a" path="res://Assets/FX/particles/alpha/muzzle_03_a.png" id="3_flame"]
-[ext_resource type="Texture2D" uid="uid://p6j5vfnhorsm" path="res://Assets/FX/particles/alpha/smoke_07_a.png" id="2_smoke"]
+[ext_resource type="Texture2D" path="res://Assets/FX/generated/noise_wisp.png" id="2_smoke"]
 
 [sub_resource type="Gradient" id="Gradient_flame_falloff"]
 offsets = PackedFloat32Array(0, 0.6, 1)
@@ -91,6 +91,6 @@ initial_velocity_min = 8.0
 initial_velocity_max = 18.0
 angular_velocity_min = -14.0
 angular_velocity_max = 14.0
-scale_amount_min = 0.02
-scale_amount_max = 0.035
+scale_amount_min = 0.04
+scale_amount_max = 0.07
 color_ramp = SubResource("Gradient_smoke_ramp")

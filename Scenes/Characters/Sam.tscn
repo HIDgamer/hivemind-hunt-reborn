@@ -13,10 +13,10 @@
 [ext_resource type="Script" uid="uid://ca0ryftorltk8" path="res://Code/Characters/Sam.cs" id="5_sam"]
 [ext_resource type="Script" uid="uid://wbok4gfvkq7a" path="res://Code/Characters/ExtraJumpComponent.cs" id="6_extra"]
 [ext_resource type="Script" uid="uid://do0tyf1y22pm3" path="res://Code/Systems/CameraSystem.gd" id="7_gupkc"]
-[ext_resource type="Texture2D" uid="uid://b6ih7jgjdjwcp" path="res://Assets/FX/particles/alpha/dirt_02_a.png" id="9_dirt2"]
 [ext_resource type="Texture2D" uid="uid://cu14cc7yxgts5" path="res://Assets/FX/particles/alpha/circle_01_a.png" id="10_circle"]
 [ext_resource type="Texture2D" uid="uid://dar8glm7oql2p" path="res://Assets/FX/particles/alpha/trace_07_a.png" id="11_trace"]
-[ext_resource type="Texture2D" uid="uid://bncq2lvbeqtu5" path="res://Assets/FX/particles/alpha/dirt_01_a.png" id="12_dirt1"]
+[ext_resource type="Texture2D" uid="uid://djhpbqtymwr0s" path="res://Assets/FX/generated/noise_puff.png" id="12_dirt1"]
+[ext_resource type="Texture2D" uid="uid://bxfcu6j65brsv" path="res://Assets/Sam/Sam crawl turn 48x48.tres" id="21_1vh0i"]
 [ext_resource type="PackedScene" uid="uid://dkdkecbaht2d7" path="res://Scenes/UI/SamHUD.tscn" id="22_samhud"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam idle.tres" id="newtex_0"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam idle left.tres" id="newtex_1"]
@@ -50,6 +50,7 @@
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam flip left.tres" id="newtex_29"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam turnaround.tres" id="newtex_30"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam turnaround run.tres" id="newtex_31"]
+[ext_resource type="Texture2D" uid="uid://bxfcu6j65brsv" path="res://Assets/Sam/Sam crawl turn 48x48.tres" id="newtex_crawlturn"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam wall slide.tres" id="newtex_wallslide"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam wall slide left.tres" id="newtex_wallslideleft"]
 
@@ -369,6 +370,50 @@ region = Rect2(432, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlLeft_10"]
 atlas = ExtResource("newtex_23")
+region = Rect2(480, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_37ld5"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ucipl"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_psh7w"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_saxgg"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ey6f3"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mutyk"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(240, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nfcaw"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(288, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oulyu"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(336, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oesod"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(384, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hr5le"]
+atlas = ExtResource("21_1vh0i")
+region = Rect2(432, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_42fqb"]
+atlas = ExtResource("21_1vh0i")
 region = Rect2(480, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_new_Death_1"]
@@ -1259,6 +1304,50 @@ region = Rect2(288, 0, 48, 48)
 atlas = ExtResource("newtex_31")
 region = Rect2(336, 0, 48, 48)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_0"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_1"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_2"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_3"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_4"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_5"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(240, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_6"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(288, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_7"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(336, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_8"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(384, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_9"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(432, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_10"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(480, 0, 48, 48)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_new_Walk_1"]
 atlas = ExtResource("newtex_2")
 region = Rect2(48, 0, 48, 48)
@@ -1607,6 +1696,44 @@ animations = [{
 }],
 "loop": 1,
 "name": &"CrawlLeft",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_37ld5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ucipl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_psh7w")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_saxgg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ey6f3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mutyk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nfcaw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oulyu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oesod")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hr5le")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_42fqb")
+}],
+"loop": 0,
+"name": &"CrawlTurn",
 "speed": 10.0
 }, {
 "frames": [{
@@ -2407,6 +2534,44 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_10")
+}],
+"loop": 0,
+"name": &"CrawlTurnaround",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_new_Walk_1")
 }, {
 "duration": 1.0,
@@ -2520,10 +2685,11 @@ HurtSounds = Array[AudioStream]([ExtResource("5_hurt1"), ExtResource("5_hurt2")]
 DeathSound = ExtResource("5_deathsound")
 
 [node name="StatusGlow" type="PointLight2D" parent="." unique_id=1755810764]
-position = Vector2(0, -18)
+position = Vector2(0, 5.384616)
 color = Color(0.55, 0.85, 1, 1)
 energy = 0.3
 range_item_cull_mask = 3
+shadow_enabled = true
 texture = SubResource("GradientTexture2D_status_glow")
 texture_scale = 1.6
 height = 60.0
@@ -2550,7 +2716,9 @@ shape = SubResource("RectangleShape2D_grab")
 light_mask = 3
 visibility_layer = 3
 sprite_frames = SubResource("SpriteFrames_dx0fp")
-animation = &"WallslideLeft"
+animation = &"CrawlTurn"
+frame = 10
+frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=295849476]
 shape = SubResource("CapsuleShape2D_pde33")
@@ -2564,7 +2732,7 @@ disabled = true
 position = Vector2(0, 16)
 emitting = false
 amount = 6
-texture = ExtResource("9_dirt2")
+texture = ExtResource("12_dirt1")
 lifetime = 0.35
 one_shot = true
 explosiveness = 1.0
@@ -2574,8 +2742,8 @@ direction = Vector2(0, -1)
 gravity = Vector2(0, 60)
 initial_velocity_min = 15.0
 initial_velocity_max = 35.0
-scale_amount_min = 0.008
-scale_amount_max = 0.016
+scale_amount_min = 0.016
+scale_amount_max = 0.032
 scale_amount_curve = SubResource("Curve_dust_grow")
 color_ramp = SubResource("Gradient_dust_fade")
 
@@ -2599,7 +2767,7 @@ color_ramp = SubResource("Gradient_thruster_fade")
 position = Vector2(0, 16)
 emitting = false
 amount = 10
-texture = ExtResource("9_dirt2")
+texture = ExtResource("12_dirt1")
 lifetime = 0.45
 emission_shape = 3
 emission_rect_extents = Vector2(5, 2)
@@ -2608,8 +2776,8 @@ spread = 40.0
 gravity = Vector2(0, -25)
 initial_velocity_min = 10.0
 initial_velocity_max = 24.0
-scale_amount_min = 0.01
-scale_amount_max = 0.02
+scale_amount_min = 0.02
+scale_amount_max = 0.04
 scale_amount_curve = SubResource("Curve_dust_grow")
 color_ramp = SubResource("Gradient_dust_fade")
 
@@ -2647,14 +2815,14 @@ spread = 75.0
 gravity = Vector2(0, 160)
 initial_velocity_min = 35.0
 initial_velocity_max = 65.0
-scale_amount_min = 0.016
-scale_amount_max = 0.028
+scale_amount_min = 0.032
+scale_amount_max = 0.056
 scale_amount_curve = SubResource("Curve_dust_grow")
 color_ramp = SubResource("Gradient_dust_fade")
 
 [node name="PlayerCamera" type="Camera2D" parent="." unique_id=2049384703]
-enabled = false
 offset = Vector2(2, 2)
+enabled = false
 drag_horizontal_enabled = true
 script = ExtResource("7_gupkc")
 target_path = NodePath("..")

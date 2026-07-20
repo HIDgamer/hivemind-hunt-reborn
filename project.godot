@@ -21,6 +21,9 @@ CheckpointManager="*res://Code/Systems/CheckpointManager.cs"
 GameSettings="*res://Code/Systems/GameSettings.cs"
 PauseMenu="*res://Scenes/UI/PauseMenu.tscn"
 NetworkManager="*res://Code/Networking/NetworkManager.cs"
+DialogueUI="*res://Scenes/UI/DialogueBox.tscn"
+ChatBox="*res://Scenes/UI/ChatBox.tscn"
+Narrator="*res://Scenes/UI/NarratorBark.tscn"
 
 [dotnet]
 

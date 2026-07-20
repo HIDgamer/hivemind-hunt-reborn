@@ -19,6 +19,12 @@ public partial class Door : StaticBody2D
     private enum State { Closed, Opening, Open, Closing }
     private State currentState = State.Closed;
 
+    // Fired once the door actually settles into Open/Closed (not on every
+    // Opening/Closing transition) — lets external systems (Narrator.gd)
+    // react to a door resolving without polling the private state machine.
+    [Signal] public delegate void OpenedEventHandler();
+    [Signal] public delegate void ClosedEventHandler();
+
     public override void _Ready()
     {
         animatedSprite = GetNode<AnimatedSprite2D>("AnimatedSprite2D");
@@ -101,6 +107,7 @@ public partial class Door : StaticBody2D
             {
                 closeTimer.Start(CloseDelay);
             }
+            EmitSignal(SignalName.Opened);
         }
         else if (currentState == State.Closing)
         {
@@ -108,6 +115,7 @@ public partial class Door : StaticBody2D
             animatedSprite.Animation = "IdleClose";
             animatedSprite.Play();
             collisionShape.Disabled = false;
+            EmitSignal(SignalName.Closed);
         }
     }
 

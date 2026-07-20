@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://buasvpdac577w" path="res://Code/Props/Laser.cs" id="1_laser_script"]
 [ext_resource type="Shader" uid="uid://c6h650ol8j5bs" path="res://Assets/Materials/laser.gdshader" id="2_631ej"]
 [ext_resource type="Texture2D" uid="uid://cemltxnt6hpji" path="res://Assets/FX/particles/alpha/light_01_a.png" id="5_spark"]
-[ext_resource type="Texture2D" uid="uid://p6j5vfnhorsm" path="res://Assets/FX/particles/alpha/smoke_07_a.png" id="6_smoke"]
+[ext_resource type="Texture2D" path="res://Assets/FX/generated/noise_wisp.png" id="6_smoke"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_laser"]
 noise_type = 1
@@ -342,8 +342,8 @@ initial_velocity_min = 6.0
 initial_velocity_max = 16.0
 angular_velocity_min = -18.0
 angular_velocity_max = 18.0
-scale_amount_min = 0.015
-scale_amount_max = 0.028
+scale_amount_min = 0.03
+scale_amount_max = 0.056
 color_ramp = SubResource("Gradient_smoke_ramp")
 
 [node name="ActivationPlayer" type="AudioStreamPlayer2D" parent="." unique_id=2098155743]

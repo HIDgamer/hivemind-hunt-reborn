@@ -222,13 +222,29 @@ private CpuParticles2D _dashParticles;
 	private float _dashTrailTimer = 0f;
 	private const float DashTrailInterval = 0.02f;
 	private bool _isDashing = false;
+	// Manual moving-platform-style ride-along for standing on another
+	// player's head. Rapier2D (this project's physics backend) has no
+	// one-way-collision support at all — confirmed missing when
+	// Platform.tscn/moving_platform.tscn were built — so there's no engine
+	// feature to lean on here; this tracks whichever Sam we're currently
+	// floor-supported by and manually carries their frame-to-frame motion
+	// the same way a real moving platform would, entirely independent of
+	// whether that other Sam is a local co-op instance, a remote authority,
+	// or a synced puppet — all three just mean "read GlobalPosition".
+	private Sam _ridingOnPlayer;
+	private Vector2 _ridingOnPlayerLastPosition;
+
+	// True while a UI element (dialogue box, chat input) owns the keyboard —
+	// all gameplay input reads as neutral so typing "wasd" in chat doesn't
+	// walk Sam off a ledge and Z advances dialogue instead of grabbing crates.
+	public bool UiInputCaptured { get; set; } = false;
 
 	public float FacingDirection { get; private set; } = 1f;
 	public float CurrentPower { get; private set; }
 	public float PowerNormalized => MaxPower <= 0f ? 0f : CurrentPower / MaxPower;
 	public bool IsAlive => _currentState != State.Dead;
 	public bool IsInHurtState => _currentState == State.Hurt;
-	public bool IsControlLocked => _stateLockTimer > 0f || _currentState == State.Hurt || _currentState == State.Dead || _interaction.IsInteracting;
+	public bool IsControlLocked => _stateLockTimer > 0f || _currentState == State.Hurt || _currentState == State.Dead || _interaction.IsInteracting || UiInputCaptured;
 
 	[Signal] public delegate void JumpedEventHandler(bool usedExtraJump);
 	[Signal] public delegate void LandedEventHandler(float impactSpeed);
@@ -299,13 +315,11 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 				}
 			}
 
-			// Players never collide with each other — everyone spawns at
-			// the same pad, and CharacterBody2D-vs-CharacterBody2D contact
-			// at the same spot shoves the later arrival through the floor.
-			// Layer stays "Player" (checkpoints/doors/boundary detect it);
-			// only the mask bit that would make players solid to each other
-			// goes away.
-			CollisionMask &= ~2u;
+			// Players collide with each other again — spawns are staggered
+			// now (see PlayerSpawner.SpawnPlayer), so the same-spot-shove-
+			// through-the-floor bug this bit was pulled for no longer
+			// applies, and solid player-vs-player contact is wanted on
+			// purpose (see _ApplyPlayerRiding below).
 		}
 
 		// Only the local authority's own copy should have an active camera
@@ -361,7 +375,9 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		if (_currentState == State.Dead) return;
 
 		float deltaTime = (float)delta;
-		Vector2 inputDir = new(Input.GetAxis("Left", "Right"), Input.GetAxis("Jump", "Crawl"));
+		Vector2 inputDir = UiInputCaptured
+			? Vector2.Zero
+			: new(Input.GetAxis("Left", "Right"), Input.GetAxis("Jump", "Crawl"));
 		bool wasOnFloorBeforeMove = IsOnFloor();
 		float fallSpeedBeforeMove = Velocity.Y;
 		// Captured before HandleHorizontalMovement can react to this frame's
@@ -444,6 +460,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		}
 
 		MoveAndSlide();
+		UpdatePlayerRiding();
 		HandleLanding(wasOnFloorBeforeMove, fallSpeedBeforeMove);
 		UpdatePower(deltaTime);
 
@@ -512,7 +529,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 	private void UpdateTimers(float deltaTime)
 	{
 		if (!IsOnFloor()) _coyoteTimer = Mathf.Max(0f, _coyoteTimer - deltaTime);
-		if (Input.IsActionJustPressed("Jump")) _jumpBufferTimer = JumpBufferTime;
+		if (!UiInputCaptured && Input.IsActionJustPressed("Jump")) _jumpBufferTimer = JumpBufferTime;
 		else _jumpBufferTimer = Mathf.Max(0f, _jumpBufferTimer - deltaTime);
 
 		_stateLockTimer = Mathf.Max(0f, _stateLockTimer - deltaTime);
@@ -530,7 +547,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
 	private void UpdateInteraction(Vector2 inputDir, float deltaTime)
 	{
-		if (Input.IsActionPressed("Interact"))
+		if (!UiInputCaptured && Input.IsActionPressed("Interact"))
 		{
 			_interaction.ProcessInteraction(inputDir, GlobalPosition, deltaTime);
 		}
@@ -807,6 +824,47 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		return !IsOnFloor() && IsOnWallOnly() && Velocity.Y >= 0f;
 	}
 
+	// Moving-platform-style ride-along for standing on another player's
+	// head — see the field comment on _ridingOnPlayer for why this is
+	// hand-rolled instead of using engine one-way-collision support.
+	private void UpdatePlayerRiding()
+	{
+		Sam standingOn = null;
+		if (IsOnFloor())
+		{
+			int count = GetSlideCollisionCount();
+			for (int i = 0; i < count; i++)
+			{
+				KinematicCollision2D collision = GetSlideCollision(i);
+				if (collision.GetCollider() is Sam otherSam && otherSam != this)
+				{
+					standingOn = otherSam;
+					break;
+				}
+			}
+		}
+
+		if (standingOn != _ridingOnPlayer)
+		{
+			_ridingOnPlayer = standingOn;
+			// First frame of a new ride: just start tracking their position —
+			// applying a delta against a stale reading here would teleport us
+			// by however far they'd already moved before we landed on them.
+			_ridingOnPlayerLastPosition = standingOn?.GlobalPosition ?? Vector2.Zero;
+			return;
+		}
+
+		if (_ridingOnPlayer != null && IsInstanceValid(_ridingOnPlayer))
+		{
+			Vector2 delta = _ridingOnPlayer.GlobalPosition - _ridingOnPlayerLastPosition;
+			if (delta != Vector2.Zero)
+			{
+				GlobalPosition += delta;
+			}
+			_ridingOnPlayerLastPosition = _ridingOnPlayer.GlobalPosition;
+		}
+	}
+
 	private void HandleLanding(bool wasOnFloorBeforeMove, float fallSpeedBeforeMove)
 	{
 		if (!IsOnFloor()) return;
@@ -941,6 +999,15 @@ if (!IsOnFloor())
 		if (_isCrawling)
 		{
 			bool isMoving = Mathf.Abs(inputDir.X) > 0.01f;
+			// Same reversal-while-crawling pivot as standing/sprinting, just
+			// gated off during the crawl-entry windup — pivoting mid-entry
+			// would fight the windup clip for the same frames.
+			if (!_crawlEntryActive && isMoving
+				&& HandleTurnaround(facingBeforeMove, heldInputSignBeforeMove, heldInputAgeBeforeMove, Mathf.Sign(inputDir.X)))
+			{
+				return;
+			}
+
 			State crawlState = isMoving ? State.Crawl : State.CrawlIdle;
 			if (_crawlEntryActive)
 			{
@@ -986,13 +1053,15 @@ if (!IsOnFloor())
 
 		// Tied to actual Sprint input/state rather than carried speed — a
 		// reversal while genuinely sprinting plays TurnaroundRun, everything
-		// else (including a fast walk) plays the plain Turnaround.
-		string clip = _isSprinting ? "TurnaroundRun" : "Turnaround";
+		// else (including a fast walk) plays the plain Turnaround. Crawling
+		// has its own single pivot clip regardless of speed, same as how
+		// crawling has no separate sprint variant of Crawl itself.
+		string clip = _isCrawling ? "CrawlTurnaround" : _isSprinting ? "TurnaroundRun" : "Turnaround";
 
-		// Turnaround/TurnaroundRun have no separate left-facing art — turning
-		// to face left plays the clip forward, turning to face right plays it
-		// backward from its last frame. Tune this if it reads mirrored from
-		// what the art actually shows.
+		// Turnaround/TurnaroundRun/CrawlTurnaround have no separate
+		// left-facing art — turning to face left plays the clip forward,
+		// turning to face right plays it backward from its last frame. Tune
+		// this if it reads mirrored from what the art actually shows.
 		bool playReversed = inputSign > 0f;
 		StartTurnaround(clip, playReversed);
 		return true;
@@ -1397,6 +1466,7 @@ private AudioStream GetRandomHurtSound()
 				break;
 			case "Turnaround":
 			case "TurnaroundRun":
+			case "CrawlTurnaround":
 				_turnaroundActive = false;
 				break;
 			case "Land":

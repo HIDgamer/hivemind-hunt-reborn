@@ -1,0 +1,252 @@
+[gd_scene format=3 uid="uid://dauhr4crshr01"]
+
+[ext_resource type="Texture2D" path="res://Assets/Enemies/Crusher_walk.tres" id="1_walk"]
+[ext_resource type="Texture2D" path="res://Assets/Enemies/crusher charge.tres" id="2_charge"]
+[ext_resource type="Texture2D" path="res://Assets/Enemies/Crusher_stmop.tres" id="3_stmop"]
+[ext_resource type="Texture2D" path="res://Assets/Enemies/Crusher_Dead.tres" id="4_dead"]
+[ext_resource type="Script" uid="uid://cos3dktxm3k0e" path="res://Code/Enemies/Crusher.gd" id="5_script"]
+[ext_resource type="Script" uid="uid://c3tu52e4hl1i7" path="res://Code/Characters/HealthComponent.cs" id="6_health"]
+[ext_resource type="Script" uid="uid://bjn1201k26ew2" path="res://Code/Enemies/EnemyLocomotion.gd" id="7_locomotion"]
+[ext_resource type="AudioStream" uid="uid://cxgkvf1j64dby" path="res://Sound/fx/Alien_Language_00.ogg" id="8_alert_sound"]
+[ext_resource type="AudioStream" uid="uid://caffr2oy4fefs" path="res://Sound/fx/alien-talk-2.ogg" id="9_attack_sound"]
+[ext_resource type="AudioStream" uid="uid://coaokmgtn7jq" path="res://Sound/fx/alien-talk-1.ogg" id="10_hurt_sound"]
+[ext_resource type="AudioStream" uid="uid://3j6bjw2xkvux" path="res://Sound/fx/alien-talk-3.ogg" id="11_death_sound"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_7"]
+atlas = ExtResource("2_charge")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_8"]
+atlas = ExtResource("2_charge")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_9"]
+atlas = ExtResource("2_charge")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_10"]
+atlas = ExtResource("2_charge")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_11"]
+atlas = ExtResource("2_charge")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_17"]
+atlas = ExtResource("4_dead")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_18"]
+atlas = ExtResource("4_dead")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_19"]
+atlas = ExtResource("4_dead")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_6"]
+atlas = ExtResource("1_walk")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_12"]
+atlas = ExtResource("3_stmop")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_13"]
+atlas = ExtResource("3_stmop")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_14"]
+atlas = ExtResource("3_stmop")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_15"]
+atlas = ExtResource("3_stmop")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_16"]
+atlas = ExtResource("3_stmop")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_0"]
+atlas = ExtResource("1_walk")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_1"]
+atlas = ExtResource("1_walk")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_2"]
+atlas = ExtResource("1_walk")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_3"]
+atlas = ExtResource("1_walk")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_4"]
+atlas = ExtResource("1_walk")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_5"]
+atlas = ExtResource("1_walk")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="sf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_11")
+}],
+"loop": 0,
+"name": &"Charge",
+"speed": 14.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_17")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_18")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_19")
+}],
+"loop": 1,
+"name": &"Dead",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_6")
+}],
+"loop": 1,
+"name": &"Idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_12")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_13")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_14")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_15")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_16")
+}],
+"loop": 0,
+"name": &"Stomp",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_5")
+}],
+"loop": 1,
+"name": &"Walk",
+"speed": 8.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(66, 22)
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hurt"]
+custom_solver_bias = 1.0
+radius = 13.5
+height = 70.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_contact"]
+custom_solver_bias = 1.0
+radius = 13.5
+height = 70.0
+
+[node name="Crusher" type="CharacterBody2D" unique_id=2102476467]
+scale = Vector2(2, 2)
+collision_layer = 8
+script = ExtResource("5_script")
+can_be_stomped = false
+stomp_damage = 0
+alert_sound = ExtResource("8_alert_sound")
+attack_sound = ExtResource("9_attack_sound")
+hurt_sound = ExtResource("10_hurt_sound")
+death_sound = ExtResource("11_death_sound")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=384849671]
+path_postprocessing = 1
+avoidance_enabled = true
+
+[node name="EdgeRayCast2D" type="RayCast2D" parent="." unique_id=995547480]
+target_position = Vector2(20, 0)
+
+[node name="EnemyLocomotion" type="Node" parent="." unique_id=742113679]
+script = ExtResource("7_locomotion")
+jump_velocity = -360.0
+max_jump_gap = 90.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1108790428]
+position = Vector2(0, -32)
+sprite_frames = SubResource("sf")
+animation = &"Walk"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=600603291]
+position = Vector2(0, -11)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1545094332]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=20417512]
+position = Vector2(1, -14)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_hurt")
+
+[node name="ContactArea" type="Area2D" parent="." unique_id=1197434649]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ContactArea" unique_id=1442148033]
+position = Vector2(1, -14)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_contact")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=54688380]
+script = ExtResource("6_health")
+MaxHealth = 140
+InvulnerabilityDuration = 0.6
+
+[node name="VoiceAudio" type="AudioStreamPlayer2D" parent="." unique_id=666852406]
+max_distance = 900.0

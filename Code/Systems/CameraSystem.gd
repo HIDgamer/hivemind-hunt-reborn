@@ -46,6 +46,7 @@ class_name PlayerCamera
 @export_group("Damage Flash")
 @export var damage_flash_duration: float = 0.12
 @export var damage_flash_color: Color = Color(1.0, 0.05, 0.02, 0.34)
+@export var hurt_zoom_punch: float = 0.12
 
 @onready var noise: FastNoiseLite = FastNoiseLite.new()
 
@@ -98,7 +99,15 @@ func _process(delta: float) -> void:
 	follow_target_smoothly(delta)
 	handle_zoom_smoothly(delta)
 
-	if !steady_cam:
+	# steady_cam suppresses continuous ambient shake/look-ahead for motion
+	# comfort, but a hurt reaction is a deliberate one-shot punch, not
+	# ambient jitter — gating it off too meant taking damage produced only
+	# the red flash overlay and nothing else, silently, since trauma was
+	# still accumulating but never rendered. trauma > 0 only happens as a
+	# result of an explicit shake_camera() call (damage, dash, etc.), so
+	# this lets those through even in steady mode without reintroducing any
+	# ambient shake for players who enabled it.
+	if !steady_cam or trauma > 0.0:
 		apply_screen_shake(delta)
 	else:
 		offset = Vector2.ZERO
@@ -187,8 +196,8 @@ func _connect_damage_feedback() -> void:
 
 	var health = target.get_node("HealthComponent")
 	var callback = Callable(self, "_on_player_took_damage")
-	if health.has_signal("took_damage") and !health.is_connected("took_damage", callback):
-		health.connect("took_damage", callback)
+	if health.has_signal("TookDamage") and !health.is_connected("TookDamage", callback):
+		health.connect("TookDamage", callback)
 
 func _setup_damage_flash_overlay() -> void:
 	damage_flash_layer = CanvasLayer.new()
@@ -206,8 +215,13 @@ func _setup_damage_flash_overlay() -> void:
 	damage_flash_layer.add_child(damage_flash_overlay)
 
 func _on_player_took_damage(_amount: int, _knockback_direction: Vector2) -> void:
+	# Health dropped from a 200-point pool to a 3-hit one — every hit is now
+	# a third of your health, so the reaction needs to read as a real punch:
+	# shake + flash (both already existed) plus a quick zoom snap-in that
+	# recoils back out, on top of the health segments visibly emptying.
 	shake_camera(damage_shake_trauma, 0.12)
 	flash_damage()
+	zoom_punch()
 
 func flash_damage() -> void:
 	if damage_flash_overlay == null:
@@ -220,6 +234,13 @@ func flash_damage() -> void:
 	damage_flash_tween = create_tween()
 	damage_flash_tween.tween_property(damage_flash_overlay, "color:a", 0.0, damage_flash_duration) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func zoom_punch() -> void:
+	var base_zoom = target_zoom
+	var punched = base_zoom * (1.0 + hurt_zoom_punch)
+	var tween = create_tween()
+	tween.tween_property(self, "zoom", punched, 0.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "zoom", base_zoom, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 # ===== Public API =====
 

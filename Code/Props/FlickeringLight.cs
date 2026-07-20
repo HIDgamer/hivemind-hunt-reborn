@@ -25,7 +25,10 @@ public partial class FlickeringLight : Node2D
 	[ExportGroup("Spark Burst")]
 	[Export] public float SparkIntervalMin = 3.0f;
 	[Export] public float SparkIntervalMax = 9.0f;
-	[Export] public float SparkFlashEnergyScale = 2.2f;
+	// 2.2 read as a literal flashbang with physical light units + HDR glow
+	// enabled (project.godot) — a spark should read as a quick bright pop,
+	// not a screen-wide white flash.
+	[Export] public float SparkFlashEnergyScale = 1.4f;
 	[Export] public float SparkFlashDuration = 0.12f;
 	[Export] public AudioStream SparkSound;
 

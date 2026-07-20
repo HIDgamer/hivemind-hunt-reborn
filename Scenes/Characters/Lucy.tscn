@@ -1,0 +1,261 @@
+[gd_scene format=3 uid="uid://cduyiu2q4kab5"]
+
+[ext_resource type="Texture2D" path="res://Assets/Enemies/Lucy Idle-sheet.tres" id="1_idle"]
+[ext_resource type="Texture2D" path="res://Assets/Enemies/Lucy right.tres" id="2_walk"]
+[ext_resource type="Texture2D" path="res://Assets/Enemies/queen headbutt.tres" id="3_headbutt"]
+[ext_resource type="Texture2D" path="res://Assets/Enemies/Lucy crit.tres" id="4_crit"]
+[ext_resource type="Texture2D" path="res://Assets/Enemies/Lucy Dead.tres" id="5_death"]
+[ext_resource type="Script" uid="uid://c6a86o7uwe11d" path="res://Code/Enemies/Lucy.gd" id="6_script"]
+[ext_resource type="Script" uid="uid://c3tu52e4hl1i7" path="res://Code/Characters/HealthComponent.cs" id="7_health"]
+[ext_resource type="Script" uid="uid://bjn1201k26ew2" path="res://Code/Enemies/EnemyLocomotion.gd" id="8_locomotion"]
+[ext_resource type="AudioStream" uid="uid://cxgkvf1j64dby" path="res://Sound/fx/Alien_Language_00.ogg" id="9_alert_sound"]
+[ext_resource type="AudioStream" uid="uid://caffr2oy4fefs" path="res://Sound/fx/alien-talk-2.ogg" id="10_attack_sound"]
+[ext_resource type="AudioStream" uid="uid://coaokmgtn7jq" path="res://Sound/fx/alien-talk-1.ogg" id="11_hurt_sound"]
+[ext_resource type="AudioStream" uid="uid://3j6bjw2xkvux" path="res://Sound/fx/alien-talk-3.ogg" id="12_death_sound"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_19"]
+atlas = ExtResource("5_death")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_12"]
+atlas = ExtResource("3_headbutt")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_13"]
+atlas = ExtResource("3_headbutt")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_14"]
+atlas = ExtResource("3_headbutt")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_15"]
+atlas = ExtResource("3_headbutt")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_16"]
+atlas = ExtResource("3_headbutt")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_17"]
+atlas = ExtResource("3_headbutt")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_0"]
+atlas = ExtResource("1_idle")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_1"]
+atlas = ExtResource("1_idle")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_2"]
+atlas = ExtResource("1_idle")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_3"]
+atlas = ExtResource("1_idle")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_4"]
+atlas = ExtResource("1_idle")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_18"]
+atlas = ExtResource("4_crit")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_5"]
+atlas = ExtResource("2_walk")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_6"]
+atlas = ExtResource("2_walk")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_7"]
+atlas = ExtResource("2_walk")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_8"]
+atlas = ExtResource("2_walk")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_9"]
+atlas = ExtResource("2_walk")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_10"]
+atlas = ExtResource("2_walk")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf_11"]
+atlas = ExtResource("2_walk")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="sf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_19")
+}],
+"loop": 1,
+"name": &"Dead",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_12")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_13")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_14")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_15")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_16")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_17")
+}],
+"loop": 0,
+"name": &"Headbutt",
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_4")
+}],
+"loop": 1,
+"name": &"Idle",
+"speed": 9.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_18")
+}],
+"loop": 1,
+"name": &"Stunned",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf_11")
+}],
+"loop": 1,
+"name": &"Walk",
+"speed": 11.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fgm18"]
+size = Vector2(48, 34)
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6f5os"]
+custom_solver_bias = 1.0
+radius = 14.0
+height = 50.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_ajm4b"]
+custom_solver_bias = 1.0
+radius = 14.0
+height = 50.0
+
+[node name="Lucy" type="CharacterBody2D" unique_id=1416691459]
+scale = Vector2(3, 3)
+collision_layer = 8
+script = ExtResource("6_script")
+spit_range = 340.0
+spit_telegraph = 0.35
+spit_damage = 28
+spit_projectile_speed = 340.0
+spit_cooldown = 1.6
+can_be_stomped = false
+stomp_damage = 0
+alert_sound = ExtResource("9_alert_sound")
+attack_sound = ExtResource("10_attack_sound")
+hurt_sound = ExtResource("11_hurt_sound")
+death_sound = ExtResource("12_death_sound")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=497149454]
+path_postprocessing = 1
+avoidance_enabled = true
+
+[node name="EdgeRayCast2D" type="RayCast2D" parent="." unique_id=144335746]
+target_position = Vector2(20, 0)
+
+[node name="EnemyLocomotion" type="Node" parent="." unique_id=1585232765]
+script = ExtResource("8_locomotion")
+jump_velocity = -460.0
+max_jump_gap = 70.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1492326803]
+position = Vector2(0, -32)
+sprite_frames = SubResource("sf")
+animation = &"Idle"
+
+[node name="SpitOrigin" type="Marker2D" parent="." unique_id=1841015796]
+position = Vector2(30.333334, -39)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=651109802]
+position = Vector2(0, -17)
+shape = SubResource("RectangleShape2D_fgm18")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=653997375]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=752018509]
+position = Vector2(0, -14)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_6f5os")
+
+[node name="ContactArea" type="Area2D" parent="." unique_id=948860463]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ContactArea" unique_id=1572585080]
+position = Vector2(0, -22)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_ajm4b")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=448295512]
+script = ExtResource("7_health")
+MaxHealth = 650
+InvulnerabilityDuration = 0.6
+
+[node name="VoiceAudio" type="AudioStreamPlayer2D" parent="." unique_id=712647128]
+max_distance = 900.0

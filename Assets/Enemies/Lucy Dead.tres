@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" format=3]
+
+[ext_resource type="Texture2D" uid="uid://bmisbbqu2teme" path="res://Assets/Enemies/Lucy Dead.png" id="1_diffuse"]
+[ext_resource type="Texture2D" uid="uid://dwkr1786qqc47" path="res://Assets/Enemies/Lucy Dead_n.png" id="2_normal"]
+
+[resource]
+diffuse_texture = ExtResource("1_diffuse")
+normal_texture = ExtResource("2_normal")

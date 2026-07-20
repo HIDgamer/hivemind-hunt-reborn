@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://cidspit0001x"]
+
+[ext_resource type="Script" path="res://Code/Enemies/AcidSpit.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://djhpbqtymwr0s" path="res://Assets/FX/generated/noise_puff.png" id="2_puff"]
+[ext_resource type="Texture2D" path="res://Assets/FX/generated/acid_glob.png" id="3_glob"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_acid"]
+radius = 5.0
+
+[sub_resource type="Gradient" id="Gradient_acid"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.55, 1, 0.25, 1, 0.35, 0.85, 0.15, 0.85, 0.15, 0.4, 0.05, 0)
+
+[node name="AcidSpit" type="Area2D"]
+collision_layer = 0
+collision_mask = 3
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_acid")
+
+[node name="TrailParticles" type="CPUParticles2D" parent="."]
+emitting = true
+amount = 8
+lifetime = 0.4
+randomness = 0.35
+texture = ExtResource("2_puff")
+direction = Vector2(-1, 0)
+spread = 24.0
+gravity = Vector2(0, 90)
+initial_velocity_min = 3.0
+initial_velocity_max = 12.0
+scale_amount_min = 0.018
+scale_amount_max = 0.032
+color_ramp = SubResource("Gradient_acid")
+
+[node name="Body" type="Sprite2D" parent="."]
+texture = ExtResource("3_glob")
+scale = Vector2(0.16, 0.16)

@@ -2,9 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://bw2ir828fafx0" path="res://Assets/Enemies/Runner run.png" id="1_myh16"]
 [ext_resource type="Texture2D" uid="uid://yujyyhmv1ffn" path="res://Assets/Enemies/Runner run_n.png" id="2_w8a61"]
-[ext_resource type="Texture2D" uid="uid://bmplj6h2bekgl" path="res://Assets/Enemies/Runner run_s.png" id="3_4p34k"]
 
 [resource]
 diffuse_texture = ExtResource("1_myh16")
 normal_texture = ExtResource("2_w8a61")
-specular_texture = ExtResource("3_4p34k")

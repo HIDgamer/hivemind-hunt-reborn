@@ -5,11 +5,13 @@ public partial class AbilityPickupComponent : Area2D
 	public enum AbilityKind
 	{
 		ExtraJump,
-		Dash
+		Dash,
+		MaxHealth
 	}
 
 	[Export] public AbilityKind Ability { get; set; } = AbilityKind.ExtraJump;
 	[Export] public int ExtraJumpCount { get; set; } = 1;
+	[Export] public int MaxHealthIncrease { get; set; } = 1;
 	[Export] public bool ConsumeOnPickup { get; set; } = true;
 	[Export] public AudioStream PickupSound { get; set; }
 
@@ -105,6 +107,9 @@ public partial class AbilityPickupComponent : Area2D
 					player.AddChild(dash);
 				}
 				dash.UnlockDash();
+				break;
+			case AbilityKind.MaxHealth:
+				player.GetNodeOrNull<HealthComponent>("HealthComponent")?.IncreaseMaxHealth(MaxHealthIncrease);
 				break;
 		}
 	}

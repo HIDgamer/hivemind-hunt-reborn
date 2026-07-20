@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://ch4tbox00001"]
+
+[ext_resource type="Script" path="res://Code/Networking/ChatBox.cs" id="1_script"]
+[ext_resource type="FontFile" uid="uid://u386rb0ghw82" path="res://Assets/Font/AlteHaasGroteskRegular.ttf" id="2_haas"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input"]
+bg_color = Color(0.05, 0.08, 0.07, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.85, 0.55, 0.8)
+
+[node name="ChatBox" type="CanvasLayer"]
+layer = 85
+script = ExtResource("1_script")
+
+[node name="Panel" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -180.0
+offset_right = 420.0
+offset_bottom = -40.0
+mouse_filter = 2
+
+[node name="Log" type="VBoxContainer" parent="Panel"]
+layout_mode = 0
+offset_top = 0.0
+offset_right = 400.0
+offset_bottom = 110.0
+theme_override_constants/separation = 2
+alignment = 2
+
+[node name="Input" type="LineEdit" parent="Panel"]
+visible = false
+layout_mode = 0
+offset_top = 116.0
+offset_right = 400.0
+offset_bottom = 140.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_input")
+theme_override_fonts/font = ExtResource("2_haas")
+theme_override_font_sizes/font_size = 14
+placeholder_text = "Say something..."
+max_length = 200

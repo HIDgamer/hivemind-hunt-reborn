@@ -1,0 +1,88 @@
+[gd_scene format=3 uid="uid://dl0gue8ox0001"]
+
+[ext_resource type="Script" path="res://Code/UI/DialogueBox.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="2_alienbold"]
+[ext_resource type="FontFile" uid="uid://u386rb0ghw82" path="res://Assets/Font/AlteHaasGroteskRegular.ttf" id="3_haas"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialogue"]
+bg_color = Color(0.05, 0.08, 0.07, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.85, 0.55, 0.9)
+shadow_color = Color(0.3, 1, 0.5, 0.15)
+shadow_size = 4
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portrait"]
+bg_color = Color(0.03, 0.05, 0.045, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.85, 0.55, 0.6)
+
+[node name="DialogueBox" type="CanvasLayer"]
+layer = 90
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="."]
+visible = false
+offset_left = 40.0
+offset_top = 340.0
+offset_right = 760.0
+offset_bottom = 480.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialogue")
+
+[node name="PortraitFrame" type="Panel" parent="Panel"]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 108.0
+offset_bottom = 108.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_portrait")
+
+[node name="Portrait" type="TextureRect" parent="Panel/PortraitFrame"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 92.0
+offset_bottom = 92.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Panel"]
+offset_left = 122.0
+offset_top = 10.0
+offset_right = 700.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
+theme_override_fonts/font = ExtResource("2_alienbold")
+theme_override_font_sizes/font_size = 20
+text = "SPEAKER"
+
+[node name="TextLabel" type="RichTextLabel" parent="Panel"]
+offset_left = 122.0
+offset_top = 36.0
+offset_right = 700.0
+offset_bottom = 118.0
+theme_override_colors/default_color = Color(0.85, 0.95, 0.9, 1)
+theme_override_fonts/normal_font = ExtResource("3_haas")
+theme_override_font_sizes/normal_font_size = 15
+bbcode_enabled = true
+scroll_active = false
+visible_characters = 0
+
+[node name="ContinueHint" type="Label" parent="Panel"]
+visible = false
+offset_left = 600.0
+offset_top = 116.0
+offset_right = 700.0
+offset_bottom = 134.0
+theme_override_colors/font_color = Color(0.5, 0.75, 0.65, 0.8)
+theme_override_fonts/font = ExtResource("3_haas")
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 2
+text = "[Z] ▼"

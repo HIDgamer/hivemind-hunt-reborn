@@ -62,6 +62,17 @@ public partial class HealthComponent : Node
 		}
 	}
 
+	// Permanent health upgrade: raises the cap and heals by the same amount,
+	// so picking one up always feels like a gain even at full health.
+	public void IncreaseMaxHealth(int amount)
+	{
+		if (amount <= 0 || IsDead) return;
+
+		MaxHealth += amount;
+		CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
+		EmitSignal(SignalName.HealthChanged, CurrentHealth, MaxHealth);
+	}
+
 	public void AddTemporaryInvulnerability(float duration)
 	{
 		if (IsDead || duration <= 0f) return;

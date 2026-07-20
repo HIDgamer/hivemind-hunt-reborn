@@ -267,7 +267,7 @@ public partial class BurnableComponent : Node
 			Amount = 7,
 			Lifetime = 1.4f,
 			Randomness = 0.6f,
-			Texture = GD.Load<Texture2D>("res://Assets/FX/particles/alpha/smoke_07_a.png"),
+			Texture = GD.Load<Texture2D>("res://Assets/FX/generated/noise_wisp.png"),
 			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
 			EmissionRectExtents = new Vector2(20f, 4f),
 			Position = new Vector2(0f, -30f),
@@ -278,8 +278,8 @@ public partial class BurnableComponent : Node
 			InitialVelocityMax = 14f,
 			AngularVelocityMin = -20f,
 			AngularVelocityMax = 20f,
-			ScaleAmountMin = 0.02f,
-			ScaleAmountMax = 0.035f,
+			ScaleAmountMin = 0.04f,
+			ScaleAmountMax = 0.07f,
 			ColorRamp = smokeRamp,
 		};
 
