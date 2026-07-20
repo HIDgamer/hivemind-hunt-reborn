@@ -240,4 +240,5 @@ MaxHealth = 60
 InvulnerabilityDuration = 0.6
 
 [node name="VoiceAudio" type="AudioStreamPlayer2D" parent="." unique_id=855312201]
+bus = &"Voice"
 max_distance = 900.0

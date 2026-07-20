@@ -48,8 +48,10 @@ void fragment() {
     // Outer beam — steep power gives a hard-edged lightsaber silhouette
     float beam = pow(clamp(1.0 - dist, 0.0, 1.0), edge_fade_power);
 
-    // Mid-glow — warm red zone between core and outer darkness
-    float mid = pow(clamp(1.0 - dist * 1.8, 0.0, 1.0), 1.6);
+    // Mid-glow — warm zone between core and outer edge. Narrower falloff
+    // than before (2.4/2.2 vs the old 1.8/1.6) so it reads as a distinct
+    // band instead of covering most of the beam's width.
+    float mid = pow(clamp(1.0 - dist * 2.4, 0.0, 1.0), 2.2);
 
     // Core — narrow, overdriven white-hot streak
     float core = pow(clamp(1.0 - dist * core_sharpness, 0.0, 1.0), 2.5);
@@ -65,17 +67,17 @@ void fragment() {
     float anim = pulse * rings;
 
     // ── Colour layers (outer → mid → core) ───────────────────────────────────
-    // 1. Dark red outer glow — modulated by noise so it breathes
-    vec3 outer_rgb = laser_color.rgb * (0.55 + energy * 0.45) * anim * beam;
-
-    // 2. Warm red mid — additive inner halo
-    vec3 mid_rgb = mid_color.rgb * mid * (0.55 + energy * 0.45) * anim;
-
-    // 3. White-hot core — slightly overdriven for bloom on HDR canvases
+    // Each layer is just its own modulated color now — no longer pre-masked
+    // and summed, since two masked colors ADDED together meant whichever
+    // one was brighter (mid_color) visually swallowed the other across most
+    // of the beam's width instead of reading as three separate bands. mix()
+    // picks exactly one color at each point across the radial profile, so
+    // outer/mid/core stay visually distinct band-to-band.
+    vec3 outer_rgb = laser_color.rgb * (0.55 + energy * 0.45) * anim;
+    vec3 mid_rgb = mid_color.rgb * (0.55 + energy * 0.45) * anim;
     vec3 core_rgb = core_color.rgb * (1.15 + energy * 0.20) * pulse;
 
-    // Layer outer + mid, then overlay core
-    vec3 rgb = outer_rgb + mid_rgb;
+    vec3 rgb = mix(outer_rgb, mid_rgb, mid) * beam;
     rgb = mix(rgb, core_rgb, core);
 
     // ── Alpha ─────────────────────────────────────────────────────────────────

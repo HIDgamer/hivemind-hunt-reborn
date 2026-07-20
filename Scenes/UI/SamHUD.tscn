@@ -2,6 +2,19 @@
 
 [ext_resource type="Script" uid="uid://c6r6o7hd5nm6s" path="res://Code/UI/SamHUD.cs" id="1_script"]
 [ext_resource type="FontFile" uid="uid://ccu6qdavb3rm0" path="res://Assets/Font/AlteHaasGroteskBold.ttf" id="3_haas_bold"]
+[ext_resource type="Shader" path="res://Assets/Materials/crt_overlay.gdshader" id="4_crt"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hud_crt"]
+resource_local_to_scene = true
+shader = ExtResource("4_crt")
+shader_parameter/tint_color = Color(0.65, 1, 0.75, 1)
+shader_parameter/tint_amount = 0.1
+shader_parameter/scanline_intensity = 0.4
+shader_parameter/scanline_spacing_px = 2.0
+shader_parameter/vignette_strength = 0.35
+shader_parameter/noise_amount = 0.04
+shader_parameter/flicker_amount = 0.04
+shader_parameter/flicker_speed = 4.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hudframe"]
 bg_color = Color(0.06, 0.09, 0.08, 0.82)
@@ -140,3 +153,14 @@ theme_override_font_sizes/font_size = 10
 text = "JUMP+"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="CRTOverlay" type="ColorRect" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("ShaderMaterial_hud_crt")
+color = Color(0, 0, 0, 1)

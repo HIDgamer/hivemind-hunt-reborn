@@ -30,6 +30,11 @@ public partial class Sam : CharacterBody2D
 	[Export] public int NetFrame { get; set; } = 0;
 	[Export] public bool NetFlipH { get; set; } = false;
 	[Export] public string DisplayName { get; set; } = "PLAYER";
+	// Set true/false by VoiceChatManager on the authority the instant it
+	// starts/stops actually transmitting (PushToTalk held), replicated to
+	// every puppet like NetAnimationName — NameTag reads this to show a
+	// speaking icon next to this player's nametag.
+	[Export] public bool NetIsSpeaking { get; set; } = false;
 
 	[ExportCategory("Movement Foundation")]
 	[Export] public float Speed { get; set; } = 130f;
@@ -139,6 +144,17 @@ private AudioStreamPlayer2D _hurtPlayer;
 private AudioStreamPlayer2D _interactionPlayer;
 private CpuParticles2D _dashParticles;
 
+	// Proximity voice chat playback — see VoiceChatManager.cs. Lazily built on
+	// the first received chunk (a puppet that's never spoken to shouldn't
+	// spin up a generator), and torn down again after a period of silence so
+	// a gap in speech rebuilds fresh rather than trying to reason about
+	// stale generator state across it.
+	private const float VoiceIdleTimeoutSeconds = 0.4f;
+	private AudioStreamPlayer2D _voiceChatPlayer;
+	private AudioStreamGenerator _voiceStream;
+	private AudioStreamGeneratorPlayback _voicePlayback;
+	private float _voiceIdleSecondsLeft;
+
 	private enum State
 	{
 		Idle,
@@ -234,6 +250,10 @@ private CpuParticles2D _dashParticles;
 	private Sam _ridingOnPlayer;
 	private Vector2 _ridingOnPlayerLastPosition;
 
+	// Exposed so ApplyPlayerSeparation (see below) can tell a ride-along
+	// pair apart from an ordinary side-by-side encounter and leave it alone.
+	public Sam RidingOnPlayer => _ridingOnPlayer;
+
 	// True while a UI element (dialogue box, chat input) owns the keyboard —
 	// all gameplay input reads as neutral so typing "wasd" in chat doesn't
 	// walk Sam off a ledge and Z advances dialogue instead of grabbing crates.
@@ -245,6 +265,7 @@ private CpuParticles2D _dashParticles;
 	public bool IsAlive => _currentState != State.Dead;
 	public bool IsInHurtState => _currentState == State.Hurt;
 	public bool IsControlLocked => _stateLockTimer > 0f || _currentState == State.Hurt || _currentState == State.Dead || _interaction.IsInteracting || UiInputCaptured;
+	public bool IsCrawling => _isCrawling;
 
 	[Signal] public delegate void JumpedEventHandler(bool usedExtraJump);
 	[Signal] public delegate void LandedEventHandler(float impactSpeed);
@@ -269,6 +290,7 @@ private CpuParticles2D _dashParticles;
 		_hurtPlayer = GetOrCreateAudioPlayer("HurtPlayer");
 _interactionPlayer = GetOrCreateAudioPlayer("InteractPlayer");
 _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
+	_voiceChatPlayer = GetNode<AudioStreamPlayer2D>("VoiceChatPlayer");
 
 	if (FootstepSound != null) _footstepPlayer.Stream = FootstepSound;
 		if (JumpSound != null) _jumpPlayer.Stream = JumpSound;
@@ -281,6 +303,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		_health.TookDamage += OnTookDamage;
 		_health.Died += OnDied;
 		_extraJump?.ApplyToPlayer(this);
+		GetNodeOrNull<SquadAbilityState>("/root/SquadAbilityState")?.ApplyAll(this);
 
 		if (IsNetworked)
 		{
@@ -369,6 +392,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		if (IsNetworked && !IsMultiplayerAuthority())
 		{
 			ApplyRemoteVisualState();
+			TickVoicePlayback((float)delta);
 			return;
 		}
 
@@ -415,6 +439,15 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 				// from frame 0 instead of being skipped as "already playing".
 				_animatedSprite.Stop();
 				FlashDashStart();
+
+				// Seed the trail with the exact start position/pose right now —
+				// otherwise the first timer-driven capture in UpdateDashTrail
+				// wouldn't land until DashTrailInterval had elapsed, which on a
+				// short dash could skip the true starting point entirely and
+				// make the trail look like it begins partway through instead of
+				// reaching all the way back to where the dash actually began.
+				CaptureDashTrailFrame();
+				_dashTrailTimer = DashTrailInterval;
 			}
 			StopSlide();
 			SetState(State.Roll, "Flip", FlipPlaybackSpeed);
@@ -459,6 +492,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 			}
 		}
 
+		ApplyPlayerSeparation();
 		MoveAndSlide();
 		UpdatePlayerRiding();
 		HandleLanding(wasOnFloorBeforeMove, fallSpeedBeforeMove);
@@ -822,6 +856,47 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 	private bool IsWallSlideCandidate()
 	{
 		return !IsOnFloor() && IsOnWallOnly() && Velocity.Y >= 0f;
+	}
+
+	// Softens player-vs-player contact: a gentle outward velocity nudge
+	// applied BEFORE MoveAndSlide, instead of dropping players from each
+	// other's collision_mask entirely. That more literal reading of "soft
+	// collision" was tried first and reverted — IsOnFloor() (and therefore
+	// jump/coyote-time/acceleration/friction/wall-slide/footsteps/landing,
+	// all of which key off it directly) has no path to ever read true
+	// against another player without a real physics collision, so removing
+	// the mask bit would have also silently broken standing on someone's
+	// head (UpdatePlayerRiding below still depends on a real MoveAndSlide
+	// collision to detect that) and made jumping off them impossible. This
+	// keeps the mask, and therefore every one of those systems, completely
+	// unchanged — the nudge below just means two players drift apart
+	// smoothly well before they'd ever reach a hard stop, so the felt
+	// "annoying/sticky" case (shoved to a dead stop, jittering in place)
+	// rarely gets reached at all, while still fundamentally blocking full
+	// overlap the same as before.
+	private const float PlayerSeparationMinDistance = 20f;
+	private const float PlayerSeparationPushSpeed = 60f;
+
+	private void ApplyPlayerSeparation()
+	{
+		foreach (Node node in GetTree().GetNodesInGroup("Player"))
+		{
+			if (node is not Sam other || other == this) continue;
+			// A ride-along pair should stay tightly coupled, not pushed apart.
+			if (other == _ridingOnPlayer || other.RidingOnPlayer == this) continue;
+
+			Vector2 offset = GlobalPosition - other.GlobalPosition;
+			float dist = offset.Length();
+			if (dist <= 0.01f || dist >= PlayerSeparationMinDistance) continue;
+			// A large vertical gap means one of us is airborne above/below
+			// the other (about to land on their head, or just jumped off) —
+			// that's the ride-along system's territory, not a side-by-side
+			// crowding case this nudge is meant for.
+			if (Mathf.Abs(offset.Y) > PlayerSeparationMinDistance * 0.6f) continue;
+
+			float strength = 1f - (dist / PlayerSeparationMinDistance);
+			Velocity += new Vector2(Mathf.Sign(offset.X) * PlayerSeparationPushSpeed * strength, 0f);
+		}
 	}
 
 	// Moving-platform-style ride-along for standing on another player's
@@ -1270,26 +1345,28 @@ if (!IsOnFloor())
 		if (_dashTrailTimer <= 0f)
 		{
 			_dashTrailTimer = DashTrailInterval;
-			
-			// Store current frame data with the actual texture
-			if (_animatedSprite != null && _dashTrailFrames.Count < 25) // Max 25 frames to prevent memory issues
-			{
-				// Get the current frame's texture directly from SpriteFrames
-				Texture2D frameTexture = null;
-				if (_animatedSprite.SpriteFrames != null)
-				{
-					frameTexture = _animatedSprite.SpriteFrames.GetFrameTexture(_animatedSprite.Animation, _animatedSprite.Frame);
-				}
-				
-				var frame = new DashTrailFrame
-				{
-					Position = GlobalPosition,
-					Texture = frameTexture,
-					FlipH = _animatedSprite.FlipH
-				};
-				_dashTrailFrames.Add(frame);
-			}
+			CaptureDashTrailFrame();
 		}
+	}
+
+	private void CaptureDashTrailFrame()
+	{
+		if (_animatedSprite == null || _dashTrailFrames.Count >= 25) return; // Max 25 frames to prevent memory issues
+
+		// Get the current frame's texture directly from SpriteFrames
+		Texture2D frameTexture = null;
+		if (_animatedSprite.SpriteFrames != null)
+		{
+			frameTexture = _animatedSprite.SpriteFrames.GetFrameTexture(_animatedSprite.Animation, _animatedSprite.Frame);
+		}
+
+		var frame = new DashTrailFrame
+		{
+			Position = GlobalPosition,
+			Texture = frameTexture,
+			FlipH = _animatedSprite.FlipH
+		};
+		_dashTrailFrames.Add(frame);
 	}
 
 	// One-shot action effects (particles + sounds) only ever fire inside
@@ -1353,9 +1430,66 @@ private AudioStreamPlayer2D GetOrCreateAudioPlayer(string nodeName)
 	AudioStreamPlayer2D player = GetNodeOrNull<AudioStreamPlayer2D>(nodeName);
 	if (player != null) return player;
 
-	player = new AudioStreamPlayer2D { Name = nodeName };
+	player = new AudioStreamPlayer2D { Name = nodeName, Bus = "SFX" };
 	AddChild(player);
 	return player;
+}
+
+// Called by VoiceChatManager.BroadcastVoice when a chunk of decoded PCM16
+// mono voice audio arrives for this peer. Only ever makes sense on a
+// puppet — the sender-side self-echo filter already prevents this from
+// being called on your own authority copy, but double-checking here
+// matches this codebase's habit of not trusting a single choke point.
+public void ReceiveVoiceChunk(byte[] pcm)
+{
+	if (IsMultiplayerAuthority()) return;
+
+	if (_voicePlayback == null)
+	{
+		_voiceStream = new AudioStreamGenerator
+		{
+			MixRate = VoiceChatManager.WireSampleRateHz,
+			BufferLength = 0.5f,
+		};
+		_voiceChatPlayer.Stream = _voiceStream;
+		_voiceChatPlayer.Play();
+		_voicePlayback = (AudioStreamGeneratorPlayback)_voiceChatPlayer.GetStreamPlayback();
+	}
+
+	int sampleCount = pcm.Length / 2;
+	var frames = new Vector2[sampleCount];
+	for (int i = 0; i < sampleCount; i++)
+	{
+		short raw = (short)(pcm[i * 2] | (pcm[i * 2 + 1] << 8));
+		float sample = raw / 32768f;
+		frames[i] = new Vector2(sample, sample);
+	}
+
+	// No jitter buffer by design — if the network delivered faster than
+	// playback is draining, drop this chunk rather than partially pushing
+	// or blocking; prioritizes freshness over completeness.
+	if (frames.Length <= _voicePlayback.GetFramesAvailable())
+	{
+		_voicePlayback.PushBuffer(frames);
+	}
+
+	_voiceIdleSecondsLeft = VoiceIdleTimeoutSeconds;
+}
+
+// Puppet-only, ticked from _PhysicsProcess's remote branch. Stops playback
+// after a stretch of silence (PushToTalk released, or the sender
+// disconnected) instead of leaving the generator idling forever — the next
+// chunk after a gap just rebuilds it fresh in ReceiveVoiceChunk.
+private void TickVoicePlayback(float delta)
+{
+	if (_voicePlayback == null) return;
+
+	_voiceIdleSecondsLeft -= delta;
+	if (_voiceIdleSecondsLeft <= 0f)
+	{
+		_voiceChatPlayer.Stop();
+		_voicePlayback = null;
+	}
 }
 
 private AudioStream GetRandomHurtSound()
@@ -1573,7 +1707,8 @@ public void SpawnDashEffect()
 	if (_animatedSprite != null && _animatedSprite.SpriteFrames != null)
 		fallbackTexture = _animatedSprite.SpriteFrames.GetFrameTexture(_animatedSprite.Animation, _animatedSprite.Frame);
 
-	// Spawn up to 5 clones from the dash trail, evenly distributed
+	// Spawn up to 5 clones from the dash trail, evenly distributed from the
+	// player's current position back to where the dash started.
 	int framesToSpawn = Mathf.Min(DashGhostPoolSize, _dashTrailFrames.Count);
 	if (framesToSpawn <= 0)
 	{
@@ -1584,9 +1719,14 @@ public void SpawnDashEffect()
 
 	for (int i = 0; i < framesToSpawn; i++)
 	{
-		// Select frames evenly distributed across the trail (oldest first, newest last)
-		int frameIndex = (i * _dashTrailFrames.Count) / framesToSpawn;
-		if (frameIndex >= _dashTrailFrames.Count) frameIndex = _dashTrailFrames.Count - 1;
+		// i=0 is the newest trail frame (right where the player ended up) and
+		// increasing i steps back toward the oldest frame (the point where
+		// the dash actually started) — so the alpha/tint/scale falloff below,
+		// which all fade out as i increases, read as "bright and full-size
+		// next to the player, fading away toward the dash's start point"
+		// instead of the reverse.
+		int frameIndex = _dashTrailFrames.Count - 1 - (i * _dashTrailFrames.Count) / framesToSpawn;
+		if (frameIndex < 0) frameIndex = 0;
 		DashTrailFrame trailFrame = _dashTrailFrames[frameIndex];
 
 		Texture2D texture = trailFrame.Texture != null ? trailFrame.Texture : fallbackTexture;

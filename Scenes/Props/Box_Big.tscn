@@ -1,9 +1,16 @@
 [gd_scene format=3 uid="uid://btpubms5230ws"]
 
 [ext_resource type="Script" uid="uid://jw32jan66lyj" path="res://Code/Props/Box_Big.cs" id="2_boxbig"]
-[ext_resource type="Script" path="res://Code/Props/BurnableComponent.cs" id="4_burnable"]
 [ext_resource type="Texture2D" uid="uid://b3aubekkay4ci" path="res://Assets/Tiles/Crate 64.tres" id="2_r0d20"]
-[ext_resource type="Texture2D" path="res://Assets/FX/generated/noise_puff.png" id="3_r0d20"]
+[ext_resource type="Texture2D" uid="uid://cvppipkcwvtnx" path="res://Assets/FX/particles/alpha/smoke_02_a.png" id="4_843dm"]
+[ext_resource type="Script" uid="uid://cvjj6vn6x0mf4" path="res://Code/Props/BurnableComponent.cs" id="4_burnable"]
+[ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="5_gas_smoke"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8rpua"]
+size = Vector2(64, 64)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_boxdust_smoke"]
+shader = ExtResource("5_gas_smoke")
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_boxsync"]
 properties/0/path = NodePath(".:position")
@@ -21,14 +28,14 @@ script = ExtResource("2_boxbig")
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=198450959]
 texture = ExtResource("2_r0d20")
 
-[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=1246388083]
-polygon = PackedVector2Array(-32, -32, -32, 32, 32, 32, 32, -32)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=656388457]
+shape = SubResource("RectangleShape2D_8rpua")
 
 [node name="DustParticles" type="CPUParticles2D" parent="." unique_id=1517522701]
+material = SubResource("ShaderMaterial_boxdust_smoke")
 position = Vector2(0, 32)
-emitting = false
 amount = 10
-texture = ExtResource("3_r0d20")
+texture = ExtResource("4_843dm")
 lifetime = 0.5
 randomness = 0.5
 direction = Vector2(0, 0)
@@ -41,9 +48,10 @@ angular_velocity_max = 180.0
 scale_amount_min = 0.016
 scale_amount_max = 0.028
 color = Color(0.8, 0.6, 0.4, 1)
+anim_offset_max = 0.99
 
-[node name="BurnableComponent" type="Node" parent="."]
+[node name="BurnableComponent" type="Node" parent="." unique_id=1333643875]
 script = ExtResource("4_burnable")
 
-[node name="BoxSync" type="MultiplayerSynchronizer" parent="."]
+[node name="BoxSync" type="MultiplayerSynchronizer" parent="." unique_id=143945152]
 replication_config = SubResource("SceneReplicationConfig_boxsync")

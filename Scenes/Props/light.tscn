@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://c25ihpq2umiy5" path="res://Assets/Tiles/Light.png" id="1_trad4"]
 [ext_resource type="Script" uid="uid://qqmoqitjel4u" path="res://Code/Props/FlickeringLight.cs" id="2_flicker"]
 [ext_resource type="AudioStream" uid="uid://ckxidlcs3jjq2" path="res://Sound/fx/spark.ogg" id="3_spark"]
+[ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="4_gas_smoke"]
 
 [sub_resource type="Gradient" id="Gradient_rn5e5"]
 colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
@@ -16,6 +17,9 @@ fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(0.7, 0)
 metadata/_snap_enabled = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_light_spark"]
+shader = ExtResource("4_gas_smoke")
 
 [sub_resource type="Gradient" id="Gradient_spark"]
 colors = PackedColorArray(1, 1, 1, 1, 0.6, 0.85, 1, 0)
@@ -55,6 +59,7 @@ texture_scale = 5.0
 height = 250.0
 
 [node name="SparkParticles" type="CPUParticles2D" parent="." unique_id=1102938475]
+material = SubResource("ShaderMaterial_light_spark")
 position = Vector2(1, -27.5)
 emitting = false
 amount = 16
@@ -66,9 +71,13 @@ spread = 55.0
 gravity = Vector2(0, 260)
 initial_velocity_min = 60.0
 initial_velocity_max = 160.0
-scale_amount_max = 2.2
+scale_amount_min = 0.5
+scale_amount_max = 0.9
 color_ramp = SubResource("Gradient_spark")
+anim_offset_max = 0.99
 
 [node name="SparkAudio" type="AudioStreamPlayer2D" parent="." unique_id=760194833]
 stream = ExtResource("3_spark")
+volume_db = -15.0
 max_distance = 900.0
+bus = &"SFX"

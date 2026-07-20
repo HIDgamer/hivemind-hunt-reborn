@@ -27,13 +27,18 @@ offset_right = 420.0
 offset_bottom = -40.0
 mouse_filter = 2
 
-[node name="Log" type="VBoxContainer" parent="Panel"]
+[node name="LogScroll" type="ScrollContainer" parent="Panel"]
 layout_mode = 0
 offset_top = 0.0
 offset_right = 400.0
 offset_bottom = 110.0
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="Log" type="VBoxContainer" parent="Panel/LogScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 2
-alignment = 2
 
 [node name="Input" type="LineEdit" parent="Panel"]
 visible = false

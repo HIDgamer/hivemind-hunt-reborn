@@ -26,6 +26,7 @@ position = Vector2(0, 2)
 shape = SubResource("RectangleShape2D_plate")
 
 [node name="ClickAudio" type="AudioStreamPlayer2D" parent="." unique_id=1590158379]
+bus = &"SFX"
 
 [node name="DustParticles" type="CPUParticles2D" parent="." unique_id=1590158378]
 emitting = false

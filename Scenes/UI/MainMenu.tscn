@@ -81,5 +81,6 @@ metadata/_edit_use_anchors_ = true
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=1828789632]
 stream = ExtResource("5_k8um8")
+bus = &"Music"
 autoplay = true
 parameters/looping = true

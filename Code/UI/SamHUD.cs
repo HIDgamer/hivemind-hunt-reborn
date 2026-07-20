@@ -50,6 +50,10 @@ public partial class SamHUD : CanvasLayer
 		_extraJumpSlot = GetNode<Panel>("Panel/UpgradeSlots/ExtraJumpSlot");
 		_extraJumpSlotLabel = _extraJumpSlot.GetNode<Label>("Label");
 
+		ApplyCrtTheme();
+		var settings = GetNodeOrNull<GameSettings>("/root/GameSettings");
+		if (settings != null) settings.SettingsChanged += ApplyCrtTheme;
+
 		if (Player == null)
 		{
 			GD.PushWarning("SamHUD: Player not assigned — HUD will not update.");
@@ -193,5 +197,19 @@ public partial class SamHUD : CanvasLayer
 		style.BorderColor = unlocked ? UpgradeLitColor : UpgradeUnlitColor;
 		slot.AddThemeStyleboxOverride("panel", style);
 		label.Modulate = unlocked ? Colors.White : new Color(1f, 1f, 1f, 0.35f);
+	}
+
+	// Matches the CRT tint color chosen in Settings — same theme applies to
+	// the full-screen menu CRTOverlay (see Code/UI/CRTOverlay.gd) and this
+	// small in-HUD overlay, so both read as the same monitor style.
+	private void ApplyCrtTheme()
+	{
+		var settings = GetNodeOrNull<GameSettings>("/root/GameSettings");
+		if (settings == null) return;
+		var crtRect = GetNodeOrNull<ColorRect>("Panel/CRTOverlay");
+		if (crtRect?.Material is ShaderMaterial mat)
+		{
+			mat.SetShaderParameter("tint_color", settings.CrtThemeColors[settings.CrtThemeIndex]);
+		}
 	}
 }

@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://bie4rseqr1pan" path="res://Code/Props/Checkpoint.cs" id="1_checkpoint"]
 [ext_resource type="AudioStream" uid="uid://cua4aosracy5f" path="res://Sound/fx/Jingle_Achievement_00.ogg" id="2_activatesound"]
 [ext_resource type="Texture2D" uid="uid://dlq2m2jv5j4in" path="res://Assets/Decals/Sign 2 Glow - Orange.tres" id="3_feilj"]
+[ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="4_gas_smoke"]
+[ext_resource type="Texture2D" uid="uid://7o2ad6qnwmmg" path="res://Assets/FX/generated/spark_variants.png" id="5_spark_variants"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_checkpoint"]
 radius = 20.0
@@ -17,6 +19,16 @@ height = 128
 fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_checkpoint_spark"]
+shader = ExtResource("4_gas_smoke")
+shader_parameter/noise_texture = ExtResource("5_spark_variants")
+shader_parameter/distortion_strength = 0.0
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 2
+shader_parameter/v_frames = 2
 
 [sub_resource type="Gradient" id="Gradient_checkpoint_spark"]
 colors = PackedColorArray(1, 1, 1, 1, 0.4, 0.85, 1, 0)
@@ -385,6 +397,7 @@ texture_scale = 1.8
 height = 90.0
 
 [node name="ActivateParticles" type="CPUParticles2D" parent="." unique_id=1184548413]
+material = SubResource("ShaderMaterial_checkpoint_spark")
 emitting = false
 amount = 24
 lifetime = 0.6
@@ -396,12 +409,14 @@ gravity = Vector2(0, -20)
 initial_velocity_min = 20.0
 initial_velocity_max = 60.0
 scale_amount_min = 0.6
-scale_amount_max = 1.3
+scale_amount_max = 1.2
 color_ramp = SubResource("Gradient_checkpoint_spark")
+anim_offset_max = 0.99
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=892756980]
 stream = ExtResource("2_activatesound")
 max_distance = 700.0
+bus = &"SFX"
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=291333656]
 position = Vector2(-2, 0)

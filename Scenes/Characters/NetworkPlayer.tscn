@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3]
 
 [ext_resource type="PackedScene" uid="uid://buyjpg8ga81xg" path="res://Scenes/Characters/Sam.tscn" id="1_sam"]
-[ext_resource type="Script" path="res://Code/Networking/NameTag.cs" id="2_nametag"]
+[ext_resource type="Script" uid="uid://d17ojs22knlb2" path="res://Code/Networking/NameTag.cs" id="2_nametag"]
+
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_net"]
 properties/0/path = NodePath(".:position")
@@ -19,6 +20,9 @@ properties/3/replication_mode = 1
 properties/4/path = NodePath(".:NetFrame")
 properties/4/spawn = true
 properties/4/replication_mode = 1
+properties/5/path = NodePath(".:NetIsSpeaking")
+properties/5/spawn = true
+properties/5/replication_mode = 1
 
 [node name="NetworkPlayer" instance=ExtResource("1_sam")]
 IsNetworked = true
@@ -38,3 +42,27 @@ theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
 theme_override_font_sizes/font_size = 10
 horizontal_alignment = 1
 text = "PLAYER"
+
+[node name="SpeakingIcon" type="Control" parent="NameTag"]
+visible = false
+
+[node name="Bar1" type="ColorRect" parent="NameTag/SpeakingIcon"]
+offset_left = -62.0
+offset_top = -3.0
+offset_right = -58.0
+offset_bottom = 6.0
+color = Color(0.55, 1, 0.7, 1)
+
+[node name="Bar2" type="ColorRect" parent="NameTag/SpeakingIcon"]
+offset_left = -57.0
+offset_top = -6.0
+offset_right = -53.0
+offset_bottom = 6.0
+color = Color(0.55, 1, 0.7, 1)
+
+[node name="Bar3" type="ColorRect" parent="NameTag/SpeakingIcon"]
+offset_left = -52.0
+offset_top = -8.0
+offset_right = -48.0
+offset_bottom = 6.0
+color = Color(0.55, 1, 0.7, 1)

@@ -21,11 +21,23 @@ public partial class AbilityPickupComponent : Area2D
 
 	public override void _Ready()
 	{
+		var squad = GetNodeOrNull<SquadAbilityState>("/root/SquadAbilityState");
+		if (squad != null && squad.IsUnlocked(Ability))
+		{
+			// The squad already has this — likely a rejoining player's
+			// freshly-loaded, un-consumed copy of a pickup whose original
+			// server-side instance is long gone. Self-consume immediately
+			// instead of sitting there visible but permanently unable to
+			// ever receive the RPC that would normally do this.
+			Consume(silent: true);
+			return;
+		}
+
 		BodyEntered += OnBodyEntered;
 		_audioPlayer = GetNodeOrNull<AudioStreamPlayer2D>("AudioStreamPlayer2D");
 		if (_audioPlayer == null)
 		{
-			_audioPlayer = new AudioStreamPlayer2D { Name = "AudioStreamPlayer2D", VolumeDb = -4f };
+			_audioPlayer = new AudioStreamPlayer2D { Name = "AudioStreamPlayer2D", VolumeDb = -4f, Bus = "SFX" };
 			AddChild(_audioPlayer);
 		}
 
@@ -94,10 +106,12 @@ public partial class AbilityPickupComponent : Area2D
 
 	private void GrantTo(Sam player)
 	{
+		var squad = GetNodeOrNull<SquadAbilityState>("/root/SquadAbilityState");
 		switch (Ability)
 		{
 			case AbilityKind.ExtraJump:
 				player.GetNodeOrNull<ExtraJumpComponent>("ExtraJumpComponent")?.UnlockExtraJumps(ExtraJumpCount);
+				squad?.RecordAbility(Ability, ExtraJumpCount);
 				break;
 			case AbilityKind.Dash:
 				DashComponent dash = player.GetNodeOrNull<DashComponent>("DashComponent");
@@ -107,14 +121,19 @@ public partial class AbilityPickupComponent : Area2D
 					player.AddChild(dash);
 				}
 				dash.UnlockDash();
+				squad?.RecordAbility(Ability, 0);
 				break;
 			case AbilityKind.MaxHealth:
 				player.GetNodeOrNull<HealthComponent>("HealthComponent")?.IncreaseMaxHealth(MaxHealthIncrease);
+				squad?.RecordAbility(Ability, MaxHealthIncrease);
 				break;
 		}
 	}
 
-	private void Consume()
+	// silent: true for a pickup self-consuming on load because the squad
+	// already has this ability (see _Ready) — no jingle, no delay, it was
+	// never really "just collected."
+	private void Consume(bool silent = false)
 	{
 		SetDeferred(Area2D.PropertyName.Monitoring, false);
 		SetDeferred(Area2D.PropertyName.Monitorable, false);
@@ -127,7 +146,7 @@ public partial class AbilityPickupComponent : Area2D
 			}
 		}
 
-		if (_audioPlayer?.Stream != null)
+		if (!silent && _audioPlayer?.Stream != null)
 		{
 			_audioPlayer.Visible = true;
 			_audioPlayer.Play();

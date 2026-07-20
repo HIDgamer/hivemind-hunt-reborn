@@ -5,8 +5,26 @@ extends Control
 
 @onready var rec_dot: ColorRect = $HUDText/RecRow/RecDot
 @onready var feed_label: Label = $HUDText/FeedLabel
+@onready var scanline_rect: ColorRect = $ScanlineRect
 
 var _elapsed: float = 0.0
+
+
+func _ready() -> void:
+	var settings := get_node_or_null("/root/GameSettings")
+	if settings:
+		settings.SettingsChanged.connect(_apply_theme)
+	_apply_theme()
+
+
+func _apply_theme() -> void:
+	var settings := get_node_or_null("/root/GameSettings")
+	if settings == null:
+		return
+	var mat: ShaderMaterial = scanline_rect.material
+	if mat:
+		mat.set_shader_parameter("tint_color", settings.CrtThemeColors[settings.CrtThemeIndex])
+
 
 func _process(delta: float) -> void:
 	_elapsed += delta

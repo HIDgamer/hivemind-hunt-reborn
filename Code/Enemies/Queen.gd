@@ -85,6 +85,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not _enemy_base_physics_process(delta):
+		return
+
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	elif velocity.y > 0.0:
@@ -156,6 +159,12 @@ func _spit_tick(delta: float) -> void:
 		_change_state(State.APPROACH)
 
 
+# Known multiplayer gap, deliberately out of scope for this pass: this only
+# ever runs on the authority (see _enemy_base_physics_process), so the spit
+# node only exists in the SERVER's own scene tree — it isn't spawner-managed,
+# so it never replicates to clients at all. Queen's melee/position/health
+# sync clients correctly; her ranged attack will be invisible on clients
+# until AcidSpit is converted to go through a proper MultiplayerSpawner.
 func _launch_acid_spit() -> void:
 	if not is_instance_valid(_player):
 		return
@@ -199,7 +208,7 @@ func _stunned_tick(delta: float) -> void:
 
 
 func _on_contact_entered(body: Node2D) -> void:
-	if body != _player:
+	if not body.is_in_group("Player"):
 		return
 	_player_in_contact = true
 	var mid_swing := current_state == State.HEADBUTT and _telegraph_timer <= 0.0
@@ -212,7 +221,7 @@ func _on_contact_entered(body: Node2D) -> void:
 
 
 func _on_contact_exited(body: Node2D) -> void:
-	if body != _player:
+	if not body.is_in_group("Player"):
 		return
 	_player_in_contact = false
 

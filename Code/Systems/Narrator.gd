@@ -100,8 +100,8 @@ const BARK_LINES := {
 	],
 }
 
-const IDLE_BARK_MIN_INTERVAL: float = 28.0
-const IDLE_BARK_MAX_INTERVAL: float = 50.0
+const IDLE_BARK_MIN_INTERVAL: float = 150.0
+const IDLE_BARK_MAX_INTERVAL: float = 280.0
 
 # Ducks whatever's in the "level_music" group (Level_00_Tutorial.tscn's
 # AudioStreamPlayer is tagged this way — add the same group to any future
@@ -304,9 +304,17 @@ func _apply_bark(category: String, idx: int) -> void:
 	var lines: Array = BARK_LINES.get(category, [])
 	if idx < 0 or idx >= lines.size():
 		return
+	# Cooldown ticks regardless of local muting, so this peer's own timing
+	# stays consistent with the bark-authority even while suppressing idle
+	# display — only "idle" is ever muted here; death/hurt/checkpoint/plate/
+	# door are real reactions, not ambience, and always show.
+	_cooldown_timer = BARK_COOLDOWN
+	if category == "idle":
+		var settings := get_node_or_null("/root/GameSettings")
+		if settings and bool(settings.IdleBarksMuted):
+			return
 	_show_bark(lines[idx])
 	_play_voice_line(category, idx)
-	_cooldown_timer = BARK_COOLDOWN
 
 
 func _play_voice_line(category: String, idx: int) -> void:

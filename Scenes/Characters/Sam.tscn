@@ -13,11 +13,10 @@
 [ext_resource type="Script" uid="uid://ca0ryftorltk8" path="res://Code/Characters/Sam.cs" id="5_sam"]
 [ext_resource type="Script" uid="uid://wbok4gfvkq7a" path="res://Code/Characters/ExtraJumpComponent.cs" id="6_extra"]
 [ext_resource type="Script" uid="uid://do0tyf1y22pm3" path="res://Code/Systems/CameraSystem.gd" id="7_gupkc"]
-[ext_resource type="Texture2D" uid="uid://cu14cc7yxgts5" path="res://Assets/FX/particles/alpha/circle_01_a.png" id="10_circle"]
 [ext_resource type="Texture2D" uid="uid://dar8glm7oql2p" path="res://Assets/FX/particles/alpha/trace_07_a.png" id="11_trace"]
-[ext_resource type="Texture2D" uid="uid://djhpbqtymwr0s" path="res://Assets/FX/generated/noise_puff.png" id="12_dirt1"]
-[ext_resource type="Texture2D" uid="uid://bxfcu6j65brsv" path="res://Assets/Sam/Sam crawl turn 48x48.tres" id="21_1vh0i"]
 [ext_resource type="PackedScene" uid="uid://dkdkecbaht2d7" path="res://Scenes/UI/SamHUD.tscn" id="22_samhud"]
+[ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="23_gas_smoke"]
+[ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="49_1vh0i"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam idle.tres" id="newtex_0"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam idle left.tres" id="newtex_1"]
 [ext_resource type="Texture2D" path="res://Assets/Sam/sam walk.tres" id="newtex_2"]
@@ -373,47 +372,91 @@ atlas = ExtResource("newtex_23")
 region = Rect2(480, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_37ld5"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(0, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ucipl"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(48, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_psh7w"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(96, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_saxgg"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(144, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ey6f3"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(192, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_mutyk"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(240, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_nfcaw"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(288, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_oulyu"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(336, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_oesod"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(384, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hr5le"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(432, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_42fqb"]
-atlas = ExtResource("21_1vh0i")
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(480, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_0"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_1"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_2"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_3"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_4"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_5"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(240, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_6"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(288, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_7"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(336, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_8"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(384, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_9"]
+atlas = ExtResource("newtex_crawlturn")
+region = Rect2(432, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_10"]
+atlas = ExtResource("newtex_crawlturn")
 region = Rect2(480, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_new_Death_1"]
@@ -1304,50 +1347,6 @@ region = Rect2(288, 0, 48, 48)
 atlas = ExtResource("newtex_31")
 region = Rect2(336, 0, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_0"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(0, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_1"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(48, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_2"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(96, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_3"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(144, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_4"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(192, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_5"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(240, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_6"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(288, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_7"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(336, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_8"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(384, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_9"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(432, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_new_CrawlTurnaround_10"]
-atlas = ExtResource("newtex_crawlturn")
-region = Rect2(480, 0, 48, 48)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_new_Walk_1"]
 atlas = ExtResource("newtex_2")
 region = Rect2(48, 0, 48, 48)
@@ -1734,6 +1733,44 @@ animations = [{
 }],
 "loop": 0,
 "name": &"CrawlTurn",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_new_CrawlTurnaround_10")
+}],
+"loop": 0,
+"name": &"CrawlTurnaround",
 "speed": 10.0
 }, {
 "frames": [{
@@ -2534,44 +2571,6 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_0")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_1")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_2")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_3")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_4")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_5")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_6")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_7")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_8")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_9")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_new_CrawlTurnaround_10")
-}],
-"loop": 0,
-"name": &"CrawlTurnaround",
-"speed": 10.0
-}, {
-"frames": [{
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_new_Walk_1")
 }, {
 "duration": 1.0,
@@ -2658,6 +2657,9 @@ height = 32.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_11iux"]
 radius = 7.071068
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gas_smoke"]
+shader = ExtResource("23_gas_smoke")
+
 [sub_resource type="Curve" id="Curve_dust_grow"]
 _data = [Vector2(0, 0.55), 0.0, 0.0, 0, 0, Vector2(1, 1.35), 0.0, 0.0, 0, 0]
 point_count = 2
@@ -2729,10 +2731,11 @@ shape = SubResource("CircleShape2D_11iux")
 disabled = true
 
 [node name="JumpParticles" type="CPUParticles2D" parent="." unique_id=652062912]
+material = SubResource("ShaderMaterial_gas_smoke")
 position = Vector2(0, 16)
 emitting = false
 amount = 6
-texture = ExtResource("12_dirt1")
+texture = ExtResource("49_1vh0i")
 lifetime = 0.35
 one_shot = true
 explosiveness = 1.0
@@ -2746,12 +2749,14 @@ scale_amount_min = 0.016
 scale_amount_max = 0.032
 scale_amount_curve = SubResource("Curve_dust_grow")
 color_ramp = SubResource("Gradient_dust_fade")
+anim_offset_max = 0.99
 
 [node name="DoubleJumpParticles" type="CPUParticles2D" parent="." unique_id=783829302]
+material = SubResource("ShaderMaterial_gas_smoke")
 position = Vector2(0, 10)
 emitting = false
 amount = 10
-texture = ExtResource("10_circle")
+texture = ExtResource("49_1vh0i")
 lifetime = 0.3
 one_shot = true
 explosiveness = 1.0
@@ -2762,12 +2767,14 @@ initial_velocity_max = 90.0
 scale_amount_min = 0.016
 scale_amount_max = 0.028
 color_ramp = SubResource("Gradient_thruster_fade")
+anim_offset_max = 0.99
 
 [node name="SlideParticles" type="CPUParticles2D" parent="." unique_id=2021642143]
+material = SubResource("ShaderMaterial_gas_smoke")
 position = Vector2(0, 16)
 emitting = false
 amount = 10
-texture = ExtResource("12_dirt1")
+texture = ExtResource("49_1vh0i")
 lifetime = 0.45
 emission_shape = 3
 emission_rect_extents = Vector2(5, 2)
@@ -2780,6 +2787,7 @@ scale_amount_min = 0.02
 scale_amount_max = 0.04
 scale_amount_curve = SubResource("Curve_dust_grow")
 color_ramp = SubResource("Gradient_dust_fade")
+anim_offset_max = 0.99
 
 [node name="DashParticles" type="CPUParticles2D" parent="." unique_id=720290815]
 position = Vector2(0, 4)
@@ -2801,10 +2809,11 @@ scale_amount_max = 0.05
 color_ramp = SubResource("Gradient_thruster_fade")
 
 [node name="LandParticles" type="CPUParticles2D" parent="." unique_id=1065204039]
+material = SubResource("ShaderMaterial_gas_smoke")
 position = Vector2(0, 16)
 emitting = false
 amount = 10
-texture = ExtResource("12_dirt1")
+texture = ExtResource("49_1vh0i")
 lifetime = 0.42
 one_shot = true
 explosiveness = 1.0
@@ -2819,6 +2828,7 @@ scale_amount_min = 0.032
 scale_amount_max = 0.056
 scale_amount_curve = SubResource("Curve_dust_grow")
 color_ramp = SubResource("Gradient_dust_fade")
+anim_offset_max = 0.99
 
 [node name="PlayerCamera" type="Camera2D" parent="." unique_id=2049384703]
 offset = Vector2(2, 2)
@@ -2834,17 +2844,26 @@ metadata/_custom_type_script = "uid://do0tyf1y22pm3"
 Player = NodePath("..")
 
 [node name="FootstepPlayer" type="AudioStreamPlayer2D" parent="." unique_id=63801087]
+bus = &"SFX"
 
 [node name="JumpPlayer" type="AudioStreamPlayer2D" parent="." unique_id=1396176509]
 volume_db = 12.0
 pitch_scale = 1.2
+bus = &"SFX"
 
 [node name="HurtPlayer" type="AudioStreamPlayer2D" parent="." unique_id=1177089363]
 volume_db = -15.0
 pitch_scale = 1.3
+bus = &"SFX"
 
 [node name="LandPlayer" type="AudioStreamPlayer2D" parent="." unique_id=465786987]
 volume_db = 10.0
+bus = &"SFX"
 
 [node name="InteractPlayer" type="AudioStreamPlayer2D" parent="." unique_id=504365348]
 volume_db = -6.0
+bus = &"SFX"
+
+[node name="VoiceChatPlayer" type="AudioStreamPlayer2D" parent="." unique_id=837201645]
+max_distance = 900.0
+bus = &"Voice"

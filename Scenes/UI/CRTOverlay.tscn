@@ -5,6 +5,7 @@
 [ext_resource type="FontFile" uid="uid://u386rb0ghw82" path="res://Assets/Font/AlteHaasGroteskRegular.ttf" id="3_haas"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+resource_local_to_scene = true
 shader = ExtResource("2_shader")
 shader_parameter/tint_color = Color(0.65, 1, 0.75, 1)
 shader_parameter/tint_amount = 0.16

@@ -32,7 +32,7 @@ public partial class DashComponent : Node
 		_audioPlayer = GetNodeOrNull<AudioStreamPlayer2D>("AudioStreamPlayer2D");
 		if (_audioPlayer == null)
 		{
-			_audioPlayer = new AudioStreamPlayer2D { Name = "AudioStreamPlayer2D", VolumeDb = -5f };
+			_audioPlayer = new AudioStreamPlayer2D { Name = "AudioStreamPlayer2D", VolumeDb = -5f, Bus = "SFX" };
 			AddChild(_audioPlayer);
 		}
 
@@ -69,7 +69,7 @@ public partial class DashComponent : Node
 			return true;
 		}
 
-		if (!Input.IsActionJustPressed(DashAction) || _cooldownTimer > 0f || player.IsControlLocked)
+		if (!Input.IsActionJustPressed(DashAction) || _cooldownTimer > 0f || player.IsControlLocked || player.IsCrawling)
 		{
 			return false;
 		}

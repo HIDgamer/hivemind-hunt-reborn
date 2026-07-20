@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 // Autoload. Owns the ENet peer connection itself (host or client) and the
 // local player's chosen display name. Deliberately does not own player
@@ -69,11 +70,30 @@ public partial class NetworkManager : Node
 		return StartClient(address, PendingClientPort);
 	}
 
+	// A fast client's ENet handshake can complete while the host is still
+	// mid-fade/loading the level scene — i.e. before the host's own
+	// PlayerSpawner._Ready has run and subscribed its own PeerConnected
+	// handler. Subscribing here instead means nothing is missed regardless
+	// of what scene is loaded or how far along it is: PeerConnected fires
+	// the instant the low-level handshake completes, independent of the
+	// scene tree. PlayerSpawner drains this once it's actually ready to
+	// spawn, instead of relying solely on its own one-shot sweep.
+	private readonly HashSet<long> _pendingSpawnPeers = new();
+
+	public IReadOnlyCollection<long> DrainPendingSpawns()
+	{
+		var ids = new List<long>(_pendingSpawnPeers);
+		_pendingSpawnPeers.Clear();
+		return ids;
+	}
+
 	public override void _Ready()
 	{
 		Multiplayer.ConnectedToServer += () => EmitSignal(SignalName.ConnectionSucceeded);
 		Multiplayer.ConnectionFailed += OnConnectionFailed;
 		Multiplayer.ServerDisconnected += OnServerDisconnected;
+		Multiplayer.PeerConnected += id => _pendingSpawnPeers.Add(id);
+		Multiplayer.PeerDisconnected += id => _pendingSpawnPeers.Remove(id);
 	}
 
 	public Error StartHost(int port = DefaultPort)
@@ -87,6 +107,10 @@ public partial class NetworkManager : Node
 		}
 
 		Multiplayer.MultiplayerPeer = peer;
+		// Scope squad-wide ability unlocks to this hosted session, not the
+		// whole process lifetime — otherwise returning to the Lobby and
+		// hosting a fresh session would leak the previous session's unlocks.
+		GetNodeOrNull<SquadAbilityState>("/root/SquadAbilityState")?.Reset();
 		EmitSignal(SignalName.ServerCreated);
 		return Error.Ok;
 	}

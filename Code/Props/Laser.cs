@@ -29,6 +29,27 @@ public partial class Laser : Node2D
 	[Export] public bool    UseRotationAsDirection = false;
 	[Export] public Vector2 LaserDirection = Vector2.Down;
 
+	// ── Color ─────────────────────────────────────────────────────────────────
+	// Named presets instead of raw color pickers — picking three coordinated
+	// (outer/mid/core) colors by hand per instance is fiddly, and platformer
+	// laser traps conventionally read as one of a handful of "danger colors."
+	// Requires the beam Line2D's ShaderMaterial to be resource_local_to_scene
+	// (see laser.tscn) — without that every Laser instance shares one material
+	// and they'd all change color together.
+	public enum ColorTheme { Red, Blue, Green, Purple, Yellow }
+
+	[ExportGroup("Color")]
+	[Export] public ColorTheme Theme = ColorTheme.Red;
+
+	private static readonly System.Collections.Generic.Dictionary<ColorTheme, (Color Outer, Color Mid, Color Core)> ColorPresets = new()
+	{
+		[ColorTheme.Red] = (new Color(0.50f, 0.02f, 0.01f), new Color(0.85f, 0.12f, 0.06f), new Color(1.00f, 0.78f, 0.72f)),
+		[ColorTheme.Blue] = (new Color(0.02f, 0.10f, 0.55f), new Color(0.10f, 0.35f, 0.90f), new Color(0.75f, 0.88f, 1.00f)),
+		[ColorTheme.Green] = (new Color(0.03f, 0.45f, 0.05f), new Color(0.15f, 0.85f, 0.15f), new Color(0.80f, 1.00f, 0.75f)),
+		[ColorTheme.Purple] = (new Color(0.30f, 0.02f, 0.50f), new Color(0.55f, 0.12f, 0.85f), new Color(0.92f, 0.78f, 1.00f)),
+		[ColorTheme.Yellow] = (new Color(0.55f, 0.42f, 0.02f), new Color(0.95f, 0.75f, 0.10f), new Color(1.00f, 0.98f, 0.75f)),
+	};
+
 	// ── Signals ───────────────────────────────────────────────────────────────
 	[Signal] public delegate void LaserActivatedEventHandler();
 	[Signal] public delegate void LaserDeactivatedEventHandler();
@@ -41,6 +62,16 @@ public partial class Laser : Node2D
 	private Line2D              _glowLine;   // Wide additive glow — renders behind beam, tracks same points
 	private Light2D             _glowLight;  // Small fixed-size impact flash at beam tip
 	private Light2D             _warnLight;  // Pre-fire telegraph light (optional)
+	// Stretched along the beam's current length/direction each tick, with
+	// shadow_enabled — this is what makes the laser actually illuminate
+	// (and correctly shadow around) the surrounding scene like a real light
+	// source, leveraging the level's existing TileMap occlusion layer plus
+	// whatever LightOccluder2D shapes nearby props carry (see Box_Big.tscn).
+	// The beam's own visible Line2D geometry is still driven by a single
+	// centerline raycast (unchanged) — this light is a separate, additive
+	// "it actually casts light" layer on top, not a replacement for the
+	// beam decal's own (still simplified, single-ray) shape.
+	private Light2D             _beamLight;
 	private CpuParticles2D      _sparks;
 	private CpuParticles2D      _smoke;      // Smoke puff particles at impact
 	private Timer               _timer;
@@ -82,6 +113,7 @@ public partial class Laser : Node2D
 		_glowLine         = GetNodeOrNull<Line2D>("GlowLine2D");        // Optional
 		_glowLight        = GetNode<Light2D>("GlowLight");
 		_warnLight        = GetNodeOrNull<Light2D>("WarnLight");        // Optional
+		_beamLight        = GetNodeOrNull<Light2D>("BeamLight");        // Optional
 		_sparks           = GetNode<CpuParticles2D>("SparkParticles");
 		_smoke            = GetNodeOrNull<CpuParticles2D>("SmokeParticles"); // Optional
 		_timer            = GetNode<Timer>("Timer");
@@ -91,6 +123,8 @@ public partial class Laser : Node2D
 		_beamArea         = GetNode<Area2D>("BeamArea");
 		_beamCollision    = GetNode<CollisionShape2D>("BeamArea/CollisionShape2D");
 		_shader           = _beamLine.Material as ShaderMaterial;
+
+		ApplyColorTheme();
 
 		_sprite.AnimationFinished += OnAnimationFinished;
 
@@ -193,6 +227,7 @@ public partial class Laser : Node2D
 
 		UpdateCollision(beamEnd);
 		UpdateImpactFX(beamEnd, colliding);
+		UpdateBeamLight(beamEnd, active);
 
 		_timeSinceLastDamage += delta;
 		if (active)
@@ -220,6 +255,15 @@ public partial class Laser : Node2D
 	// ─────────────────────────────────────────────────────────────────────────
 	// Initialisation helpers
 	// ─────────────────────────────────────────────────────────────────────────
+
+	private void ApplyColorTheme()
+	{
+		if (!ColorPresets.TryGetValue(Theme, out var preset)) return;
+		_shader?.SetShaderParameter("laser_color", preset.Outer);
+		_shader?.SetShaderParameter("mid_color", preset.Mid);
+		_shader?.SetShaderParameter("core_color", preset.Core);
+		if (_beamLight != null) _beamLight.Color = preset.Mid;
+	}
 
 	private void SetupRaycast()
 	{
@@ -516,6 +560,33 @@ public partial class Laser : Node2D
 			_glowLight.Position = beamEnd;
 			_glowLight.Enabled  = showImpact;
 		}
+	}
+
+	// Stretches BeamLight across the beam's current origin-to-hitpoint span
+	// each tick, so it lights (and, via shadow_enabled, correctly darkens
+	// behind occluders like the TileMap's solid layer or Box_Big) exactly
+	// the space the beam currently occupies — same origin/rotation math as
+	// the Line2D points, just also driving a Light2D instead of just a mesh.
+	private const float BeamLightReferenceWidth = 64f;
+	private const float BeamLightThickness = 0.32f;
+
+	private void UpdateBeamLight(Vector2 beamEnd, bool active)
+	{
+		if (_beamLight == null) return;
+
+		Vector2 origin = BeamDir * StartDistance;
+		float length = origin.DistanceTo(beamEnd);
+		bool visible = active && length > 1.0f;
+		_beamLight.Enabled = visible;
+		if (!visible) return;
+
+		_beamLight.Position = (origin + beamEnd) * 0.5f;
+		_beamLight.Rotation = BeamDir.Angle();
+		_beamLight.Scale = new Vector2(length / BeamLightReferenceWidth, BeamLightThickness);
+		// Fade in with the same charge_level the shader/collision already use,
+		// so the light snaps on/off in step with the visible beam growing.
+		float charge = MaxLineWidth > 0f ? _beamLine.Width / MaxLineWidth : 0f;
+		_beamLight.Energy = 1.4f * charge;
 	}
 
 	private void SyncParticleDirection()

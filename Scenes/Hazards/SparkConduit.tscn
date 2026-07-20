@@ -4,6 +4,8 @@
 [ext_resource type="Script" path="res://Code/Props/SparkHazard.cs" id="2_hazard"]
 [ext_resource type="AudioStream" path="res://Sound/fx/spark.ogg" id="3_spark"]
 [ext_resource type="AudioStream" path="res://Sound/fx/continuousspark.ogg" id="4_crackle"]
+[ext_resource type="Shader" path="res://Assets/Materials/gas_smoke.gdshader" id="5_gas_smoke"]
+[ext_resource type="Texture2D" path="res://Assets/FX/generated/spark_variants.png" id="6_spark_variants"]
 
 [sub_resource type="Gradient" id="Gradient_conduit"]
 colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
@@ -22,6 +24,13 @@ colors = PackedColorArray(1, 1, 1, 1, 0.6, 0.85, 1, 0)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_conduit"]
 size = Vector2(48, 40)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_conduit_spark"]
+shader = ExtResource("5_gas_smoke")
+shader_parameter/noise_texture = ExtResource("6_spark_variants")
+shader_parameter/distortion_strength = 0.0
+shader_parameter/h_frames = 2
+shader_parameter/v_frames = 2
 
 # A gap of broken/exposed wiring — no fixture sprite, the light and particles
 # ARE the visual. Deals light contact damage on a cooldown (see SparkHazard.cs)
@@ -48,8 +57,10 @@ texture_scale = 2.5
 height = 120.0
 
 [node name="SparkParticles" type="CPUParticles2D" parent="."]
+material = SubResource("ShaderMaterial_conduit_spark")
 emitting = false
 amount = 16
+texture = ExtResource("6_spark_variants")
 lifetime = 0.35
 one_shot = true
 explosiveness = 1.0
@@ -58,18 +69,24 @@ spread = 70.0
 gravity = Vector2(0, 260)
 initial_velocity_min = 60.0
 initial_velocity_max = 160.0
-scale_amount_min = 1.0
-scale_amount_max = 2.2
+scale_amount_min = 0.05
+scale_amount_max = 0.09
 color_ramp = SubResource("Gradient_conduit_spark")
+anim_offset_min = 0.0
+anim_offset_max = 0.99
+anim_speed_min = 0.0
+anim_speed_max = 0.0
 
 [node name="SparkAudio" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("3_spark")
 max_distance = 700.0
+bus = &"SFX"
 
 [node name="AmbientCrackle" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("4_crackle")
 volume_db = -14.0
 max_distance = 350.0
+bus = &"SFX"
 autoplay = true
 
 [node name="DamageArea" type="Area2D" parent="."]

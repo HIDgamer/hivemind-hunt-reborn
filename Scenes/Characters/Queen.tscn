@@ -256,6 +256,20 @@ custom_solver_bias = 1.0
 radius = 20.0
 height = 50.0
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_queen"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("AnimatedSprite2D:animation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("AnimatedSprite2D:flip_h")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:net_current_health")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+
 [node name="Queen" type="CharacterBody2D" unique_id=746671004]
 scale = Vector2(3, 3)
 collision_layer = 8
@@ -312,4 +326,8 @@ MaxHealth = 400
 InvulnerabilityDuration = 0.6
 
 [node name="VoiceAudio" type="AudioStreamPlayer2D" parent="." unique_id=2010677305]
+bus = &"Voice"
 max_distance = 900.0
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_queen")

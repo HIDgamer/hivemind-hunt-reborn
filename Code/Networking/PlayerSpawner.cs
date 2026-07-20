@@ -68,7 +68,16 @@ public partial class PlayerSpawner : Node
 			// A fast client can complete its ENet handshake while the host
 			// is still fading/loading this scene — PeerConnected has already
 			// fired by the time we subscribed above, so sweep for peers that
-			// are connected but have no player yet.
+			// are connected but have no player yet. Two overlapping sources
+			// on purpose: NetworkManager's own PeerConnected subscription
+			// (live from process start, so it can't miss a peer regardless
+			// of how far along this scene's own loading was) plus the
+			// standard GetPeers() sweep — SpawnPlayer is idempotent, so
+			// nominating the same id from both costs nothing.
+			foreach (long peerId in networkManager.DrainPendingSpawns())
+			{
+				SpawnPlayer(peerId);
+			}
 			foreach (int peerId in Multiplayer.GetPeers())
 			{
 				SpawnPlayer(peerId);
@@ -78,7 +87,52 @@ public partial class PlayerSpawner : Node
 		{
 			// Scene + spawner are ready — NOW open the connection.
 			networkManager.CompletePendingJoin();
+			// Safety net: if the spawn packet is somehow still lost (the
+			// scenario above should already prevent this on the host side,
+			// but nothing guarantees delivery on a lossy real connection),
+			// ask again rather than sitting in a silent, permanent softlock.
+			StartSpawnWatchdog();
 		}
+	}
+
+	// ── Client-side spawn retry ────────────────────────────────────────────
+	private const float SpawnRetryInterval = 4f;
+	private const int MaxSpawnRetries = 2;
+	private int _spawnRetriesLeft = MaxSpawnRetries;
+
+	private void StartSpawnWatchdog()
+	{
+		GetTree().CreateTimer(SpawnRetryInterval).Timeout += CheckSpawnedOrRetry;
+	}
+
+	private void CheckSpawnedOrRetry()
+	{
+		if (!IsInstanceValid(this)) return;
+		if (_playersRoot.GetNodeOrNull(Multiplayer.GetUniqueId().ToString()) != null) return; // already spawned, nothing to do
+
+		if (_spawnRetriesLeft <= 0)
+		{
+			var networkManager = GetNode<NetworkManager>("/root/NetworkManager");
+			networkManager.LastError = "SPAWN FAILED // COULD NOT REACH HOST";
+			networkManager.Disconnect();
+			GetTree().ChangeSceneToFile("res://Scenes/UI/Lobby.tscn");
+			return;
+		}
+
+		_spawnRetriesLeft--;
+		RpcId(1, MethodName.RequestSpawn);
+		StartSpawnWatchdog();
+	}
+
+	// Idempotent re-entry point into the exact same spawn logic the server
+	// already uses — a client that still has no player node after the
+	// normal join flow asks the server directly instead of waiting forever
+	// for a packet that already went missing once.
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer)]
+	private void RequestSpawn()
+	{
+		if (!Multiplayer.IsServer()) return;
+		SpawnPlayer(Multiplayer.GetRemoteSenderId());
 	}
 
 	public override void _ExitTree()

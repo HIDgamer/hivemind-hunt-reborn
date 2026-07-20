@@ -8,21 +8,72 @@ using Godot;
 // itself, via CallLocal — receives).
 public partial class ChatBox : CanvasLayer
 {
-	private const int MaxLogLines = 8;
+	// A real cap on actual history, not just how many labels happen to be
+	// alive — previously the "log" was just whatever hadn't timed out yet,
+	// so there was no scrollback to speak of. 100 messages is generous for
+	// a 4-player session without the label list growing unbounded.
+	private const int MaxHistoryLines = 100;
 	private const float MessageLifetime = 8f;
+	private const float FadeOutDuration = 0.6f;
+	private const float FadeInDuration = 0.15f;
 
 	private LineEdit _input;
 	private VBoxContainer _log;
+	private ScrollContainer _logScroll;
 	private Control _panel;
+
+	// Whole log fades out together after inactivity (matches the old
+	// per-message fade's "gets out of the way" feel) rather than each
+	// message dimming to a permanent half-visible state and cluttering the
+	// screen forever — the backing labels themselves stay at full opacity
+	// and simply accumulate up to MaxHistoryLines, so scrollback is intact,
+	// it's just hidden until something brings the log back into view.
+	private float _idleSecondsLeft;
+	private Tween _logFadeTween;
 
 	public override void _Ready()
 	{
 		_panel = GetNode<Control>("Panel");
 		_input = GetNode<LineEdit>("Panel/Input");
-		_log = GetNode<VBoxContainer>("Panel/Log");
+		_logScroll = GetNode<ScrollContainer>("Panel/LogScroll");
+		_log = GetNode<VBoxContainer>("Panel/LogScroll/Log");
 
 		_input.Visible = false;
 		_input.TextSubmitted += OnTextSubmitted;
+
+		// Nothing to show yet — start hidden instead of waiting out a full
+		// MessageLifetime fade with an empty log visible.
+		_logScroll.Modulate = new Color(1f, 1f, 1f, 0f);
+		// Scrolling to actually read history counts as activity too — it
+		// shouldn't fade away out from under someone mid-scroll.
+		_logScroll.GetVScrollBar().ValueChanged += _ => RevealLog();
+	}
+
+	public override void _Process(double delta)
+	{
+		if (_idleSecondsLeft <= 0f) return;
+
+		_idleSecondsLeft -= (float)delta;
+		if (_idleSecondsLeft <= 0f)
+		{
+			FadeLog(0f, FadeOutDuration);
+		}
+	}
+
+	private void RevealLog()
+	{
+		_idleSecondsLeft = MessageLifetime;
+		FadeLog(1f, FadeInDuration);
+	}
+
+	private void FadeLog(float targetAlpha, float duration)
+	{
+		if (_logFadeTween != null && _logFadeTween.IsValid())
+		{
+			_logFadeTween.Kill();
+		}
+		_logFadeTween = CreateTween();
+		_logFadeTween.TweenProperty(_logScroll, "modulate:a", targetAlpha, duration);
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -48,6 +99,7 @@ public partial class ChatBox : CanvasLayer
 		_input.Text = "";
 		_input.GrabFocus();
 		SetLocalInputCaptured(true);
+		RevealLog();
 	}
 
 	private void CloseInput()
@@ -87,7 +139,7 @@ public partial class ChatBox : CanvasLayer
 		Rpc(MethodName.SubmitChatServer, text);
 	}
 
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer)]
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
 	private void SubmitChatServer(string text)
 	{
 		if (!Multiplayer.IsServer()) return;
@@ -134,17 +186,21 @@ public partial class ChatBox : CanvasLayer
 		label.AppendText($"[color=#8cffb0]{senderName.ToUpper()}:[/color] {EscapeBbcode(text)}");
 		_log.AddChild(label);
 
-		while (_log.GetChildCount() > MaxLogLines)
+		while (_log.GetChildCount() > MaxHistoryLines)
 		{
 			_log.GetChild(0).QueueFree();
 		}
 
-		Tween tween = CreateTween();
-		tween.TweenInterval(MessageLifetime);
-		tween.TweenProperty(label, "modulate:a", 0f, 0.6f);
-		tween.TweenCallback(Callable.From(() =>
-		{
-			if (IsInstanceValid(label)) label.QueueFree();
-		}));
+		// Scroll follows fresh messages to the bottom — matches normal chat
+		// UX. Deferred because the ScrollContainer's content size hasn't
+		// updated to include the new label yet this frame.
+		CallDeferred(MethodName.ScrollToBottom);
+
+		RevealLog();
+	}
+
+	private void ScrollToBottom()
+	{
+		_logScroll.ScrollVertical = (int)_logScroll.GetVScrollBar().MaxValue;
 	}
 }

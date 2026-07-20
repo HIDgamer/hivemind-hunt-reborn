@@ -79,3 +79,4 @@ scroll_active = false
 visible_characters = 0
 
 [node name="VoiceAudio" type="AudioStreamPlayer" parent="."]
+bus = &"Voice"
