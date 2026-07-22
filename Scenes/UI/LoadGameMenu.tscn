@@ -1,0 +1,248 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Code/UI/LoadGameMenu.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bda50snfg8lq2" path="res://Scenes/UI/SciFiButtonTheme.tres" id="2_theme"]
+[ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="3_alienbold"]
+
+[node name="LoadGameMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.85)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -220.0
+offset_right = 300.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
+theme_override_fonts/font = ExtResource("3_alienbold")
+theme_override_font_sizes/font_size = 32
+text = "LOAD GAME"
+horizontal_alignment = 1
+
+[node name="SlotList" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Slot1Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot1Row"]
+custom_minimum_size = Vector2(96, 54)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot1Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot1Row/Info"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "EMPTY"
+
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot1Row/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
+theme_override_font_sizes/font_size = 13
+text = ""
+
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot1Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "LOAD"
+
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot1Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "DELETE"
+
+[node name="Slot2Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot2Row"]
+custom_minimum_size = Vector2(96, 54)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot2Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot2Row/Info"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "EMPTY"
+
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot2Row/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
+theme_override_font_sizes/font_size = 13
+text = ""
+
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot2Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "LOAD"
+
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot2Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "DELETE"
+
+[node name="Slot3Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot3Row"]
+custom_minimum_size = Vector2(96, 54)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot3Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot3Row/Info"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "EMPTY"
+
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot3Row/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
+theme_override_font_sizes/font_size = 13
+text = ""
+
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot3Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "LOAD"
+
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot3Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "DELETE"
+
+[node name="Slot4Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot4Row"]
+custom_minimum_size = Vector2(96, 54)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot4Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot4Row/Info"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "EMPTY"
+
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot4Row/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
+theme_override_font_sizes/font_size = 13
+text = ""
+
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot4Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "LOAD"
+
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot4Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "DELETE"
+
+[node name="Slot5Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot5Row"]
+custom_minimum_size = Vector2(96, 54)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot5Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot5Row/Info"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "EMPTY"
+
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot5Row/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
+theme_override_font_sizes/font_size = 13
+text = ""
+
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot5Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "LOAD"
+
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot5Row"]
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+text = "DELETE"
+
+[node name="BackButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "BACK"
+
+[node name="ConfirmDialog" type="ConfirmationDialog" parent="."]
+title = "CONFIRM"
+initial_position = 1
+size = Vector2i(360, 120)
+ok_button_text = "YES"
+cancel_button_text = "CANCEL"

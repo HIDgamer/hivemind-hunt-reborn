@@ -12,6 +12,7 @@ const NORMAL_COLOR := Color(1, 1, 1, 1)
 var fade_tween: Tween
 var button_tweens: Dictionary = {}
 var _click_player: AudioStreamPlayer
+var _first_menu_button: Button = null
 
 func _ready() -> void:
 	modulate = Color(1, 1, 1, 0)
@@ -35,6 +36,23 @@ func _connect_menu_button(button: Button, callback: Callable) -> void:
 	button.connect("pressed", Callable(self, "_on_menu_button_pressed").bind(button, callback))
 	button.connect("mouse_entered", Callable(self, "_on_button_hover").bind(button))
 	button.connect("mouse_exited", Callable(self, "_on_button_exit").bind(button))
+	# Keyboard/gamepad nav reuses the same hover glow so a focused button
+	# reads identically to a moused-over one — otherwise arrow-key nav would
+	# move focus invisibly with no feedback.
+	button.focus_mode = Control.FOCUS_ALL
+	button.connect("focus_entered", Callable(self, "_on_button_hover").bind(button))
+	button.connect("focus_exited", Callable(self, "_on_button_exit").bind(button))
+
+	# First button registered gets focus automatically once the menu is on
+	# screen, so ui_up/ui_down/ui_accept work immediately without requiring
+	# a mouse click first.
+	if _first_menu_button == null:
+		_first_menu_button = button
+		call_deferred("_grab_initial_focus")
+
+func _grab_initial_focus() -> void:
+	if _first_menu_button != null and is_instance_valid(_first_menu_button) and not _first_menu_button.disabled:
+		_first_menu_button.grab_focus()
 
 func _on_menu_button_pressed(button: Button, callback: Callable) -> void:
 	if _click_player:

@@ -35,6 +35,18 @@ const CLICK_SOUND: AudioStream = preload("res://Sound/UI/Menu_Select_00.ogg")
 @onready var crt_theme_option: OptionButton = (
 	$ScrollContainer/VBoxContainer/CrtThemeRow/CrtThemeOption
 )
+@onready var graphics_preset_option: OptionButton = (
+	$ScrollContainer/VBoxContainer/GraphicsPresetRow/GraphicsPresetOption
+)
+@onready var shadow_quality_option: OptionButton = (
+	$ScrollContainer/VBoxContainer/ShadowQualityRow/ShadowQualityOption
+)
+@onready var line_of_sight_option: OptionButton = (
+	$ScrollContainer/VBoxContainer/LineOfSightRow/LineOfSightOption
+)
+@onready var line_of_sight_quality_option: OptionButton = (
+	$ScrollContainer/VBoxContainer/LineOfSightQualityRow/LineOfSightQualityOption
+)
 @onready var steady_cam_check: CheckBox = (
 	$ScrollContainer/VBoxContainer/SteadyCamRow/SteadyCamCheck
 )
@@ -70,6 +82,10 @@ func _ready() -> void:
 	_populate_resolution_options(settings)
 	_populate_fps_options(settings)
 	_populate_crt_theme_options(settings)
+	_populate_graphics_preset_options(settings)
+	_populate_shadow_quality_options(settings)
+	_populate_line_of_sight_options(settings)
+	_populate_line_of_sight_quality_options(settings)
 	_populate_mic_device_options(settings)
 	resolution_option.disabled = settings.FullscreenEnabled
 
@@ -88,6 +104,24 @@ func _ready() -> void:
 		func(disabled): settings.SetVoiceChatDisabled(disabled)
 	)
 	crt_theme_option.item_selected.connect(func(index): settings.SetCrtTheme(index))
+	graphics_preset_option.item_selected.connect(func(index):
+		settings.SetGraphicsPreset(index)
+		_populate_shadow_quality_options(settings)
+		_populate_line_of_sight_options(settings)
+		_populate_line_of_sight_quality_options(settings)
+	)
+	shadow_quality_option.item_selected.connect(func(index):
+		settings.SetShadowQuality(index)
+		_populate_graphics_preset_options(settings)
+	)
+	line_of_sight_option.item_selected.connect(func(index):
+		settings.SetLineOfSightMode(index)
+		_populate_graphics_preset_options(settings)
+	)
+	line_of_sight_quality_option.item_selected.connect(func(index):
+		settings.SetLineOfSightQuality(index)
+		_populate_graphics_preset_options(settings)
+	)
 	steady_cam_check.toggled.connect(func(enabled): settings.SetSteadyCam(enabled))
 	fullscreen_check.toggled.connect(func(enabled):
 		settings.SetFullscreen(enabled)
@@ -122,6 +156,9 @@ func _ready() -> void:
 		_stop_mic_test()
 		back_pressed.emit()
 	)
+
+func grab_initial_focus() -> void:
+	back_button.grab_focus()
 
 func _process(_delta: float) -> void:
 	if _mic_test_held:
@@ -185,3 +222,27 @@ func _populate_crt_theme_options(settings) -> void:
 	for i in settings.CrtThemeNames.size():
 		crt_theme_option.add_item(settings.CrtThemeNames[i])
 	crt_theme_option.select(settings.CrtThemeIndex)
+
+func _populate_line_of_sight_options(settings) -> void:
+	line_of_sight_option.clear()
+	for i in settings.LineOfSightModeNames.size():
+		line_of_sight_option.add_item(settings.LineOfSightModeNames[i])
+	line_of_sight_option.select(settings.LineOfSightMode)
+
+func _populate_graphics_preset_options(settings) -> void:
+	graphics_preset_option.clear()
+	for i in settings.GraphicsPresetNames.size():
+		graphics_preset_option.add_item(settings.GraphicsPresetNames[i])
+	graphics_preset_option.select(settings.GraphicsPreset)
+
+func _populate_shadow_quality_options(settings) -> void:
+	shadow_quality_option.clear()
+	for i in settings.ShadowQualityNames.size():
+		shadow_quality_option.add_item(settings.ShadowQualityNames[i])
+	shadow_quality_option.select(settings.ShadowQuality)
+
+func _populate_line_of_sight_quality_options(settings) -> void:
+	line_of_sight_quality_option.clear()
+	for i in settings.LineOfSightQualityNames.size():
+		line_of_sight_quality_option.add_item(settings.LineOfSightQualityNames[i])
+	line_of_sight_quality_option.select(settings.LineOfSightQuality)

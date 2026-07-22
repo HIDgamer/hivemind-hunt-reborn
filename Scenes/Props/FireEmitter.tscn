@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" uid="uid://qqmoqitjel4u" path="res://Code/Props/FlickeringLight.cs" id="1_flicker"]
 [ext_resource type="Texture2D" uid="uid://bbks3dwy5e52a" path="res://Assets/FX/particles/alpha/muzzle_03_a.png" id="3_flame"]
+[ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="4_0ul1k"]
 [ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="4_gas_smoke"]
 [ext_resource type="Texture2D" uid="uid://bylxnomqhsdln" path="res://Assets/FX/Fire+Sparks-Sheet.png" id="5_0ul1k"]
-[ext_resource type="Texture2D" uid="uid://b1s8k2haxbdq3" path="res://Assets/FX/generated/smoke_variants.png" id="5_smoke_variants"]
 
 [sub_resource type="Gradient" id="Gradient_flame_falloff"]
 offsets = PackedFloat32Array(0, 0.6, 1)
@@ -30,6 +30,12 @@ colors = PackedColorArray(1, 0.9, 0.5, 1, 1, 0.4, 0.05, 0)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fire_smoke"]
 shader = ExtResource("4_gas_smoke")
+shader_parameter/distortion_strength = 0.12
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 1
+shader_parameter/v_frames = 1
 
 [sub_resource type="Gradient" id="Gradient_smoke_ramp"]
 colors = PackedColorArray(0.12, 0.12, 0.12, 0.5, 0.05, 0.05, 0.05, 0)
@@ -219,13 +225,15 @@ spread = 30.0
 gravity = Vector2(0, -18)
 initial_velocity_min = 18.0
 initial_velocity_max = 42.0
-scale_amount_min = 0.5
+scale_amount_min = 0.1
+scale_amount_max = 0.4
 color_ramp = SubResource("Gradient_ember_ramp")
 
 [node name="SmokeParticles" type="CPUParticles2D" parent="." unique_id=1493276511]
 material = SubResource("ShaderMaterial_fire_smoke")
 position = Vector2(0, -6)
-texture = ExtResource("5_smoke_variants")
+emitting = false
+texture = ExtResource("4_0ul1k")
 lifetime = 2.6
 randomness = 0.7
 emission_shape = 3
@@ -237,8 +245,8 @@ initial_velocity_min = 8.0
 initial_velocity_max = 18.0
 angular_velocity_min = -14.0
 angular_velocity_max = 14.0
-scale_amount_min = 0.04
-scale_amount_max = 0.07
+scale_amount_min = 0.1
+scale_amount_max = 0.4
 color_ramp = SubResource("Gradient_smoke_ramp")
 anim_offset_max = 0.99
 

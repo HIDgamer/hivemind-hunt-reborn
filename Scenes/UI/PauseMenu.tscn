@@ -1,41 +1,49 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://43xv18mishjv"]
 
-[ext_resource type="Script" path="res://Code/UI/PauseMenu.gd" id="1_pause"]
-[ext_resource type="Theme" path="res://Scenes/UI/SciFiButtonTheme.tres" id="2_theme"]
-[ext_resource type="PackedScene" path="res://Scenes/UI/SettingsPanel.tscn" id="3_settingspanel"]
-[ext_resource type="PackedScene" path="res://Scenes/UI/CRTOverlay.tscn" id="4_crt"]
-[ext_resource type="FontFile" path="res://Assets/Font/alienleaguebold.ttf" id="5_alienbold"]
+[ext_resource type="Script" uid="uid://cq6e4kr4ne8ii" path="res://Code/UI/PauseMenu.gd" id="1_pause"]
+[ext_resource type="Theme" uid="uid://bda50snfg8lq2" path="res://Scenes/UI/SciFiButtonTheme.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://limvgth5lx5g" path="res://Scenes/UI/SettingsPanel.tscn" id="3_settingspanel"]
+[ext_resource type="PackedScene" uid="uid://c0irqm7n43qu7" path="res://Scenes/UI/CRTOverlay.tscn" id="4_crt"]
+[ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="5_alienbold"]
+[ext_resource type="AudioStream" uid="uid://dycrn64wppvbm" path="res://Sound/UI/loading_muffled.ogg" id="6_ambient"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/LoadGameMenu.tscn" id="7_saveload"]
 
-[node name="PauseMenu" type="CanvasLayer"]
+[node name="PauseMenu" type="CanvasLayer" unique_id=1721896027]
 layer = 100
 script = ExtResource("1_pause")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1197499482]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.02, 0.03, 0.05, 0.75)
 
-[node name="MenuRoot" type="Control" parent="."]
+[node name="MenuRoot" type="Control" parent="." unique_id=139347244]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme = ExtResource("2_theme")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MenuRoot"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MenuRoot" unique_id=876627709]
 layout_mode = 1
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -160.0
-offset_top = -110.0
+offset_top = -170.0
 offset_right = 160.0
-offset_bottom = 110.0
+offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="Title" type="Label" parent="MenuRoot/VBoxContainer"]
+[node name="Title" type="Label" parent="MenuRoot/VBoxContainer" unique_id=168749881]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
 theme_override_fonts/font = ExtResource("5_alienbold")
@@ -43,22 +51,33 @@ theme_override_font_sizes/font_size = 42
 text = "PAUSED"
 horizontal_alignment = 1
 
-[node name="ResumeButton" type="Button" parent="MenuRoot/VBoxContainer"]
+[node name="ResumeButton" type="Button" parent="MenuRoot/VBoxContainer" unique_id=1202491500]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "RESUME"
 
-[node name="SettingsButton" type="Button" parent="MenuRoot/VBoxContainer"]
+[node name="SaveButton" type="Button" parent="MenuRoot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "SAVE"
+
+[node name="LoadButton" type="Button" parent="MenuRoot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "LOAD"
+
+[node name="SettingsButton" type="Button" parent="MenuRoot/VBoxContainer" unique_id=328866719]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "SETTINGS"
 
-[node name="QuitButton" type="Button" parent="MenuRoot/VBoxContainer"]
+[node name="QuitButton" type="Button" parent="MenuRoot/VBoxContainer" unique_id=2124764041]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "QUIT TO MAIN MENU"
 
-[node name="SettingsPanelInstance" parent="MenuRoot" instance=ExtResource("3_settingspanel")]
+[node name="SettingsPanelInstance" parent="MenuRoot" unique_id=1057485253 instance=ExtResource("3_settingspanel")]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -71,10 +90,16 @@ offset_right = 230.0
 offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
-visible = false
 
-[node name="CRTOverlay" parent="MenuRoot" instance=ExtResource("4_crt")]
+[node name="SaveLoadMenuInstance" parent="MenuRoot" instance=ExtResource("7_saveload")]
+visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+
+[node name="CRTOverlay" parent="MenuRoot" unique_id=990915090 instance=ExtResource("4_crt")]
+layout_mode = 1
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=1365402686]
+stream = ExtResource("6_ambient")
+volume_db = -6.0
+bus = &"Music"
+parameters/looping = true

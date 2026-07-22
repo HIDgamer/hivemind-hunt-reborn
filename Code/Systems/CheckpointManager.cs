@@ -12,11 +12,56 @@ public partial class CheckpointManager : Node
 	public Vector2 CheckpointPosition { get; private set; } = Vector2.Zero;
 	public string CheckpointScenePath { get; private set; } = "";
 
+	// Set by SaveManager.LoadSlot right before changing scene, so the level
+	// being loaded knows to reposition Sam at the saved checkpoint instead of
+	// her scene-authored default spawn — see Sam._Ready's ConsumePendingRespawn
+	// call, single-player only.
+	public bool PendingRespawnOnLoad { get; private set; } = false;
+
 	public void SetCheckpoint(Vector2 position, string scenePath)
+	{
+		bool isNewCheckpoint = !HasCheckpoint || scenePath != CheckpointScenePath || position != CheckpointPosition;
+		HasCheckpoint = true;
+		CheckpointPosition = position;
+		CheckpointScenePath = scenePath;
+
+		if (isNewCheckpoint)
+		{
+			GetNodeOrNull<SaveManager>("/root/SaveManager")?.Autosave(scenePath, position);
+		}
+	}
+
+	// Called by SaveManager right before a scene change so the destination
+	// level knows where to place Sam once it's ready.
+	public void RequestRespawnOnLoad(Vector2 position, string scenePath)
 	{
 		HasCheckpoint = true;
 		CheckpointPosition = position;
 		CheckpointScenePath = scenePath;
+		PendingRespawnOnLoad = true;
+	}
+
+	// One-shot: only fires the first time the freshly loaded scene asks, so a
+	// later in-scene respawn (death, boundary fall) doesn't get short-circuited
+	// by a stale pending flag.
+	public bool ConsumePendingRespawn(string currentScenePath, out Vector2 position)
+	{
+		position = CheckpointPosition;
+		if (PendingRespawnOnLoad && CheckpointScenePath == currentScenePath)
+		{
+			PendingRespawnOnLoad = false;
+			return true;
+		}
+		return false;
+	}
+
+	// GDScript-callable (no `out` param, which doesn't marshal across the
+	// scripting bridge) — used by New Game to make sure a checkpoint left
+	// over from a previous session, or from browsing the Load screen, never
+	// leaks into a fresh run.
+	public void ClearPendingRespawn()
+	{
+		PendingRespawnOnLoad = false;
 	}
 
 	// A checkpoint from a different level shouldn't apply here.

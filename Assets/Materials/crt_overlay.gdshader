@@ -35,6 +35,14 @@ uniform float noise_amount : hint_range(0.0, 0.3) = 0.05;
 uniform float flicker_amount : hint_range(0.0, 0.3) = 0.05;
 uniform float flicker_speed = 5.0;
 
+// The classic "camera recording a CRT" roll bar — a soft horizontal band of
+// brightness that slowly travels down the whole screen because the camera's
+// shutter and the monitor's refresh never quite line up. Wraps seamlessly
+// from bottom back to top so it loops forever rather than resetting visibly.
+uniform float anomaly_speed = 0.045; // band position cycles 0..1 every 1/speed seconds (~22s)
+uniform float anomaly_width : hint_range(0.01, 0.4) = 0.07;
+uniform float anomaly_brightness : hint_range(0.0, 3.0) = 0.3;
+
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
 }
@@ -72,6 +80,19 @@ void fragment() {
 	// separate blend pass.
 	vec3 color = tint_color.rgb * (1.0 - dark * 0.85);
 	float alpha = clamp(tint_amount + dark * 0.6, 0.0, 1.0);
+
+	// Spans the full width at a single scanline height — unlike the diagonal
+	// sweep this replaced, real rolling interference is horizontal and moves
+	// only in Y. min(dist, 1.0-dist) makes the distance wrap around, so the
+	// band re-enters smoothly at the top the instant it exits the bottom
+	// instead of popping.
+	float roll_pos = fract(TIME * anomaly_speed);
+	float roll_dist = abs(uv.y - roll_pos);
+	roll_dist = min(roll_dist, 1.0 - roll_dist);
+	float anomaly_glow = smoothstep(anomaly_width, 0.0, roll_dist) * anomaly_brightness;
+
+	color += tint_color.rgb * anomaly_glow;
+	alpha = clamp(alpha + anomaly_glow * 0.25, 0.0, 1.0);
 
 	COLOR = vec4(color, alpha);
 }

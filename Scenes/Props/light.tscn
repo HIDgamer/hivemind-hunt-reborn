@@ -20,6 +20,12 @@ metadata/_snap_enabled = true
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_light_spark"]
 shader = ExtResource("4_gas_smoke")
+shader_parameter/distortion_strength = 0.12
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 1
+shader_parameter/v_frames = 1
 
 [sub_resource type="Gradient" id="Gradient_spark"]
 colors = PackedColorArray(1, 1, 1, 1, 0.6, 0.85, 1, 0)

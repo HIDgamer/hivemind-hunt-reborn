@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://daf0bl03h0qgv"]
 
 [ext_resource type="Script" uid="uid://cxbbu2x8bi5h" path="res://Code/Characters/StatusEffectComponent.cs" id="1_status"]
-[ext_resource type="Texture2D" uid="uid://c4rac1xrxki33" path="res://Assets/Tiles/Tileset_extra.tres" id="2_1o45t"]
-[ext_resource type="Texture2D" uid="uid://ctc3u34dbptuq" path="res://Assets/Particles/Smoke 8x8.png" id="3_particle"]
+[ext_resource type="Texture2D" uid="uid://ndouadkdf7gf" path="res://Assets/Tiles/Tileset_extra.tres" id="2_1o45t"]
+[ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="3_1o45t"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_freeze"]
 radius = 15.0
@@ -16,20 +16,20 @@ script = ExtResource("1_status")
 scale = Vector2(0.45, 0.45)
 texture = ExtResource("2_1o45t")
 region_enabled = true
-region_rect = Rect2(320, 32, 32, 32)
+region_rect = Rect2(96, 160, 32, 32)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=998764321]
 shape = SubResource("CircleShape2D_freeze")
 
 [node name="ColdParticles" type="CPUParticles2D" parent="." unique_id=1396706759]
 amount = 24
-texture = ExtResource("3_particle")
+texture = ExtResource("3_1o45t")
 lifetime = 0.9
 direction = Vector2(0, -1)
 spread = 160.0
 gravity = Vector2(0, -18)
 initial_velocity_min = 8.0
 initial_velocity_max = 24.0
-scale_amount_min = 0.35
-scale_amount_max = 0.8
+scale_amount_min = 0.02
+scale_amount_max = 0.1
 color = Color(0.25, 0.65, 1, 0.7)

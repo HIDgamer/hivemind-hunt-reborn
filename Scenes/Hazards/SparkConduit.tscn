@@ -1,11 +1,12 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://c0vj3ojjer1lm"]
 
-[ext_resource type="Script" path="res://Code/Props/FlickeringLight.cs" id="1_flicker"]
-[ext_resource type="Script" path="res://Code/Props/SparkHazard.cs" id="2_hazard"]
-[ext_resource type="AudioStream" path="res://Sound/fx/spark.ogg" id="3_spark"]
-[ext_resource type="AudioStream" path="res://Sound/fx/continuousspark.ogg" id="4_crackle"]
-[ext_resource type="Shader" path="res://Assets/Materials/gas_smoke.gdshader" id="5_gas_smoke"]
-[ext_resource type="Texture2D" path="res://Assets/FX/generated/spark_variants.png" id="6_spark_variants"]
+[ext_resource type="Script" uid="uid://qqmoqitjel4u" path="res://Code/Props/FlickeringLight.cs" id="1_flicker"]
+[ext_resource type="Script" uid="uid://bielw7aspik8h" path="res://Code/Props/SparkHazard.cs" id="2_hazard"]
+[ext_resource type="AudioStream" uid="uid://ckxidlcs3jjq2" path="res://Sound/fx/spark.ogg" id="3_spark"]
+[ext_resource type="AudioStream" uid="uid://drtns3ivl51nm" path="res://Sound/fx/continuousspark.ogg" id="4_crackle"]
+[ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="5_3xixj"]
+[ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="5_gas_smoke"]
+[ext_resource type="Texture2D" uid="uid://7o2ad6qnwmmg" path="res://Assets/FX/generated/spark_variants.png" id="6_spark_variants"]
 
 [sub_resource type="Gradient" id="Gradient_conduit"]
 colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
@@ -19,25 +20,23 @@ fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(0.8, 0)
 metadata/_snap_enabled = true
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_conduit_spark"]
+shader = ExtResource("5_gas_smoke")
+shader_parameter/noise_texture = ExtResource("6_spark_variants")
+shader_parameter/distortion_strength = 0.0
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 2
+shader_parameter/v_frames = 2
+
 [sub_resource type="Gradient" id="Gradient_conduit_spark"]
 colors = PackedColorArray(1, 1, 1, 1, 0.6, 0.85, 1, 0)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_conduit"]
 size = Vector2(48, 40)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_conduit_spark"]
-shader = ExtResource("5_gas_smoke")
-shader_parameter/noise_texture = ExtResource("6_spark_variants")
-shader_parameter/distortion_strength = 0.0
-shader_parameter/h_frames = 2
-shader_parameter/v_frames = 2
-
-# A gap of broken/exposed wiring — no fixture sprite, the light and particles
-# ARE the visual. Deals light contact damage on a cooldown (see SparkHazard.cs)
-# and periodically pops with a bright flash + particle burst + sound
-# (FlickeringLight.cs, SparkBurst profile). A constant low crackle loops in
-# the background so it reads as "actively arcing" even between bursts.
-[node name="SparkConduit" type="Node2D"]
+[node name="SparkConduit" type="Node2D" unique_id=951953642]
 script = ExtResource("1_flicker")
 Profile = 2
 SparkIntervalMin = 2.0
@@ -45,7 +44,7 @@ SparkIntervalMax = 5.5
 SparkFlashEnergyScale = 3.0
 SparkSound = ExtResource("3_spark")
 
-[node name="Aura" type="PointLight2D" parent="."]
+[node name="Aura" type="PointLight2D" parent="." unique_id=962901088]
 color = Color(0.75, 0.9, 1, 1)
 energy = 0.35
 range_item_cull_mask = 3
@@ -56,11 +55,11 @@ texture = SubResource("GradientTexture2D_conduit")
 texture_scale = 2.5
 height = 120.0
 
-[node name="SparkParticles" type="CPUParticles2D" parent="."]
+[node name="SparkParticles" type="CPUParticles2D" parent="." unique_id=1236146526]
 material = SubResource("ShaderMaterial_conduit_spark")
 emitting = false
 amount = 16
-texture = ExtResource("6_spark_variants")
+texture = ExtResource("5_3xixj")
 lifetime = 0.35
 one_shot = true
 explosiveness = 1.0
@@ -69,30 +68,27 @@ spread = 70.0
 gravity = Vector2(0, 260)
 initial_velocity_min = 60.0
 initial_velocity_max = 160.0
-scale_amount_min = 0.05
-scale_amount_max = 0.09
+scale_amount_min = 0.1
+scale_amount_max = 0.4
 color_ramp = SubResource("Gradient_conduit_spark")
-anim_offset_min = 0.0
 anim_offset_max = 0.99
-anim_speed_min = 0.0
-anim_speed_max = 0.0
 
-[node name="SparkAudio" type="AudioStreamPlayer2D" parent="."]
+[node name="SparkAudio" type="AudioStreamPlayer2D" parent="." unique_id=525983828]
 stream = ExtResource("3_spark")
 max_distance = 700.0
 bus = &"SFX"
 
-[node name="AmbientCrackle" type="AudioStreamPlayer2D" parent="."]
+[node name="AmbientCrackle" type="AudioStreamPlayer2D" parent="." unique_id=507299319]
 stream = ExtResource("4_crackle")
 volume_db = -14.0
+autoplay = true
 max_distance = 350.0
 bus = &"SFX"
-autoplay = true
 
-[node name="DamageArea" type="Area2D" parent="."]
-script = ExtResource("2_hazard")
+[node name="DamageArea" type="Area2D" parent="." unique_id=396130358]
 collision_layer = 0
 collision_mask = 10
+script = ExtResource("2_hazard")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea" unique_id=1843607680]
 shape = SubResource("RectangleShape2D_conduit")

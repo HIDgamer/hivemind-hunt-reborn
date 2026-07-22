@@ -379,6 +379,20 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		{
 			GetNodeOrNull<CanvasLayer>("SamHUD")?.Set("visible", false);
 		}
+
+		// A save loaded from the main menu's Load screen leaves a pending
+		// respawn request on CheckpointManager for exactly this scene —
+		// multiplayer sessions never load a save this way, so this is
+		// single-player only.
+		if (!IsNetworked)
+		{
+			var checkpointManager = GetNodeOrNull<CheckpointManager>("/root/CheckpointManager");
+			if (checkpointManager != null
+				&& checkpointManager.ConsumePendingRespawn(GetTree().CurrentScene.SceneFilePath, out Vector2 loadPosition))
+			{
+				RespawnAt(loadPosition);
+			}
+		}
 	}
 
 	public override void _PhysicsProcess(double delta)

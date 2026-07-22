@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://dkk5hgublw6wo"]
+
+[ext_resource type="Script" uid="uid://ds0a1oiralvay" path="res://Code/Props/TimedHazardEmitter.cs" id="1_hazard"]
+[ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="2_gas_smoke"]
+[ext_resource type="Texture2D" uid="uid://b1s8k2haxbdq3" path="res://Assets/FX/generated/smoke_variants.png" id="3_smoke_variants"]
+[ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="4_ga76a"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vent"]
+size = Vector2(28, 44)
+
+[sub_resource type="Gradient" id="Gradient_vent_glow"]
+colors = PackedColorArray(0.75, 0.9, 1, 1, 0.3, 0.5, 0.65, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_vent_glow"]
+gradient = SubResource("Gradient_vent_glow")
+width = 96
+height = 96
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vent_steam"]
+shader = ExtResource("2_gas_smoke")
+shader_parameter/noise_texture = ExtResource("3_smoke_variants")
+shader_parameter/distortion_strength = 0.12
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 2
+shader_parameter/v_frames = 2
+
+[sub_resource type="Gradient" id="Gradient_vent_steam"]
+colors = PackedColorArray(0.85, 0.92, 1, 0.6, 0.7, 0.8, 0.85, 0)
+
+[node name="SteamVent" type="Area2D" unique_id=384756129]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_hazard")
+IntervalMin = 3.0
+IntervalMax = 6.0
+TelegraphDuration = 0.5
+BurstDuration = 0.9
+Damage = 8
+DamageTickInterval = 0.35
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=716283945]
+shape = SubResource("RectangleShape2D_vent")
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=502938174]
+color = Color(0.8, 0.92, 1, 1)
+energy = 0.6
+texture = SubResource("GradientTexture2D_vent_glow")
+texture_scale = 1.2
+height = 60.0
+
+[node name="Particles" type="CPUParticles2D" parent="." unique_id=619384725]
+material = SubResource("ShaderMaterial_vent_steam")
+amount = 14
+texture = ExtResource("4_ga76a")
+lifetime = 1.1
+randomness = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(10, 2)
+direction = Vector2(0, -1)
+spread = 18.0
+gravity = Vector2(0, -30)
+initial_velocity_min = 70.0
+initial_velocity_max = 130.0
+scale_amount_min = 0.1
+scale_amount_max = 0.4
+color_ramp = SubResource("Gradient_vent_steam")
+anim_offset_max = 0.99
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=847162935]
+max_distance = 700.0
+bus = &"SFX"

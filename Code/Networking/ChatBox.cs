@@ -84,11 +84,21 @@ public partial class ChatBox : CanvasLayer
 		_logFadeTween.TweenProperty(_logScroll, "modulate:a", targetAlpha, duration);
 	}
 
+	// ChatBox is a global autoload with no scene-specific lifecycle of its
+	// own, so without this, Enter opened a chat box that had nobody to talk
+	// to and nothing sending on the main menu/lobby/settings — PlayersRoot is
+	// the same "are we actually in a level" marker ResolveSenderName already
+	// relies on (present in every level scene, absent from every menu scene).
+	private bool IsInGameplayScene()
+	{
+		return GetTree().CurrentScene?.GetNodeOrNull("PlayersRoot") != null;
+	}
+
 	public override void _UnhandledInput(InputEvent @event)
 	{
 		if (@event is InputEventKey key && key.Pressed && !key.Echo)
 		{
-			if (key.Keycode == Key.Enter && !_input.Visible)
+			if (key.Keycode == Key.Enter && !_input.Visible && IsInGameplayScene())
 			{
 				OpenInput();
 				GetViewport().SetInputAsHandled();

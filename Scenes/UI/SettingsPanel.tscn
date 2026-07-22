@@ -106,6 +106,62 @@ text = "CRT THEME"
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 
+[node name="GraphicsPresetRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/GraphicsPresetRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "GRAPHICS PRESET"
+
+[node name="GraphicsPresetOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/GraphicsPresetRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="ShadowQualityRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/ShadowQualityRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "SHADOW QUALITY"
+
+[node name="ShadowQualityOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/ShadowQualityRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="LineOfSightRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/LineOfSightRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "LINE OF SIGHT"
+
+[node name="LineOfSightOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/LineOfSightRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="LineOfSightQualityRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/LineOfSightQualityRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "LOS SMOOTHING"
+
+[node name="LineOfSightQualityOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/LineOfSightQualityRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
 [node name="IdleBarksRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=1556537829]
 layout_mode = 2
 

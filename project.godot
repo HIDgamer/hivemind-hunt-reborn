@@ -13,9 +13,9 @@ config_version=5
 config/name="Hivemind-Hunt_Reborn"
 run/main_scene="res://Scenes/UI/BootSplash.tscn"
 config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
-config/icon="uid://c8f4qbslwchqf"
-boot_splash/image="res://Assets/UI/boot_splash.png"
 boot_splash/bg_color=Color(0.02, 0.02, 0.03, 1)
+boot_splash/image="res://Assets/UI/boot_splash.png"
+config/icon="uid://c8f4qbslwchqf"
 
 [audio]
 
@@ -32,6 +32,14 @@ ChatBox="*res://Scenes/UI/ChatBox.tscn"
 Narrator="*res://Scenes/UI/NarratorBark.tscn"
 SquadAbilityState="*res://Code/Systems/SquadAbilityState.cs"
 VoiceChatManager="*res://Code/Networking/VoiceChatManager.cs"
+SaveManager="*res://Code/Systems/SaveManager.cs"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [dotnet]
 

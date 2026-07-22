@@ -69,6 +69,40 @@ public partial class GameSettings : Node
 
 	public int CrtThemeIndex { get; private set; } = 0;
 
+	// 0=Auto, 1=GPU (shader), 2=CPU (per-tile draw calls, no shader) — see
+	// LineOfSightSystem.cs for what each backend actually does. Same plain-
+	// int-for-GDScript-OptionButton shape as CrtThemeIndex. Only read once
+	// when a level's LineOfSightSystem enters the tree, so changing this
+	// takes effect on the next level load, not instantly mid-session.
+	public string[] LineOfSightModeNames { get; private set; } = { "AUTO", "GPU (SHADER)", "CPU (NO SHADER)" };
+	public int LineOfSightMode { get; private set; } = 0;
+
+	// 0=Blocky (1 mask texel per tile, hard edge — the original "tile
+	// perfect" look), 1=Smooth (2x supersampled + blurred, bilinear), 2=
+	// Smoothest (4x supersampled + blurred). Only affects the Gpu backend —
+	// Cpu mode always draws hard per-tile rects regardless, since avoiding a
+	// shader entirely is the whole point of that fallback. See
+	// LineOfSightSystem.BuildMaskFromVisibility.
+	public string[] LineOfSightQualityNames { get; private set; } = { "BLOCKY", "SMOOTH", "SMOOTHEST" };
+	public int LineOfSightQuality { get; private set; } = 1;
+
+	// Applied to every Light2D in the current level by GraphicsQualityApplier
+	// (swept on level load and again live whenever this changes) — Off skips
+	// shadow casting entirely (cheapest), Hard/Soft/Smooth map directly to
+	// Light2D.ShadowFilter's own None/Pcf5/Pcf13 options.
+	public string[] ShadowQualityNames { get; private set; } = { "OFF", "HARD", "SOFT", "SMOOTH" };
+	public int ShadowQuality { get; private set; } = 2;
+
+	// Presets bundle the above (plus LineOfSightMode) into one dropdown for
+	// players who just want "make it faster" or "make it prettier" without
+	// digging through individual sliders — picking one sets every bundled
+	// value in one shot. Changing any individual bundled setting afterward
+	// flips this back to Custom, same "preset vs custom" idiom most games'
+	// graphics menus use. Index 4 (Custom) is never itself "applied" — it's
+	// just what the dropdown shows once you've deviated from a preset.
+	public string[] GraphicsPresetNames { get; private set; } = { "LOW", "MEDIUM", "HIGH", "ULTRA", "CUSTOM" };
+	public int GraphicsPreset { get; private set; } = 2;
+
 	// Instance properties rather than static — GDScript's cross-language
 	// property binding only sees members on the Godot object instance, so a
 	// static field would silently fail to resolve from SettingsPanel.gd.
@@ -76,12 +110,25 @@ public partial class GameSettings : Node
 	// no native PackedVector2IArray Variant type, so a plain C# array of
 	// Vector2I doesn't get a property binding generated for it at all and
 	// stays invisible to GDScript regardless of the get/set accessors.
+	// A wider spread than just the standard 16:9 steps — covers 4:3, 16:10,
+	// and 21:9 ultrawide too, since plenty of monitors/laptops aren't 16:9
+	// at all (1680x1050, 1920x1200, and the ultrawides notably weren't
+	// reachable before, only exact multiples of 16:9 were listed).
 	public Godot.Collections.Array<Vector2I> AvailableResolutions { get; private set; } = new Godot.Collections.Array<Vector2I>
 	{
-		new Vector2I(1280, 720),
-		new Vector2I(1600, 900),
-		new Vector2I(1920, 1080),
-		new Vector2I(2560, 1440),
+		new Vector2I(1024, 768),  // 4:3
+		new Vector2I(1280, 720),  // 16:9
+		new Vector2I(1280, 800),  // 16:10
+		new Vector2I(1366, 768),  // 16:9 — common laptop panel
+		new Vector2I(1440, 900),  // 16:10
+		new Vector2I(1600, 900),  // 16:9
+		new Vector2I(1680, 1050), // 16:10
+		new Vector2I(1920, 1080), // 16:9
+		new Vector2I(1920, 1200), // 16:10
+		new Vector2I(2560, 1080), // 21:9 ultrawide
+		new Vector2I(2560, 1440), // 16:9
+		new Vector2I(3440, 1440), // 21:9 ultrawide
+		new Vector2I(3840, 2160), // 16:9 4K
 	};
 
 	public int[] AvailableFpsCaps { get; private set; } = { 0, 30, 60, 120, 144 };
@@ -164,6 +211,73 @@ public partial class GameSettings : Node
 	public void SetCrtTheme(int index)
 	{
 		CrtThemeIndex = Mathf.Clamp(index, 0, CrtThemeColors.Count - 1);
+		Save();
+		EmitSignal(SignalName.SettingsChanged);
+	}
+
+	public void SetLineOfSightMode(int mode)
+	{
+		LineOfSightMode = Mathf.Clamp(mode, 0, LineOfSightModeNames.Length - 1);
+		MarkPresetCustom();
+		Save();
+		EmitSignal(SignalName.SettingsChanged);
+	}
+
+	public void SetLineOfSightQuality(int quality)
+	{
+		LineOfSightQuality = Mathf.Clamp(quality, 0, LineOfSightQualityNames.Length - 1);
+		MarkPresetCustom();
+		Save();
+		EmitSignal(SignalName.SettingsChanged);
+	}
+
+	public void SetShadowQuality(int quality)
+	{
+		ShadowQuality = Mathf.Clamp(quality, 0, ShadowQualityNames.Length - 1);
+		MarkPresetCustom();
+		Save();
+		EmitSignal(SignalName.SettingsChanged);
+	}
+
+	// Called by every individual bundled setter above — if the change came
+	// from SetGraphicsPreset itself, that method sets GraphicsPreset AFTER
+	// calling these, so this only ever "sticks" as Custom when a setting was
+	// changed on its own.
+	private void MarkPresetCustom()
+	{
+		GraphicsPreset = GraphicsPresetNames.Length - 1; // Custom
+	}
+
+	// LineOfSightMode: Low/Medium force Cpu (no shader at all, cheapest);
+	// High/Ultra prefer Gpu (or Auto for High, so a detected-weak machine can
+	// still fall back even on a "High" pick).
+	public void SetGraphicsPreset(int preset)
+	{
+		preset = Mathf.Clamp(preset, 0, GraphicsPresetNames.Length - 2); // exclude Custom — not a real target
+		switch (preset)
+		{
+			case 0: // Low
+				ShadowQuality = 0;
+				LineOfSightQuality = 0;
+				LineOfSightMode = 2;
+				break;
+			case 1: // Medium
+				ShadowQuality = 1;
+				LineOfSightQuality = 0;
+				LineOfSightMode = 0;
+				break;
+			case 2: // High
+				ShadowQuality = 2;
+				LineOfSightQuality = 1;
+				LineOfSightMode = 0;
+				break;
+			case 3: // Ultra
+				ShadowQuality = 3;
+				LineOfSightQuality = 2;
+				LineOfSightMode = 1;
+				break;
+		}
+		GraphicsPreset = preset;
 		Save();
 		EmitSignal(SignalName.SettingsChanged);
 	}
@@ -292,6 +406,10 @@ public partial class GameSettings : Node
 		MicDeviceName = (string)config.GetValue(SectionMain, "mic_device", MicDeviceName);
 		MicGainLinear = (float)config.GetValue(SectionMain, "mic_gain", MicGainLinear);
 		CrtThemeIndex = (int)config.GetValue(SectionMain, "crt_theme_index", CrtThemeIndex);
+		LineOfSightMode = (int)config.GetValue(SectionMain, "line_of_sight_mode", LineOfSightMode);
+		LineOfSightQuality = (int)config.GetValue(SectionMain, "line_of_sight_quality", LineOfSightQuality);
+		ShadowQuality = (int)config.GetValue(SectionMain, "shadow_quality", ShadowQuality);
+		GraphicsPreset = (int)config.GetValue(SectionMain, "graphics_preset", GraphicsPreset);
 		SteadyCamEnabled = (bool)config.GetValue(SectionMain, "steady_cam", SteadyCamEnabled);
 		FullscreenEnabled = (bool)config.GetValue(SectionMain, "fullscreen", FullscreenEnabled);
 		WindowResolution = (Vector2I)config.GetValue(SectionMain, "resolution", WindowResolution);
@@ -311,6 +429,10 @@ public partial class GameSettings : Node
 		config.SetValue(SectionMain, "mic_device", MicDeviceName);
 		config.SetValue(SectionMain, "mic_gain", MicGainLinear);
 		config.SetValue(SectionMain, "crt_theme_index", CrtThemeIndex);
+		config.SetValue(SectionMain, "line_of_sight_mode", LineOfSightMode);
+		config.SetValue(SectionMain, "line_of_sight_quality", LineOfSightQuality);
+		config.SetValue(SectionMain, "shadow_quality", ShadowQuality);
+		config.SetValue(SectionMain, "graphics_preset", GraphicsPreset);
 		config.SetValue(SectionMain, "steady_cam", SteadyCamEnabled);
 		config.SetValue(SectionMain, "fullscreen", FullscreenEnabled);
 		config.SetValue(SectionMain, "resolution", WindowResolution);
