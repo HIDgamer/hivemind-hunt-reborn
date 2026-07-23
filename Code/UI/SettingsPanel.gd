@@ -11,6 +11,9 @@ signal back_pressed
 const CLICK_SOUND: AudioStream = preload("res://Sound/UI/Menu_Select_00.ogg")
 
 @onready var volume_slider: HSlider = $ScrollContainer/VBoxContainer/VolumeRow/VolumeSlider
+@onready var brightness_slider: HSlider = (
+	$ScrollContainer/VBoxContainer/BrightnessRow/BrightnessSlider
+)
 @onready var music_volume_slider: HSlider = (
 	$ScrollContainer/VBoxContainer/MusicVolumeRow/MusicVolumeSlider
 )
@@ -69,6 +72,7 @@ func _ready() -> void:
 	_voice_chat_manager = get_node("/root/VoiceChatManager")
 
 	volume_slider.value = settings.MasterVolumeLinear
+	brightness_slider.value = settings.BrightnessLevel
 	music_volume_slider.value = settings.MusicVolumeLinear
 	sfx_volume_slider.value = settings.SFXVolumeLinear
 	voice_volume_slider.value = settings.VoiceVolumeLinear
@@ -95,6 +99,7 @@ func _ready() -> void:
 	add_child(_click_player)
 
 	volume_slider.value_changed.connect(func(value): settings.SetMasterVolume(value))
+	brightness_slider.value_changed.connect(func(value): settings.SetBrightness(value))
 	music_volume_slider.value_changed.connect(func(value): settings.SetMusicVolume(value))
 	sfx_volume_slider.value_changed.connect(func(value): settings.SetSFXVolume(value))
 	voice_volume_slider.value_changed.connect(func(value): settings.SetVoiceVolume(value))

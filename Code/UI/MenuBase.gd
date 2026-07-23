@@ -54,6 +54,19 @@ func _grab_initial_focus() -> void:
 	if _first_menu_button != null and is_instance_valid(_first_menu_button) and not _first_menu_button.disabled:
 		_first_menu_button.grab_focus()
 
+# Escape/Back-gamepad-button acts as a shortcut for whatever this screen's
+# own Back button already does — subclasses need nothing extra beyond the
+# _on_back_pressed() method most of them already define for their Back
+# button's own callback. call() (not a direct call) since MenuBase itself
+# doesn't declare that method — only some subclasses do, checked at runtime
+# via has_method. Screens with no "back" concept (MainMenu) or their own
+# distinct Escape behavior (BootSplash, which fully overrides this instead
+# of calling super) are unaffected.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and has_method("_on_back_pressed"):
+		call("_on_back_pressed")
+		get_viewport().set_input_as_handled()
+
 func _on_menu_button_pressed(button: Button, callback: Callable) -> void:
 	if _click_player:
 		_click_player.play()
@@ -96,9 +109,8 @@ func _kill_button_tween(button: Button) -> void:
 		button_tweens[button].kill()
 
 func _fade_out_and_change_scene(scene_path: String) -> void:
-	if fade_tween and fade_tween.is_valid():
-		fade_tween.kill()
-	fade_tween = create_tween()
-	fade_tween.tween_property(self, "modulate", Color(1, 1, 1, 0), 0.5)
-	await fade_tween.finished
-	get_tree().change_scene_to_file(scene_path)
+	# SceneTransition (an autoload CanvasLayer) covers the screen, changes
+	# the scene while fully opaque, then reveals — see its own doc comment
+	# for why that replaced this screen fading itself out and just hoping
+	# the next scene's own fade-in covered the gap.
+	get_node("/root/SceneTransition").change_scene(scene_path)

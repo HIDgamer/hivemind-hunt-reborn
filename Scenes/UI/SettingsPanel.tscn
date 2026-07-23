@@ -41,6 +41,24 @@ max_value = 1.0
 step = 0.01
 value = 1.0
 
+[node name="BrightnessRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/BrightnessRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "BRIGHTNESS"
+
+[node name="BrightnessSlider" type="HSlider" parent="ScrollContainer/VBoxContainer/BrightnessRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 0.5
+max_value = 1.5
+step = 0.01
+value = 1.0
+
 [node name="MusicVolumeRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=15011173]
 layout_mode = 2
 

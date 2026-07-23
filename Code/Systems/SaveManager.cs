@@ -18,6 +18,13 @@ public partial class SaveManager : Node
 	private const string SaveDir = "user://saves/";
 	private const int ThumbnailWidth = 320;
 	private const int ThumbnailHeight = 180;
+	// Bump this whenever the save schema (the fields WriteSlot writes, or
+	// what they mean) changes. A save written under an older version — or
+	// one whose scene_path points at a level that no longer exists, e.g.
+	// after a level got renamed/removed — gets treated as empty and quietly
+	// deleted the next time it's read, rather than handing LoadSlot a
+	// checkpoint that no longer resolves to anything and breaking the load.
+	private const int SaveFormatVersion = 1;
 
 	private struct SlotData
 	{
@@ -125,6 +132,7 @@ public partial class SaveManager : Node
 		CaptureThumbnail(SlotThumbnailPath(slot));
 
 		var config = new ConfigFile();
+		config.SetValue("save", "version", SaveFormatVersion);
 		config.SetValue("save", "name", displayName);
 		config.SetValue("save", "timestamp", Time.GetDatetimeStringFromSystem(false).Replace("T", "  "));
 		config.SetValue("save", "unix_time", Time.GetUnixTimeFromSystem());
@@ -140,10 +148,22 @@ public partial class SaveManager : Node
 		var config = new ConfigFile();
 		if (config.Load(SlotConfigPath(slot)) != Error.Ok) return data;
 
+		int version = (int)config.GetValue("save", "version", 0);
+		string scenePath = (string)config.GetValue("save", "scene_path", "");
+		// A save from an older schema version, or one pointing at a scene
+		// that's since been renamed/removed, can't be trusted to load
+		// correctly — silently wipe it instead of handing back a checkpoint
+		// that'll fail partway through joining/loading.
+		if (version != SaveFormatVersion || string.IsNullOrEmpty(scenePath) || !ResourceLoader.Exists(scenePath))
+		{
+			DeleteSlot(slot);
+			return data;
+		}
+
 		data.Occupied = true;
 		data.DisplayName = (string)config.GetValue("save", "name", $"AUTOSAVE {slot}");
 		data.Timestamp = (string)config.GetValue("save", "timestamp", "");
-		data.ScenePath = (string)config.GetValue("save", "scene_path", "");
+		data.ScenePath = scenePath;
 		data.Position = new Vector2(
 			(float)(double)config.GetValue("save", "pos_x", 0.0),
 			(float)(double)config.GetValue("save", "pos_y", 0.0)

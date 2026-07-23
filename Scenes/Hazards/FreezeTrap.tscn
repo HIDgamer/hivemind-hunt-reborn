@@ -1,8 +1,72 @@
 [gd_scene format=3 uid="uid://daf0bl03h0qgv"]
 
 [ext_resource type="Script" uid="uid://cxbbu2x8bi5h" path="res://Code/Characters/StatusEffectComponent.cs" id="1_status"]
-[ext_resource type="Texture2D" uid="uid://ndouadkdf7gf" path="res://Assets/Tiles/Tileset_extra.tres" id="2_1o45t"]
+[ext_resource type="Texture2D" uid="uid://cc5xssv6irjt8" path="res://Assets/Tiles/Vent.png" id="2_1o45t"]
 [ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="3_1o45t"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g8ccg"]
+atlas = ExtResource("2_1o45t")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bvuxe"]
+atlas = ExtResource("2_1o45t")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ven6i"]
+atlas = ExtResource("2_1o45t")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eq7p6"]
+atlas = ExtResource("2_1o45t")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qu1hw"]
+atlas = ExtResource("2_1o45t")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7qlc8"]
+atlas = ExtResource("2_1o45t")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_og6gk"]
+atlas = ExtResource("2_1o45t")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_whc2o"]
+atlas = ExtResource("2_1o45t")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_qkled"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g8ccg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bvuxe")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ven6i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eq7p6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qu1hw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7qlc8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_og6gk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_whc2o")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 15.0
+}]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_freeze"]
 radius = 15.0
@@ -12,11 +76,10 @@ collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_status")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1043201409]
-scale = Vector2(0.45, 0.45)
-texture = ExtResource("2_1o45t")
-region_enabled = true
-region_rect = Rect2(96, 160, 32, 32)
+[node name="Sprite2D" type="AnimatedSprite2D" parent="." unique_id=1905152725]
+sprite_frames = SubResource("SpriteFrames_qkled")
+autoplay = "default"
+frame_progress = 0.13224435
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=998764321]
 shape = SubResource("CircleShape2D_freeze")

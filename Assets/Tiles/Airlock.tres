@@ -2,9 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://ct03qinou144j" path="res://Assets/Tiles/Airlock.png" id="1_oo7wu"]
 [ext_resource type="Texture2D" uid="uid://c6h67jthej8fi" path="res://Assets/Tiles/Airlock_n.png" id="2_5v0f3"]
-[ext_resource type="Texture2D" uid="uid://c840pdcshu68h" path="res://Assets/Tiles/Airlock_s.png" id="3_58ejq"]
 
 [resource]
 diffuse_texture = ExtResource("1_oo7wu")
 normal_texture = ExtResource("2_5v0f3")
-specular_texture = ExtResource("3_58ejq")

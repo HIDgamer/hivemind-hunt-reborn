@@ -488,8 +488,11 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		{
 			if (_interaction.IsInteracting)
 			{
+				// Pushing/pulling and jumping are mutually exclusive — bracing
+				// against a crate isn't a stance you jump out of, and letting
+				// jump fire mid-push let players skip the "windup" entirely by
+				// hopping instead of committing to the push.
 				HandleInteractionMovement(inputDir, deltaTime);
-				HandleJumping(inputDir);
 			}
 			else
 			{
@@ -1643,6 +1646,18 @@ private void OnDied()
 	// checkpoint (or reload the scene if none was reached yet) — dying
 	// used to just leave Sam stuck in the Dead state forever with no
 	// recovery path.
+	//
+	// HealthComponent isn't networked — every peer's own machine independently
+	// simulates collision against every player's replicated position
+	// (including remote puppets), so a puppet copy can reach 0 HP and fire
+	// Died purely locally on a machine that doesn't actually own that player.
+	// CheckpointManager.RespawnPlayer() always repositions "whichever Sam is
+	// this machine's own local authority" — with no guard here, a remote
+	// puppet's spurious local death silently teleported the WRONG player (the
+	// one actually watching), which is why the host got yanked back whenever
+	// a peer died. Only the machine that truly owns this Sam may act on it.
+	if (IsNetworked && !IsMultiplayerAuthority()) return;
+
 	SceneTreeTimer respawnTimer = GetTree().CreateTimer(DeathRespawnDelay);
 	respawnTimer.Timeout += () =>
 	{

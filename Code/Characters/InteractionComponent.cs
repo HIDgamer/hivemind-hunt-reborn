@@ -169,7 +169,14 @@ public partial class InteractionComponent : Node2D
 		}
 
 		bool physicsOwner = IsPhysicsOwner();
-		if (physicsOwner)
+		// Box_Big (and anything else with LocalApplyHold) owns its own
+		// wake/damping/rotation-lock tuning now, applied once per holder-count
+		// transition rather than once per Sam — see RegisterHold. Doing it
+		// here too, per-Sam, would fight it directly: with two players
+		// holding, whichever one's StopInteraction ran first would restore
+		// the object's original damping right out from under the other one
+		// still actively pushing.
+		if (physicsOwner && !_currentPushable.HasMethod("LocalApplyHold"))
 		{
 			WakeAndTuneObjectForInteraction(_currentPushable);
 		}
@@ -228,16 +235,28 @@ public partial class InteractionComponent : Node2D
 		DriveObjectVelocity(physicsOwner, objectVelocityX);
 	}
 
-	// Server/singleplayer: write straight into the body. Networked client:
-	// the local body is a frozen puppet — forward the intent to the server's
-	// authoritative copy instead (unreliable stream at physics rate; the
-	// server self-releases the hold if the stream stops, so a lost packet or
-	// a sudden disconnect can't wedge a crate in "held" tuning forever).
+	// Server/singleplayer: register this hold with the object itself rather
+	// than writing LinearVelocity directly — Box_Big sums every simultaneous
+	// holder's requested velocity (see Box_Big.RegisterHold), which is what
+	// lets two players pushing/pulling together actually move it faster than
+	// one alone instead of each write just clobbering the other's. Networked
+	// client: the local body is a frozen puppet — forward the intent to the
+	// server's authoritative copy instead (unreliable stream at physics rate;
+	// the server self-releases the hold if the stream stops, so a lost
+	// packet or a sudden disconnect can't wedge a crate in "held" tuning
+	// forever).
 	private void DriveObjectVelocity(bool physicsOwner, float velocityX)
 	{
 		if (physicsOwner)
 		{
-			_currentPushable.LinearVelocity = new Vector2(velocityX, _currentPushable.LinearVelocity.Y);
+			if (_currentPushable.HasMethod("LocalApplyHold"))
+			{
+				_currentPushable.Call("LocalApplyHold", velocityX);
+			}
+			else
+			{
+				_currentPushable.LinearVelocity = new Vector2(velocityX, _currentPushable.LinearVelocity.Y);
+			}
 		}
 		else if (_currentPushable.HasMethod("ServerApplyHold"))
 		{
@@ -247,7 +266,8 @@ public partial class InteractionComponent : Node2D
 
 	public void StopInteraction()
 	{
-		if (_wasAdjustingObjectDamping && _currentPushable != null && GodotObject.IsInstanceValid(_currentPushable))
+		if (_wasAdjustingObjectDamping && _currentPushable != null && GodotObject.IsInstanceValid(_currentPushable)
+			&& !_currentPushable.HasMethod("LocalApplyHold"))
 		{
 			RestoreObjectDamping(_currentPushable);
 		}

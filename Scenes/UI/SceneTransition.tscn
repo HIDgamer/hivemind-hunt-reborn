@@ -1,0 +1,41 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Code/UI/SceneTransition.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://cgr6rdri2brxe" path="res://Assets/Materials/crt_overlay.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_transition"]
+shader = ExtResource("2_shader")
+shader_parameter/tint_color = Color(0.65, 1, 0.75, 1)
+shader_parameter/tint_amount = 0.0
+shader_parameter/scanline_intensity = 0.6
+shader_parameter/scanline_spacing_px = 3.0
+shader_parameter/vignette_strength = 0.0
+shader_parameter/noise_amount = 0.0
+shader_parameter/flicker_amount = 0.0
+shader_parameter/flicker_speed = 9.0
+shader_parameter/anomaly_speed = 0.0
+shader_parameter/anomaly_width = 0.0
+shader_parameter/anomaly_brightness = 0.0
+
+[node name="SceneTransition" type="CanvasLayer"]
+layer = 500
+script = ExtResource("1_script")
+
+[node name="Black" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="StaticRect" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_transition")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

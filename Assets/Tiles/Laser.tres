@@ -2,9 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://8muuv2xh0v3c" path="res://Assets/Tiles/laser.png" id="1_31eix"]
 [ext_resource type="Texture2D" uid="uid://difgxfdk0x2iw" path="res://Assets/Tiles/laser_n.png" id="2_xce3e"]
-[ext_resource type="Texture2D" uid="uid://cs1tg6vxxwlil" path="res://Assets/Tiles/laser_s.png" id="3_thrf3"]
 
 [resource]
 diffuse_texture = ExtResource("1_31eix")
 normal_texture = ExtResource("2_xce3e")
-specular_texture = ExtResource("3_thrf3")

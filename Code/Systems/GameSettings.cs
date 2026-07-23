@@ -18,6 +18,12 @@ public partial class GameSettings : Node
 	public float SFXVolumeLinear { get; private set; } = 1.0f;
 	public float VoiceVolumeLinear { get; private set; } = 1.0f;
 	public bool SteadyCamEnabled { get; private set; } = true;
+	// Multiplies final rendered screen color (see BrightnessOverlay.gd) — 1.0
+	// is neutral/unmodified. Range is deliberately narrow (0.5-1.5): this is
+	// a "the game looks too dark/bright on my monitor" correction, not a
+	// gamma-correction tool, and letting it go further either washes the
+	// image out to white or crushes it to black well before the slider ends.
+	public float BrightnessLevel { get; private set; } = 1.0f;
 	public bool FullscreenEnabled { get; private set; } = false;
 	public Vector2I WindowResolution { get; private set; } = new Vector2I(1280, 720);
 	public bool VsyncEnabled { get; private set; } = true;
@@ -289,6 +295,13 @@ public partial class GameSettings : Node
 		EmitSignal(SignalName.SettingsChanged);
 	}
 
+	public void SetBrightness(float level)
+	{
+		BrightnessLevel = Mathf.Clamp(level, 0.5f, 1.5f);
+		Save();
+		EmitSignal(SignalName.SettingsChanged);
+	}
+
 	public void SetFullscreen(bool enabled)
 	{
 		FullscreenEnabled = enabled;
@@ -411,6 +424,7 @@ public partial class GameSettings : Node
 		ShadowQuality = (int)config.GetValue(SectionMain, "shadow_quality", ShadowQuality);
 		GraphicsPreset = (int)config.GetValue(SectionMain, "graphics_preset", GraphicsPreset);
 		SteadyCamEnabled = (bool)config.GetValue(SectionMain, "steady_cam", SteadyCamEnabled);
+		BrightnessLevel = (float)config.GetValue(SectionMain, "brightness", BrightnessLevel);
 		FullscreenEnabled = (bool)config.GetValue(SectionMain, "fullscreen", FullscreenEnabled);
 		WindowResolution = (Vector2I)config.GetValue(SectionMain, "resolution", WindowResolution);
 		VsyncEnabled = (bool)config.GetValue(SectionMain, "vsync", VsyncEnabled);

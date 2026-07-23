@@ -31,11 +31,20 @@ public partial class FlickeringLight : Node2D
 	[Export] public float SparkFlashEnergyScale = 1.4f;
 	[Export] public float SparkFlashDuration = 0.12f;
 	[Export] public AudioStream SparkSound;
+	// Optional jagged lightning-bolt visual (an "ArcLine" Line2D child) that
+	// snaps into a fresh random zigzag every spark and disappears again once
+	// the flash ends — a soft particle puff alone didn't read as "electric,"
+	// this is what actually sells a Tesla-coil-style arc discharge. Purely
+	// additive: hazards without an ArcLine child are unaffected.
+	[Export] public float ArcReachDistance = 48f;
+	[Export] public float ArcJitter = 10f;
+	[Export] public int ArcSegments = 6;
 
 	private PointLight2D _beam;
 	private PointLight2D _aura;
 	private CpuParticles2D _sparkParticles;
 	private AudioStreamPlayer2D _sparkAudio;
+	private Line2D _arcLine;
 
 	private float _beamBaseEnergy = 1f;
 	private float _auraBaseEnergy = 1f;
@@ -51,6 +60,8 @@ public partial class FlickeringLight : Node2D
 		_aura = GetNodeOrNull<PointLight2D>("Aura");
 		_sparkParticles = GetNodeOrNull<CpuParticles2D>("SparkParticles");
 		_sparkAudio = GetNodeOrNull<AudioStreamPlayer2D>("SparkAudio");
+		_arcLine = GetNodeOrNull<Line2D>("ArcLine");
+		if (_arcLine != null) _arcLine.Visible = false;
 
 		if (_beam != null) _beamBaseEnergy = _beam.Energy;
 		if (_aura != null) _auraBaseEnergy = _aura.Energy;
@@ -102,7 +113,10 @@ public partial class FlickeringLight : Node2D
 			_sparkFlashTimer -= dt;
 			ApplyEnergyScale(SparkFlashEnergyScale);
 			if (_sparkFlashTimer <= 0f)
+			{
 				ApplyEnergyScale(1f);
+				if (_arcLine != null) _arcLine.Visible = false;
+			}
 			return;
 		}
 
@@ -116,9 +130,38 @@ public partial class FlickeringLight : Node2D
 		_sparkFlashTimer = SparkFlashDuration;
 		_sparkTimer = _rng.RandfRange(SparkIntervalMin, SparkIntervalMax);
 
+		if (_arcLine != null)
+		{
+			GenerateArc();
+			_arcLine.Visible = true;
+		}
+
 		_sparkParticles?.Restart();
 		if (_sparkAudio != null && _sparkAudio.Stream != null)
 			_sparkAudio.Play();
+	}
+
+	// A fresh random zigzag every flash — same reach each time (authored via
+	// ArcReachDistance, along the node's local +X), but the midpoints jitter
+	// perpendicular to that line so consecutive sparks don't look identical.
+	private void GenerateArc()
+	{
+		Vector2 start = Vector2.Zero;
+		Vector2 end = new Vector2(ArcReachDistance, 0f);
+		Vector2 perp = (end - start).Rotated(Mathf.Pi / 2f).Normalized();
+
+		var points = new Vector2[ArcSegments + 1];
+		for (int i = 0; i <= ArcSegments; i++)
+		{
+			float t = (float)i / ArcSegments;
+			Vector2 point = start.Lerp(end, t);
+			if (i > 0 && i < ArcSegments)
+			{
+				point += perp * _rng.RandfRange(-ArcJitter, ArcJitter);
+			}
+			points[i] = point;
+		}
+		_arcLine.Points = points;
 	}
 
 	private void ApplyEnergyScale(float scale)

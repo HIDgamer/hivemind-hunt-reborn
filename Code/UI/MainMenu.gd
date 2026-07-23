@@ -69,6 +69,11 @@ func _on_tutorial_pressed():
 	# here, the tutorial level would see IsNetworked still true and try to
 	# spawn networked players instead of just using the plain single Sam.
 	get_node("/root/NetworkManager").Disconnect()
+	# Same reasoning as New Game: browsing the Load screen (or a save loaded
+	# earlier this session) can leave a pending checkpoint respawn queued on
+	# CheckpointManager — Tutorial is a standalone practice run, never a
+	# resume, and must never inherit it.
+	get_node("/root/CheckpointManager").ClearPendingRespawn()
 	_fade_out_and_change_scene(TUTORIAL_LEVEL)
 
 func _on_new_game_pressed():
@@ -88,6 +93,11 @@ func _on_load_pressed():
 func _on_load_game_back():
 	load_game_menu.visible = false
 	button_box_visible(true)
+	# Deleting the last save from inside the Load screen must gray Load back
+	# out immediately — this only ever ran once, in _ready(), so it stayed
+	# stale (still enabled) after returning from a Load screen that emptied
+	# out without the whole MainMenu scene reloading.
+	load_button.disabled = not get_node("/root/SaveManager").HasAnySave()
 	load_button.grab_focus()
 
 func _on_save_slot_selected(scene_path: String):

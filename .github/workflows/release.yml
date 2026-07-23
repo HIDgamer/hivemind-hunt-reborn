@@ -69,6 +69,21 @@ jobs:
           cd "${{ steps.export.outputs.archive_directory }}"
           for f in *.zip; do mv "$f" "Hivemind-Hunt-Reborn-Windows.zip"; done
 
+      # godot-export zips the .exe/.pck/etc. loose at the archive root, so
+      # extracting it dumps every build file straight into whatever folder
+      # the player happened to extract into instead of its own folder.
+      # Re-pack so the zip's only top-level entry is a named folder — most
+      # archive tools (Explorer's included) extract that as one subfolder on
+      # its own rather than spilling loose files everywhere.
+      - name: Wrap build output in its own folder
+        run: |
+          cd "${{ steps.export.outputs.archive_directory }}"
+          mkdir "Hivemind-Hunt-Reborn"
+          unzip -q "Hivemind-Hunt-Reborn-Windows.zip" -d "Hivemind-Hunt-Reborn"
+          rm "Hivemind-Hunt-Reborn-Windows.zip"
+          zip -rq "Hivemind-Hunt-Reborn-Windows.zip" "Hivemind-Hunt-Reborn"
+          rm -rf "Hivemind-Hunt-Reborn"
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:

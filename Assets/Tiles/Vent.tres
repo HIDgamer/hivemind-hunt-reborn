@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" format=3 uid="uid://eg1vaor7535h"]
+
+[ext_resource type="Texture2D" uid="uid://cc5xssv6irjt8" path="res://Assets/Tiles/Vent.png" id="1_fel2v"]
+[ext_resource type="Texture2D" uid="uid://ddb2sdj0ru1m2" path="res://Assets/Tiles/Vent_n.png" id="2_amugr"]
+
+[resource]
+diffuse_texture = ExtResource("1_fel2v")
+normal_texture = ExtResource("2_amugr")

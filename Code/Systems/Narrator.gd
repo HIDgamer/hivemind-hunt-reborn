@@ -445,7 +445,10 @@ func _hook_player_health(player: Node) -> void:
 	# peer already gets its own copy of this same check for its own local
 	# player, so the squad-wide bark request still happens exactly once per
 	# real event, just from whichever machine actually owns it.
-	if not player.is_multiplayer_authority():
+	# IsNetworked is checked first — is_multiplayer_authority() itself warns
+	# ("No multiplayer peer is assigned") when called with no active
+	# MultiplayerPeer at all, which is every singleplayer session.
+	if player.IsNetworked and not player.is_multiplayer_authority():
 		return
 	var health := player.get_node_or_null("HealthComponent")
 	if health == null:

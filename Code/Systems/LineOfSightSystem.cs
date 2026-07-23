@@ -107,6 +107,7 @@ void fragment() {{
 	private int _supersample = 2;
 	private int _blurRadius = 1;
 	private int _maskResolution;
+	private GameSettings _settings;
 
 	// Cpu backend — recomputed every frame (not just on tile change) since
 	// the camera can move/zoom independently of the player crossing a tile.
@@ -133,7 +134,45 @@ void fragment() {{
 		if (_backend == Backend.Gpu)
 		{
 			SetupGpuBackend();
+			// Smoothing quality (not the Gpu/Cpu backend choice itself — that
+			// still needs a level reload, see ResolveBackend) can change
+			// mid-session from the settings menu and used to silently do
+			// nothing until the next level load, since the mask texture was
+			// only ever sized once here.
+			_settings = GetNodeOrNull<GameSettings>("/root/GameSettings");
+			if (_settings != null) _settings.SettingsChanged += OnQualitySettingChanged;
 		}
+	}
+
+	public override void _ExitTree()
+	{
+		if (_settings != null) _settings.SettingsChanged -= OnQualitySettingChanged;
+	}
+
+	private void OnQualitySettingChanged()
+	{
+		int oldSupersample = _supersample;
+		bool oldSmooth = oldSupersample > 1;
+		ResolveQuality();
+		if (_supersample == oldSupersample) return; // this setting didn't actually change
+
+		_maskResolution = _gridSize * _supersample;
+		_maskImage = Image.CreateEmpty(_maskResolution, _maskResolution, false, Image.Format.Rgba8);
+		_maskTexture = ImageTexture.CreateFromImage(_maskImage);
+
+		// filter_nearest vs filter_linear is baked into the shader source
+		// text itself (see BuildShaderSource) — crossing the Blocky<->Smooth
+		// boundary needs a recompiled shader, not just a new texture.
+		bool newSmooth = _supersample > 1;
+		if (newSmooth != oldSmooth)
+		{
+			_material.Shader = new Shader { Code = BuildShaderSource(newSmooth) };
+		}
+		_material.SetShaderParameter("mask_texture", _maskTexture);
+		_material.SetShaderParameter("tile_size", (float)_tileSize.X);
+		_material.SetShaderParameter("grid_span_tiles", (float)_gridSize);
+
+		_fadeConverged = false; // forces one BuildMaskFromVisibility pass at the new resolution next frame
 	}
 
 	// Mode is resolved once at level load, not re-checked live — matches how

@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" format=3]
+
+[ext_resource type="Texture2D" uid="uid://d2pml30a7kiqr" path="res://Assets/Tiles/Laser_Turret.png" id="1_body"]
+[ext_resource type="Texture2D" uid="uid://b0bqyukp4t1pk" path="res://Assets/Tiles/Laser_Turret_n.png" id="2_body_n"]
+
+[resource]
+diffuse_texture = ExtResource("1_body")
+normal_texture = ExtResource("2_body_n")

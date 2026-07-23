@@ -29,12 +29,33 @@ public partial class Box_Big : RigidBody2D
 	// "did the push actually move it for both of us" all hang off.
 	private bool _isNetClientPuppet;
 	private Vector2 _lastPuppetPosition;
-	// Remote-hold bookkeeping (a client pushing/pulling via ServerApplyHold).
-	private const float RemoteHoldLinearDamp = 0.5f;
-	private const float RemoteHoldAngularDamp = 4f;
-	private const float RemoteHoldTimeout = 0.25f;
-	private bool _remoteHeld;
-	private float _remoteHoldTimer;
+
+	// ── cooperative hold bookkeeping ─────────────────────────────────────
+	// Every player currently pushing/pulling this crate — the host's own
+	// hold (LocalApplyHold) and each remote client's hold (ServerApplyHold,
+	// keyed by sender id) both register here instead of writing straight to
+	// LinearVelocity. That's what makes two players working together
+	// actually faster than one: their requested velocities are summed
+	// (capped below) rather than the last write silently clobbering the
+	// other's the way a bare "LinearVelocity = ..." would.
+	private const float HoldLinearDamp = 0.5f;
+	private const float HoldAngularDamp = 4f;
+	private const float HoldTimeout = 0.25f;
+	// Two people pushing the same direction should clearly beat one, but
+	// still be a bounded team effort rather than unbounded — capped relative
+	// to whatever the fastest single contributor actually asked for.
+	private const float MaxCombinedSpeedMultiplier = 1.6f;
+	// Sentinel key for the host's own local hold — always negative, so it
+	// never collides with a real ENet peer id (Godot allocates those >= 1).
+	private const long LocalHolderId = -1;
+
+	private class HolderState
+	{
+		public float VelocityX;
+		public float TimeLeft;
+	}
+
+	private readonly System.Collections.Generic.Dictionary<long, HolderState> _holders = new();
 	private float _savedLinearDamp;
 	private float _savedAngularDamp;
 
@@ -100,19 +121,7 @@ public partial class Box_Big : RigidBody2D
 
 		if (_isNetClientPuppet) return;
 
-		// Auto-release a client's remote hold when its unreliable intent
-		// stream stops arriving (released the key, or disconnected mid-push).
-		if (_remoteHeld)
-		{
-			_remoteHoldTimer -= (float)delta;
-			if (_remoteHoldTimer <= 0f)
-			{
-				LinearDamp = _savedLinearDamp;
-				AngularDamp = _savedAngularDamp;
-				LockRotation = false;
-				_remoteHeld = false;
-			}
-		}
+		ApplyHolderVelocities((float)delta);
 
 		if (isSliding)
 		{
@@ -132,27 +141,84 @@ public partial class Box_Big : RigidBody2D
 
 	// A joining client's push/pull intent, streamed every physics tick while
 	// they hold the crate (see InteractionComponent.DriveObjectVelocity).
-	// Mirrors the same held-object tuning the host's own grab applies:
-	// wake, heavier damping, rotation snapped square then locked.
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
 	public void ServerApplyHold(float velocityX)
 	{
 		if (!Multiplayer.IsServer()) return;
+		RegisterHold(Multiplayer.GetRemoteSenderId(), velocityX);
+	}
 
-		if (!_remoteHeld)
+	// Same registration, for the host's own local push/pull — called
+	// in-process (no RPC hop needed, the host already IS the physics owner)
+	// from InteractionComponent.DriveObjectVelocity.
+	public void LocalApplyHold(float velocityX)
+	{
+		RegisterHold(LocalHolderId, velocityX);
+	}
+
+	private void RegisterHold(long holderId, float velocityX)
+	{
+		if (_holders.Count == 0)
 		{
 			_savedLinearDamp = LinearDamp;
 			_savedAngularDamp = AngularDamp;
-			LinearDamp = RemoteHoldLinearDamp;
-			AngularDamp = RemoteHoldAngularDamp;
+			LinearDamp = HoldLinearDamp;
+			AngularDamp = HoldAngularDamp;
 			Rotation = Mathf.Round(Rotation / (Mathf.Pi / 2f)) * (Mathf.Pi / 2f);
 			LockRotation = true;
-			_remoteHeld = true;
 		}
 
-		_remoteHoldTimer = RemoteHoldTimeout;
+		if (!_holders.TryGetValue(holderId, out HolderState state))
+		{
+			state = new HolderState();
+			_holders[holderId] = state;
+		}
+		state.VelocityX = velocityX;
+		state.TimeLeft = HoldTimeout;
 		Sleeping = false;
-		LinearVelocity = new Vector2(velocityX, LinearVelocity.Y);
+	}
+
+	// Sums every still-active holder's requested velocity (pruning any whose
+	// unreliable stream has gone quiet — a released key or a disconnect mid-
+	// push), capped relative to the fastest single contributor so N helpers
+	// don't scale the crate's speed without bound. Restores the crate's
+	// original damping/rotation only once the LAST holder lets go — with per-
+	// holder tuning instead, whichever of two simultaneous holders released
+	// first would have reset damping out from under the one still pushing.
+	private void ApplyHolderVelocities(float delta)
+	{
+		if (_holders.Count == 0) return;
+
+		float sum = 0f;
+		float maxAbsSingle = 0f;
+		System.Collections.Generic.List<long> expired = null;
+		foreach (var pair in _holders)
+		{
+			pair.Value.TimeLeft -= delta;
+			if (pair.Value.TimeLeft <= 0f)
+			{
+				(expired ??= new System.Collections.Generic.List<long>()).Add(pair.Key);
+				continue;
+			}
+			sum += pair.Value.VelocityX;
+			maxAbsSingle = Mathf.Max(maxAbsSingle, Mathf.Abs(pair.Value.VelocityX));
+		}
+		if (expired != null)
+		{
+			foreach (long key in expired) _holders.Remove(key);
+		}
+
+		if (_holders.Count == 0)
+		{
+			LinearDamp = _savedLinearDamp;
+			AngularDamp = _savedAngularDamp;
+			LockRotation = false;
+			return;
+		}
+
+		float maxCombined = maxAbsSingle * MaxCombinedSpeedMultiplier;
+		float combinedX = Mathf.Clamp(sum, -maxCombined, maxCombined);
+		LinearVelocity = new Vector2(combinedX, LinearVelocity.Y);
 	}
 
 	// A fixed authored position only reads as "the bottom of the crate" as

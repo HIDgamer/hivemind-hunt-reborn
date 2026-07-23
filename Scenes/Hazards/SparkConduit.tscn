@@ -7,6 +7,9 @@
 [ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="5_3xixj"]
 [ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="5_gas_smoke"]
 [ext_resource type="Texture2D" uid="uid://7o2ad6qnwmmg" path="res://Assets/FX/generated/spark_variants.png" id="6_spark_variants"]
+[ext_resource type="Texture2D" uid="uid://e517krvssxa1" path="res://Assets/Tiles/Tesla_trap.png" id="8_canwx"]
+[ext_resource type="Texture2D" uid="uid://ck8hvow8c2fdn" path="res://Assets/Tiles/Tesla_trap_n.png" id="9_e0yjd"]
+[ext_resource type="Texture2D" uid="uid://bjuku1gvgj22s" path="res://Assets/FX/predrawn/charge_7x6.png" id="10_e0yjd"]
 
 [sub_resource type="Gradient" id="Gradient_conduit"]
 colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
@@ -33,8 +36,104 @@ shader_parameter/v_frames = 2
 [sub_resource type="Gradient" id="Gradient_conduit_spark"]
 colors = PackedColorArray(1, 1, 1, 1, 0.6, 0.85, 1, 0)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_conduit"]
-size = Vector2(48, 40)
+[sub_resource type="CircleShape2D" id="CircleShape2D_nggpb"]
+radius = 32.0
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_8rpua"]
+diffuse_texture = ExtResource("8_canwx")
+normal_texture = ExtResource("9_e0yjd")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ukokt"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(0, 0, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_epysj"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(321, 0, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_70pd0"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(642, 0, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e6j0f"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(963, 0, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j7wtp"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(1284, 0, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1jjs3"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(1605, 0, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rpdt5"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(1926, 0, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ujvlm"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(0, 371, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j1s3u"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(321, 371, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8sfpb"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(642, 371, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cg3tt"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(963, 371, 321, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qeio6"]
+atlas = ExtResource("10_e0yjd")
+region = Rect2(1284, 371, 321, 371)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_8rpua"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ukokt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_epysj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_70pd0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e6j0f")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j7wtp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1jjs3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rpdt5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ujvlm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j1s3u")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8sfpb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cg3tt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qeio6")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 15.0
+}]
 
 [node name="SparkConduit" type="Node2D" unique_id=951953642]
 script = ExtResource("1_flicker")
@@ -91,4 +190,13 @@ collision_mask = 10
 script = ExtResource("2_hazard")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea" unique_id=1843607680]
-shape = SubResource("RectangleShape2D_conduit")
+shape = SubResource("CircleShape2D_nggpb")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1106881033]
+texture = SubResource("CanvasTexture_8rpua")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1660382457]
+scale = Vector2(0.3, 0.3)
+sprite_frames = SubResource("SpriteFrames_8rpua")
+autoplay = "default"
+frame_progress = 0.5609388

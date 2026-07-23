@@ -2,9 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://mkc6rfb5740d" path="res://Assets/Tiles/Crate 32.png" id="1_348c7"]
 [ext_resource type="Texture2D" uid="uid://gt34r06vtjkd" path="res://Assets/Tiles/Crate 32_n.png" id="2_6tbyo"]
-[ext_resource type="Texture2D" uid="uid://ewlfy4dktqqe" path="res://Assets/Tiles/Crate 32_s.png" id="3_jl4i6"]
 
 [resource]
 diffuse_texture = ExtResource("1_348c7")
 normal_texture = ExtResource("2_6tbyo")
-specular_texture = ExtResource("3_jl4i6")

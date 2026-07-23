@@ -33,6 +33,8 @@ Narrator="*res://Scenes/UI/NarratorBark.tscn"
 SquadAbilityState="*res://Code/Systems/SquadAbilityState.cs"
 VoiceChatManager="*res://Code/Networking/VoiceChatManager.cs"
 SaveManager="*res://Code/Systems/SaveManager.cs"
+BrightnessOverlay="*res://Scenes/UI/BrightnessOverlay.tscn"
+SceneTransition="*res://Scenes/UI/SceneTransition.tscn"
 
 [display]
 

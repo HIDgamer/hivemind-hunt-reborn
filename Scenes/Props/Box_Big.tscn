@@ -9,6 +9,10 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8rpua"]
 size = Vector2(64, 64)
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_boxbig"]
+friction = 0.15
+friction_combine_mode = 1
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_boxdust_smoke"]
 shader = ExtResource("5_gas_smoke")
 shader_parameter/distortion_strength = 0.12
@@ -29,6 +33,7 @@ properties/1/replication_mode = 1
 [node name="Box_Big" type="RigidBody2D" unique_id=872767005 groups=["pushable"]]
 collision_layer = 4
 collision_mask = 7
+physics_material_override = SubResource("PhysicsMaterial_boxbig")
 script = ExtResource("2_boxbig")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=198450959]

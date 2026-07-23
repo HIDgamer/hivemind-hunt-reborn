@@ -8,6 +8,13 @@ public partial class Laser : Node2D
 	[Export] public float OnTime   = 3.5f;  // Active duration (seconds)
 	[Export] public float OffTime  = 4.0f;  // Dormant duration (seconds)
 	[Export] public float WarnTime = 0.55f; // Pre-fire telegraph blink duration
+	// When true, this laser never free-runs its own Off/Warning/Active/Off
+	// loop — something else (LaserTurret) decides when to fire via
+	// ExternalFire(). OffTime is unused in this mode; the same Warning->
+	// Active->Off timing/telegraph/RPC machinery still drives one full pass
+	// per call, it's just kicked off externally instead of by _timer looping
+	// on its own.
+	[Export] public bool ExternallyTriggered = false;
 
 	// ── Damage ────────────────────────────────────────────────────────────────
 	[ExportGroup("Damage")]
@@ -144,8 +151,9 @@ public partial class Laser : Node2D
 		// host and clients — a beam one player sees as safe is live on the
 		// other's screen (and burns/damage judged against different beams).
 		// Clients never tick their own cycle; the server mirrors every
-		// transition via RemoteCycle below.
-		if (!IsNetClient())
+		// transition via RemoteCycle below. An externally-triggered laser
+		// (LaserTurret) never free-runs at all — it waits for ExternalFire().
+		if (!IsNetClient() && !ExternallyTriggered)
 		{
 			_timer.Start();
 		}
@@ -393,12 +401,39 @@ public partial class Laser : Node2D
 			TransitionTo(LaserState.Off);
 			_sprite.Play("Off");
 			_timer.WaitTime = OffTime;
+
+			// An externally-triggered laser (LaserTurret) settles at Off and
+			// waits for the controller's next ExternalFire() call — it must
+			// not restart its own OffTime countdown and auto-refire on its
+			// own the way a normal free-running laser does.
+			if (ExternallyTriggered) return;
 		}
 		else
 		{
 			_timer.WaitTime = OnTime + WarnTime;
 			TransitionTo(LaserState.Warning);
 		}
+		_timer.Start();
+	}
+
+	// Used by an external controller (LaserTurret) instead of the normal
+	// free-running cycle — fires one Warning->Active->Off pass reusing the
+	// exact same timing/telegraph/RPC-broadcast machinery OnTimerTimeout
+	// already drives above, just kicked off on demand instead of by _timer
+	// looping on its own. Ignored unless the beam is fully Off, so a
+	// turret's own cooldown can never interrupt an already-firing beam, and
+	// ignored entirely on a client (the server's own ExternalFire call is
+	// what gets mirrored out via RemoteCycle, same as every other laser).
+	public void ExternalFire()
+	{
+		if (!ExternallyTriggered || _state != LaserState.Off || IsNetClient()) return;
+
+		if (IsNetServer())
+		{
+			Rpc(MethodName.RemoteCycle, false);
+		}
+		_timer.WaitTime = OnTime + WarnTime;
+		TransitionTo(LaserState.Warning);
 		_timer.Start();
 	}
 
@@ -662,9 +697,19 @@ public partial class Laser : Node2D
 	// Helpers
 	// ─────────────────────────────────────────────────────────────────────────
 
+	// Every consumer of this (the RayCast2D's TargetPosition, the Line2D
+	// beam/glow/core points, BeamArea's CollisionShape2D rotation, BeamLight,
+	// the spark/smoke particle direction) is a child node of this same Laser
+	// Node2D, so the scene graph already applies GlobalRotation once,
+	// automatically, when any of them actually render/cast/collide in world
+	// space. Rotating this vector by GlobalRotation too — as this used to —
+	// applied it a second time on top of that, so the beam ended up pointing
+	// at roughly double the angle the sprite (which just inherits Rotation
+	// plainly, no extra math) visibly faced. This must stay in the Laser
+	// node's own local frame; do not re-add a .Rotated(GlobalRotation) here.
 	private Vector2 BeamDir =>
 		UseRotationAsDirection
-			? Vector2.Right.Rotated(GlobalRotation)
+			? Vector2.Right
 			: LaserDirection.Normalized();
 
 	private void OnAnimationFinished()
