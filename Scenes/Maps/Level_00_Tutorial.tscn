@@ -1288,18 +1288,22 @@ position = Vector2(2223, 38)
 [node name="Laser7" parent="Lasers" unique_id=128976770 instance=ExtResource("8_34m0b")]
 position = Vector2(2704, 47)
 rotation = 1.5707964
+UseRotationAsDirection = true
 
 [node name="Laser8" parent="Lasers" unique_id=1092305747 instance=ExtResource("8_34m0b")]
 position = Vector2(2704, -74)
 rotation = 1.5707964
+UseRotationAsDirection = true
 
 [node name="Laser9" parent="Lasers" unique_id=1671636249 instance=ExtResource("8_34m0b")]
 position = Vector2(2704, -205)
 rotation = 1.5707964
+UseRotationAsDirection = true
 
 [node name="Laser6" parent="Lasers" unique_id=203181272 instance=ExtResource("8_34m0b")]
 position = Vector2(2517, 67)
 rotation = 1.2217305
+UseRotationAsDirection = true
 Theme = 4
 
 [node name="Laser" parent="Lasers" unique_id=476783700 instance=ExtResource("8_34m0b")]
