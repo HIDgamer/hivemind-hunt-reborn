@@ -59,6 +59,14 @@ public partial class SaveManager : Node
 		if (FileAccess.FileExists(pngPath)) DirAccess.RemoveAbsolute(pngPath);
 	}
 
+	public void ClearAllSlots()
+	{
+		for (int i = 1; i <= MaxSlots; i++)
+		{
+			DeleteSlot(i);
+		}
+	}
+
 	public bool HasAnySave()
 	{
 		for (int i = 1; i <= MaxSlots; i++)

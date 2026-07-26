@@ -85,7 +85,17 @@ public partial class VoiceChatManager : Node
 		bool allowed = networkManager != null && networkManager.IsNetworked
 			&& (settings == null || !settings.VoiceChatDisabled);
 
-		if (Input.IsActionJustPressed("PushToTalk"))
+		// OpenMic: hands-free, captures continuously whenever voice chat is
+		// otherwise allowed — no PushToTalk press/release needed at all.
+		// "Always transmit while connected," not silence-gated voice-activity
+		// detection (no threshold/hangover timer) — a further refinement,
+		// not this pass.
+		if (settings != null && settings.VoiceActivationMode == 1)
+		{
+			if (allowed && !_isCapturing) StartCapture();
+			else if (!allowed && _isCapturing) StopCapture();
+		}
+		else if (Input.IsActionJustPressed("PushToTalk"))
 		{
 			if (allowed)
 			{

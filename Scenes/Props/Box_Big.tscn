@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://btpubms5230ws"]
 
 [ext_resource type="Script" uid="uid://jw32jan66lyj" path="res://Code/Props/Box_Big.cs" id="2_boxbig"]
-[ext_resource type="Texture2D" uid="uid://b3aubekkay4ci" path="res://Assets/Tiles/Crate 64.tres" id="2_r0d20"]
+[ext_resource type="Texture2D" uid="uid://b3aubekkay4ci" path="res://Assets/Hazards/Crate 64.tres" id="2_r0d20"]
 [ext_resource type="Texture2D" uid="uid://cvppipkcwvtnx" path="res://Assets/FX/particles/alpha/smoke_02_a.png" id="4_843dm"]
 [ext_resource type="Script" uid="uid://cvjj6vn6x0mf4" path="res://Code/Props/BurnableComponent.cs" id="4_burnable"]
 [ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="5_gas_smoke"]

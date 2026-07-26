@@ -42,18 +42,37 @@ public partial class LaserTurret : Node2D
 	// allowed to fire — without this it would fire the instant it acquires
 	// a target even while still mid-swing toward them.
 	[Export] public float AimToleranceDeg = 15f;
-	// Resting/scanning-center angle (degrees) — RestAngleDeg is the middle
-	// of the back-and-forth scan sweep below, and what it eases back toward
-	// once a chase is given up.
-	[Export] public float RestAngleDeg = 0f;
+	// Resting/scanning-center angle in degrees — a small fine-tune OFFSET
+	// added to this node's own placed Rotation (see _Ready/TickScanning),
+	// not an absolute world angle. Previously this WAS treated as an
+	// absolute world angle, which meant a turret rotated to mount on a side
+	// wall/ceiling/floor still scanned centered on world +X by default,
+	// requiring per-instance manual re-tuning that evidently wasn't
+	// happening — now a level designer just rotates the turret node to
+	// face away from its mounting surface and the scan follows automatically.
+	//
+	// Default is -90 (not 0): Rotation=0 means an UNROTATED marker tile,
+	// i.e. a turret placed normally sitting on the floor — its mounting
+	// surface is BELOW it, so it should scan centered facing UP (away from
+	// the floor), sweeping west-north-east. Vector2.Right.Rotated(0) is
+	// East, not up, so leaving this at 0 scanned north-east-south instead
+	// (clipping straight through the floor on one side of the sweep) — a
+	// -90 offset rotates the East-facing default back up to North. Every
+	// other mounting orientation just falls out of this same constant once
+	// ObjectManager sets Rotation from the tile's placed transform (e.g.
+	// upside-down on a ceiling = Rotation 180, so center lands on South,
+	// correctly scanning away from the ceiling instead).
+	[Export] public float RestAngleDeg = -90f;
 
 	[ExportGroup("Scanning")]
 	// Idle isn't a fixed stare — it's a slow searchlight sweep across this
 	// many degrees to either side of RestAngleDeg, only actually noticing a
 	// player who's inside the narrow sight cone (see SightHalfAngleDeg)
 	// while it happens to be aimed their way, not the wide DetectionRange
-	// circle in every direction at once.
-	[Export] public float ScanArcDeg = 55f;
+	// circle in every direction at once. Raised from 55 (110 total) to 90
+	// (180 total) — a turret should be able to cover the full half-plane in
+	// front of wherever it's mounted, not a narrow forward slice.
+	[Export] public float ScanArcDeg = 90f;
 	[Export] public float ScanSpeedDegPerSec = 40f;
 	// A short probe straight ahead of the CURRENT scan direction — if it's
 	// already blocked this close, the sweep reverses right there instead of
@@ -71,6 +90,13 @@ public partial class LaserTurret : Node2D
 	[Export] public float FireCooldown = 1.1f;
 	[Export] public float MuzzleDistance = 16f;
 	[Export] public AudioStream FireSound;
+	// A locked-on shot no longer always lands true — a random offset in
+	// [-AimErrorDeg, AimErrorDeg] is added to the bolt's actual launch
+	// direction (not the AimToleranceDeg gate above, which stays about WHEN
+	// it's allowed to fire). Every fired shot being a guaranteed hit was
+	// "too deadly" for a patrolling hazard. Plain export for now — a future
+	// difficulty setting can scale this, not wired to one yet.
+	[Export] public float AimErrorDeg = 10f;
 
 	private AudioStreamPlayer2D _audioPlayer;
 	private Polygon2D _sightCone;
@@ -86,6 +112,16 @@ public partial class LaserTurret : Node2D
 	private float _cooldownTimer;
 	// +1 or -1 — which way the idle scan sweep is currently turning.
 	private int _scanDirection = 1;
+	// Rising-edge latch for the wall probe — without it, sitting anywhere
+	// near a wall reversed direction EVERY frame (the scan is deliberately
+	// slow, so one frame's movement isn't enough to leave "blocked" range
+	// before the next frame re-checks and flips back), leaving the turret
+	// visibly jittering in place by a fraction of a degree forever instead
+	// of actually sweeping — this is what read as the turret "freezing."
+	private bool _wasWallBlocked;
+	private MultiplayerSpawner _boltSpawner;
+	private NetworkManager _networkManager;
+	private readonly RandomNumberGenerator _rng = new();
 
 	private static readonly Color IdleConeColor = new Color(0.6f, 0.65f, 0.7f, 0.10f);
 	private static readonly Color SearchingConeColor = new Color(1f, 0.6f, 0.1f, 0.16f);
@@ -93,23 +129,46 @@ public partial class LaserTurret : Node2D
 
 	public override void _Ready()
 	{
+		_rng.Randomize();
 		_audioPlayer = GetNodeOrNull<AudioStreamPlayer2D>("AudioStreamPlayer2D");
 		_sightCone = GetNodeOrNull<Polygon2D>("SightCone");
 		_body = GetNodeOrNull<Sprite2D>("Body");
-		_currentAimRad = Mathf.DegToRad(RestAngleDeg);
+		_currentAimRad = Rotation + Mathf.DegToRad(RestAngleDeg);
 		ApplyAimVisuals();
 		BuildSightCone();
 
-		var networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
+		_networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
 		// IsClientSession, not IsNetworked — _Ready can run before a joining
 		// client's deferred connection opens (same reasoning as Box_Big and
 		// Laser's own _Ready checks), so the raw flag would read false there.
-		bool isClient = networkManager != null && networkManager.IsClientSession;
+		bool isClient = _networkManager != null && _networkManager.IsClientSession;
 		SetPhysicsProcess(!isClient);
 		if (isClient)
 		{
 			UpdateSightCone(false);
 		}
+
+		// Known multiplayer gap this closes: bolts used to be instantiated
+		// directly (only ever on the server, since Fire() only ever runs
+		// there), so they only ever existed in the server's own scene tree —
+		// invisible on every client. A MultiplayerSpawner with spawn-data
+		// (origin+direction) delivered atomically avoids the exact "spawns
+		// at (0,0) before real data arrives" bug PlayerSpawner's own comment
+		// already documents for plain AddSpawnableScene-style spawning.
+		_boltSpawner = GetNodeOrNull<MultiplayerSpawner>("MultiplayerSpawner");
+		if (_boltSpawner != null)
+		{
+			_boltSpawner.SpawnPath = GetTree().CurrentScene.GetPath();
+			_boltSpawner.SpawnFunction = Callable.From<Variant, Node2D>(SpawnBoltFromData);
+		}
+	}
+
+	private Node2D SpawnBoltFromData(Variant data)
+	{
+		var dict = data.AsGodotDictionary();
+		LaserBolt bolt = BoltScene.Instantiate<LaserBolt>();
+		bolt.Launch(dict["origin"].AsVector2(), dict["dir"].AsVector2());
+		return bolt;
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -175,14 +234,21 @@ public partial class LaserTurret : Node2D
 	// made this "instantly lock on" before.
 	private void TickScanning(float dt)
 	{
-		float restRad = Mathf.DegToRad(RestAngleDeg);
+		float restRad = Rotation + Mathf.DegToRad(RestAngleDeg);
 		float extremeRad = restRad + Mathf.DegToRad(ScanArcDeg) * _scanDirection;
 
-		if (IsWallProbeBlocked(_currentAimRad))
+		// Only flip on the rising edge (just became blocked), not on every
+		// frame the probe still reads blocked — the scan speed is slow
+		// enough that one frame's movement can't clear the blocked zone
+		// before the next check, so re-testing unconditionally every frame
+		// just flips back and forth forever without ever making progress.
+		bool blockedNow = IsWallProbeBlocked(_currentAimRad);
+		if (blockedNow && !_wasWallBlocked)
 		{
 			_scanDirection = -_scanDirection;
 			extremeRad = restRad + Mathf.DegToRad(ScanArcDeg) * _scanDirection;
 		}
+		_wasWallBlocked = blockedNow;
 
 		EaseAimToward(extremeRad, dt, ScanSpeedDegPerSec);
 
@@ -292,10 +358,33 @@ public partial class LaserTurret : Node2D
 	{
 		if (BoltScene == null) return;
 
-		var bolt = BoltScene.Instantiate<LaserBolt>();
-		GetTree().CurrentScene.AddChild(bolt);
 		Vector2 dir = Vector2.Right.Rotated(_currentAimRad);
-		bolt.Launch(GlobalPosition + dir * MuzzleDistance, dir);
+		Vector2 origin = GlobalPosition + dir * MuzzleDistance;
+		// The muzzle position/visual aim stays true — only the actual fired
+		// bolt's direction gets the error, so the turret still visibly aims
+		// where it's aiming, it just doesn't always land.
+		Vector2 firedDir = AimErrorDeg > 0f
+			? dir.Rotated(Mathf.DegToRad(_rng.RandfRange(-AimErrorDeg, AimErrorDeg)))
+			: dir;
+
+		// Fire() only ever runs on the server/singleplayer already (client
+		// copies have _PhysicsProcess disabled in _Ready), so no authority
+		// check is needed here — only whether a spawner exists to use.
+		if (_networkManager != null && _networkManager.IsNetworked && _boltSpawner != null)
+		{
+			var data = new Godot.Collections.Dictionary
+			{
+				{ "origin", origin },
+				{ "dir", firedDir },
+			};
+			_boltSpawner.Spawn(data);
+		}
+		else
+		{
+			var bolt = BoltScene.Instantiate<LaserBolt>();
+			GetTree().CurrentScene.AddChild(bolt);
+			bolt.Launch(origin, firedDir);
+		}
 
 		if (_audioPlayer != null && FireSound != null)
 		{

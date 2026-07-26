@@ -1,0 +1,31 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" uid="uid://qchytwxuimpn" path="res://Code/Props/BeaconLight.cs" id="1_beacon"]
+
+[sub_resource type="Gradient" id="Gradient_disco"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_disco"]
+gradient = SubResource("Gradient_disco")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_rainbow"]
+offsets = PackedFloat32Array(0, 0.17, 0.33, 0.5, 0.67, 0.83, 1)
+colors = PackedColorArray(1, 0, 0, 1, 1, 0.6, 0, 1, 1, 1, 0, 1, 0, 1, 0.3, 1, 0, 0.4, 1, 1, 0.4, 0, 0.8, 1, 1, 0, 0, 1)
+
+[node name="DiscoLight" type="Node2D"]
+script = ExtResource("1_beacon")
+Spin = 1
+SpinSpeedDegPerSec = 220.0
+ColorCycle = true
+ColorCycleGradient = SubResource("Gradient_rainbow")
+ColorCycleSpeed = 0.35
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(1, 1, 1, 1)
+energy = 1.4
+texture = SubResource("GradientTexture2D_disco")
+texture_scale = 3.0
+height = 40.0

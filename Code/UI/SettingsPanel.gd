@@ -10,58 +10,80 @@ signal back_pressed
 
 const CLICK_SOUND: AudioStream = preload("res://Sound/UI/Menu_Select_00.ogg")
 
-@onready var volume_slider: HSlider = $ScrollContainer/VBoxContainer/VolumeRow/VolumeSlider
-@onready var brightness_slider: HSlider = (
-	$ScrollContainer/VBoxContainer/BrightnessRow/BrightnessSlider
-)
+const AUDIO := "TabContainer/Audio/ScrollContainer/VBoxContainer/"
+const GRAPHICS := "TabContainer/Graphics/ScrollContainer/VBoxContainer/"
+const GAMEPLAY := "TabContainer/Gameplay/ScrollContainer/VBoxContainer/"
+
+const KEYBIND_ROW_SCENE: PackedScene = preload("res://Scenes/UI/KeybindRow.tscn")
+
+# (action name, display label) for every rebindable action, in the order
+# they're listed in the Gameplay tab's Controls section.
+const REBINDABLE_ACTIONS := [
+	["Jump", "JUMP"],
+	["Left", "MOVE LEFT"],
+	["Right", "MOVE RIGHT"],
+	["Crawl", "CRAWL"],
+	["Sprint", "SPRINT"],
+	["Flashlight", "FLASHLIGHT"],
+	["Interact", "INTERACT"],
+	["Dash", "DASH"],
+	["Pause", "PAUSE"],
+	["PushToTalk", "PUSH TO TALK"],
+]
+
+@onready var volume_slider: HSlider = get_node(AUDIO + "VolumeRow/VolumeSlider")
+@onready var brightness_slider: HSlider = get_node(GRAPHICS + "BrightnessRow/BrightnessSlider")
 @onready var music_volume_slider: HSlider = (
-	$ScrollContainer/VBoxContainer/MusicVolumeRow/MusicVolumeSlider
+	get_node(AUDIO + "MusicVolumeRow/MusicVolumeSlider")
 )
-@onready var sfx_volume_slider: HSlider = (
-	$ScrollContainer/VBoxContainer/SFXVolumeRow/SFXVolumeSlider
-)
+@onready var sfx_volume_slider: HSlider = get_node(AUDIO + "SFXVolumeRow/SFXVolumeSlider")
 @onready var voice_volume_slider: HSlider = (
-	$ScrollContainer/VBoxContainer/VoiceVolumeRow/VoiceVolumeSlider
+	get_node(AUDIO + "VoiceVolumeRow/VoiceVolumeSlider")
 )
-@onready var idle_barks_check: CheckBox = (
-	$ScrollContainer/VBoxContainer/IdleBarksRow/IdleBarksCheck
-)
+@onready var idle_barks_check: CheckBox = get_node(AUDIO + "IdleBarksRow/IdleBarksCheck")
 @onready var voice_chat_disabled_check: CheckBox = (
-	$ScrollContainer/VBoxContainer/VoiceChatDisabledRow/VoiceChatDisabledCheck
+	get_node(AUDIO + "VoiceChatDisabledRow/VoiceChatDisabledCheck")
 )
 @onready var mic_device_option: OptionButton = (
-	$ScrollContainer/VBoxContainer/MicDeviceRow/MicDeviceOption
+	get_node(AUDIO + "MicDeviceRow/MicDeviceOption")
 )
-@onready var mic_gain_slider: HSlider = $ScrollContainer/VBoxContainer/MicGainRow/MicGainSlider
-@onready var mic_test_button: Button = $ScrollContainer/VBoxContainer/MicTestRow/MicTestButton
-@onready var mic_test_bar: ProgressBar = $ScrollContainer/VBoxContainer/MicTestRow/MicTestBar
-@onready var crt_theme_option: OptionButton = (
-	$ScrollContainer/VBoxContainer/CrtThemeRow/CrtThemeOption
+@onready var mic_gain_slider: HSlider = get_node(AUDIO + "MicGainRow/MicGainSlider")
+@onready var mic_test_button: Button = get_node(AUDIO + "MicTestRow/MicTestButton")
+@onready var mic_test_bar: ProgressBar = get_node(AUDIO + "MicTestRow/MicTestBar")
+@onready var voice_mode_option: OptionButton = (
+	get_node(AUDIO + "VoiceModeRow/VoiceModeOption")
 )
+@onready var mouse_sensitivity_slider: HSlider = (
+	get_node(GAMEPLAY + "MouseSensitivityRow/MouseSensitivitySlider")
+)
+@onready var keybinds_container: VBoxContainer = get_node(GAMEPLAY + "KeybindsContainer")
+@onready var crt_theme_option: OptionButton = get_node(GRAPHICS + "CrtThemeRow/CrtThemeOption")
 @onready var graphics_preset_option: OptionButton = (
-	$ScrollContainer/VBoxContainer/GraphicsPresetRow/GraphicsPresetOption
+	get_node(GRAPHICS + "GraphicsPresetRow/GraphicsPresetOption")
 )
 @onready var shadow_quality_option: OptionButton = (
-	$ScrollContainer/VBoxContainer/ShadowQualityRow/ShadowQualityOption
+	get_node(GRAPHICS + "ShadowQualityRow/ShadowQualityOption")
 )
 @onready var line_of_sight_option: OptionButton = (
-	$ScrollContainer/VBoxContainer/LineOfSightRow/LineOfSightOption
+	get_node(GRAPHICS + "LineOfSightRow/LineOfSightOption")
 )
 @onready var line_of_sight_quality_option: OptionButton = (
-	$ScrollContainer/VBoxContainer/LineOfSightQualityRow/LineOfSightQualityOption
+	get_node(GRAPHICS + "LineOfSightQualityRow/LineOfSightQualityOption")
 )
-@onready var steady_cam_check: CheckBox = (
-	$ScrollContainer/VBoxContainer/SteadyCamRow/SteadyCamCheck
-)
+@onready var steady_cam_check: CheckBox = get_node(GAMEPLAY + "SteadyCamRow/SteadyCamCheck")
 @onready var fullscreen_check: CheckBox = (
-	$ScrollContainer/VBoxContainer/FullscreenRow/FullscreenCheck
+	get_node(GRAPHICS + "FullscreenRow/FullscreenCheck")
 )
 @onready var resolution_option: OptionButton = (
-	$ScrollContainer/VBoxContainer/ResolutionRow/ResolutionOption
+	get_node(GRAPHICS + "ResolutionRow/ResolutionOption")
 )
-@onready var vsync_check: CheckBox = $ScrollContainer/VBoxContainer/VsyncRow/VsyncCheck
-@onready var fps_option: OptionButton = $ScrollContainer/VBoxContainer/FpsRow/FpsOption
-@onready var back_button: Button = $ScrollContainer/VBoxContainer/BackButton
+@onready var vsync_check: CheckBox = get_node(GRAPHICS + "VsyncRow/VsyncCheck")
+@onready var fps_option: OptionButton = get_node(GRAPHICS + "FpsRow/FpsOption")
+@onready var clear_saves_button: Button = (
+	get_node(GAMEPLAY + "ClearSavesRow/ClearSavesButton")
+)
+@onready var confirm_dialog: ConfirmationDialog = $ConfirmDialog
+@onready var back_button: Button = $BackButton
 
 var _click_player: AudioStreamPlayer
 var _voice_chat_manager
@@ -82,6 +104,7 @@ func _ready() -> void:
 	steady_cam_check.button_pressed = settings.SteadyCamEnabled
 	fullscreen_check.button_pressed = settings.FullscreenEnabled
 	vsync_check.button_pressed = settings.VsyncEnabled
+	mouse_sensitivity_slider.value = settings.MouseSensitivity
 
 	_populate_resolution_options(settings)
 	_populate_fps_options(settings)
@@ -91,6 +114,8 @@ func _ready() -> void:
 	_populate_line_of_sight_options(settings)
 	_populate_line_of_sight_quality_options(settings)
 	_populate_mic_device_options(settings)
+	_populate_voice_mode_options(settings)
+	_populate_keybind_rows()
 	resolution_option.disabled = settings.FullscreenEnabled
 
 	_click_player = AudioStreamPlayer.new()
@@ -142,6 +167,8 @@ func _ready() -> void:
 	mic_device_option.item_selected.connect(func(index):
 		settings.SetMicDevice(mic_device_option.get_item_metadata(index))
 	)
+	voice_mode_option.item_selected.connect(func(index): settings.SetVoiceActivationMode(index))
+	mouse_sensitivity_slider.value_changed.connect(func(value): settings.SetMouseSensitivity(value))
 	mic_test_button.button_down.connect(func():
 		_mic_test_held = true
 		_voice_chat_manager.SetTestModeActive(true)
@@ -160,6 +187,13 @@ func _ready() -> void:
 		_click_player.play()
 		_stop_mic_test()
 		back_pressed.emit()
+	)
+	clear_saves_button.pressed.connect(func():
+		_click_player.play()
+		confirm_dialog.popup_centered()
+	)
+	confirm_dialog.confirmed.connect(func():
+		get_node("/root/SaveManager").ClearAllSlots()
 	)
 
 func grab_initial_focus() -> void:
@@ -251,3 +285,18 @@ func _populate_line_of_sight_quality_options(settings) -> void:
 	for i in settings.LineOfSightQualityNames.size():
 		line_of_sight_quality_option.add_item(settings.LineOfSightQualityNames[i])
 	line_of_sight_quality_option.select(settings.LineOfSightQuality)
+
+func _populate_voice_mode_options(settings) -> void:
+	voice_mode_option.clear()
+	for i in settings.VoiceActivationModeNames.size():
+		voice_mode_option.add_item(settings.VoiceActivationModeNames[i])
+	voice_mode_option.select(settings.VoiceActivationMode)
+
+func _populate_keybind_rows() -> void:
+	for child in keybinds_container.get_children():
+		child.queue_free()
+	for entry in REBINDABLE_ACTIONS:
+		var row := KEYBIND_ROW_SCENE.instantiate()
+		row.action_name = entry[0]
+		row.display_name = entry[1]
+		keybinds_container.add_child(row)

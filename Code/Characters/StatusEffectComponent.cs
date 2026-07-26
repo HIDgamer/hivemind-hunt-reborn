@@ -5,7 +5,8 @@ public partial class StatusEffectComponent : Area2D
 	public enum StatusEffect
 	{
 		Freeze,
-		Slow
+		Slow,
+		Burn
 	}
 
 	[Export] public StatusEffect Effect { get; set; } = StatusEffect.Freeze;
@@ -39,6 +40,10 @@ public partial class StatusEffectComponent : Area2D
 		if (Effect == StatusEffect.Freeze || Effect == StatusEffect.Slow)
 		{
 			player.ApplyMovementSlow(SpeedMultiplier, Duration);
+		}
+		else if (Effect == StatusEffect.Burn)
+		{
+			player.ApplyBurning(Duration);
 		}
 
 		EmitSignal(SignalName.StatusEffectApplied, player, (int)Effect, SpeedMultiplier, Duration);

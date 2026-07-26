@@ -7,8 +7,8 @@
 [ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="5_3xixj"]
 [ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="5_gas_smoke"]
 [ext_resource type="Texture2D" uid="uid://7o2ad6qnwmmg" path="res://Assets/FX/generated/spark_variants.png" id="6_spark_variants"]
-[ext_resource type="Texture2D" uid="uid://e517krvssxa1" path="res://Assets/Tiles/Tesla_trap.png" id="8_canwx"]
-[ext_resource type="Texture2D" uid="uid://ck8hvow8c2fdn" path="res://Assets/Tiles/Tesla_trap_n.png" id="9_e0yjd"]
+[ext_resource type="Texture2D" uid="uid://e517krvssxa1" path="res://Assets/Hazards/Tesla_trap.png" id="8_canwx"]
+[ext_resource type="Texture2D" uid="uid://ck8hvow8c2fdn" path="res://Assets/Hazards/Tesla_trap_n.png" id="9_e0yjd"]
 [ext_resource type="Texture2D" uid="uid://bjuku1gvgj22s" path="res://Assets/FX/predrawn/charge_7x6.png" id="10_e0yjd"]
 
 [sub_resource type="Gradient" id="Gradient_conduit"]

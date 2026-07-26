@@ -23,6 +23,9 @@ properties/4/replication_mode = 1
 properties/5/path = NodePath(".:NetIsSpeaking")
 properties/5/spawn = true
 properties/5/replication_mode = 1
+properties/6/path = NodePath("HealthComponent:SyncedHealth")
+properties/6/spawn = true
+properties/6/replication_mode = 1
 
 [node name="NetworkPlayer" instance=ExtResource("1_sam")]
 IsNetworked = true

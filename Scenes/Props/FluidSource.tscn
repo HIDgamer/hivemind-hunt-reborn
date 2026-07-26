@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://da6tvllh2tngk"]
+
+[ext_resource type="Script" uid="uid://cv6ptyluqvc4j" path="res://Code/Props/FluidSource.cs" id="1_fluidsource"]
+[ext_resource type="Texture2D" uid="uid://bjp0rlwhglrft" path="res://Assets/Hazards/EMP_Trap.png" id="2_v10ny"]
+[ext_resource type="Texture2D" uid="uid://cfopwil0pl5al" path="res://Assets/Hazards/EMP_Trap_n.png" id="3_3ejpf"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_8rpua"]
+diffuse_texture = ExtResource("2_v10ny")
+normal_texture = ExtResource("3_3ejpf")
+
+[node name="FluidSource" type="Node2D" unique_id=603828429]
+z_index = 3
+script = ExtResource("1_fluidsource")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=334729355]
+texture = SubResource("CanvasTexture_8rpua")
+region_enabled = true
+region_rect = Rect2(32, 0, 32, 32)

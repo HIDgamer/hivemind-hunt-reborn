@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b338clvaxofqp"]
 
 [ext_resource type="Script" uid="uid://cwsaoshgyxh5b" path="res://Code/Props/NpcDialogueTrigger.cs" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://iw56m5v8delm" path="res://Assets/Tiles/Console.tres" id="2_console"]
+[ext_resource type="Texture2D" uid="uid://iw56m5v8delm" path="res://Assets/Hazards/Console.tres" id="2_console"]
 [ext_resource type="Texture2D" uid="uid://da78tke2d5ydu" path="res://Assets/FX/generated/npc_portrait_placeholder.png" id="3_portrait"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_range"]

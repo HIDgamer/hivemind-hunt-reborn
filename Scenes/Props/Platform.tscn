@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://fx703038j0hv"]
 
-[ext_resource type="Texture2D" uid="uid://cserkghc74pqy" path="res://Assets/Tiles/Platform.png" id="1_0towb"]
-[ext_resource type="Texture2D" uid="uid://cqpfa133x7ya0" path="res://Assets/Tiles/Platform_n.png" id="2_aiw26"]
+[ext_resource type="Texture2D" uid="uid://cserkghc74pqy" path="res://Assets/Hazards/Platform.png" id="1_0towb"]
+[ext_resource type="Script" uid="uid://dtxckw1jfqrd5" path="res://Code/Props/MovingPlatform.cs" id="1_aiw26"]
+[ext_resource type="Texture2D" uid="uid://cqpfa133x7ya0" path="res://Assets/Hazards/Platform_n.png" id="2_aiw26"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_7qdk8"]
 diffuse_texture = ExtResource("1_0towb")
@@ -10,11 +11,31 @@ normal_texture = ExtResource("2_aiw26")
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_53r27"]
 size = Vector2(42, 8)
 
-[node name="Platform" type="StaticBody2D" unique_id=1263528588]
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_g68ka"]
+cull_mode = 1
+polygon = PackedVector2Array(21, 0, 21, 5, -21, 5, -21, 0)
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=886452260]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_platform"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[node name="MovingPlatform" type="CharacterBody2D" unique_id=1368600897]
+disable_mode = 2
+motion_mode = 1
+floor_constant_speed = true
+platform_wall_layers = 1
+script = ExtResource("1_aiw26")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1927714928]
 texture = SubResource("CanvasTexture_7qdk8")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=122953124]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=771205418]
 position = Vector2(0, 1)
 shape = SubResource("RectangleShape2D_53r27")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=399486850]
+occluder = SubResource("OccluderPolygon2D_g68ka")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=12244136]
+replication_config = SubResource("SceneReplicationConfig_platform")

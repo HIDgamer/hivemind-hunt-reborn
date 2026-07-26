@@ -1,0 +1,150 @@
+[gd_scene format=3 uid="uid://bkcmc7pc16e82"]
+
+[ext_resource type="Script" uid="uid://bgkrrmxd3nf08" path="res://Code/Props/GasVent.cs" id="1_gasvent"]
+[ext_resource type="Texture2D" uid="uid://ndouadkdf7gf" path="res://Assets/Tiles/Tileset_extra.tres" id="2_em4el"]
+[ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="2_gas_smoke"]
+[ext_resource type="Texture2D" uid="uid://cc5xssv6irjt8" path="res://Assets/Hazards/Vent.png" id="2_je2ci"]
+[ext_resource type="Texture2D" uid="uid://b1s8k2haxbdq3" path="res://Assets/FX/generated/smoke_variants.png" id="3_smoke_variants"]
+[ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="4_ga76a"]
+[ext_resource type="AudioStream" uid="uid://b6lud0ounxbhw" path="res://Sound/fx/Vent_loop.ogg" id="5_ventloop"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wetcj"]
+atlas = ExtResource("2_em4el")
+region = Rect2(32, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g8ccg"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bvuxe"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ven6i"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eq7p6"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qu1hw"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7qlc8"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_og6gk"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_whc2o"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_75lvo"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wetcj")
+}],
+"loop": 1,
+"name": &"Broken",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g8ccg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bvuxe")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ven6i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eq7p6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qu1hw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7qlc8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_og6gk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_whc2o")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 15.0
+}]
+
+[sub_resource type="Gradient" id="Gradient_vent_glow"]
+colors = PackedColorArray(0.75, 0.9, 1, 1, 0.3, 0.5, 0.65, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_vent_glow"]
+gradient = SubResource("Gradient_vent_glow")
+width = 96
+height = 96
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vent_steam"]
+shader = ExtResource("2_gas_smoke")
+shader_parameter/noise_texture = ExtResource("3_smoke_variants")
+shader_parameter/distortion_strength = 0.12
+shader_parameter/distortion_scale = 1.5
+shader_parameter/drift_speed = 0.12
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/h_frames = 2
+shader_parameter/v_frames = 2
+
+[sub_resource type="Gradient" id="Gradient_vent_steam"]
+colors = PackedColorArray(0.85, 0.92, 1, 0.6, 0.7, 0.8, 0.85, 0)
+
+[node name="GasVent" type="Node2D" unique_id=431278502]
+z_index = 3
+script = ExtResource("1_gasvent")
+EmittedGasType = 0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=786448211]
+sprite_frames = SubResource("SpriteFrames_75lvo")
+animation = &"Broken"
+autoplay = "default"
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=1475218895]
+color = Color(0.8, 0.92, 1, 1)
+energy = 0.6
+texture = SubResource("GradientTexture2D_vent_glow")
+texture_scale = 1.2
+height = 60.0
+
+[node name="Particles" type="CPUParticles2D" parent="." unique_id=1102005365]
+material = SubResource("ShaderMaterial_vent_steam")
+amount = 14
+texture = ExtResource("4_ga76a")
+lifetime = 1.1
+randomness = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(10, 2)
+direction = Vector2(0, -1)
+spread = 18.0
+gravity = Vector2(0, -30)
+initial_velocity_min = 70.0
+initial_velocity_max = 130.0
+scale_amount_min = 0.1
+scale_amount_max = 0.4
+color_ramp = SubResource("Gradient_vent_steam")
+anim_offset_max = 0.99
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=98660300]
+stream = ExtResource("5_ventloop")
+max_distance = 700.0
+bus = &"SFX"
+parameters/looping = true

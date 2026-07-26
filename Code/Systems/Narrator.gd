@@ -192,7 +192,7 @@ var _music_tweens: Dictionary = {}
 @onready var _text_label: RichTextLabel = $Panel/TextLabel
 @onready var _portrait: TextureRect = $Panel/PortraitFrame/Portrait
 @onready var _voice: AudioStreamPlayer = $VoiceAudio
-@onready var _saffi_texture: Texture2D = preload("res://Assets/Potraits/Saffi.png")
+@onready var _saffi_texture: Texture2D = preload("res://Assets/Potraits/Saffi-potrait.png")
 
 var _fade_tween: Tween
 

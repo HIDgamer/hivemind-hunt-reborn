@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" format=3 uid="uid://51uk77kbgru5"]
+
+[ext_resource type="Texture2D" uid="uid://trhdx6bbj1i2" path="res://Assets/Decals/Sign 5  Glow - YELLOW.png" id="1_epm07"]
+[ext_resource type="Texture2D" uid="uid://bgd5h0ot0nlny" path="res://Assets/Decals/Sign 5  Glow - YELLOW_n.png" id="2_rdqq0"]
+
+[resource]
+diffuse_texture = ExtResource("1_epm07")
+normal_texture = ExtResource("2_rdqq0")

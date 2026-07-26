@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://qchytwxuimpn" path="res://Code/Props/BeaconLight.cs" id="1_beacon"]
+
+[sub_resource type="Gradient" id="Gradient_warn"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_warn"]
+gradient = SubResource("Gradient_warn")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="WarningLight" type="Node2D"]
+script = ExtResource("1_beacon")
+Spin = 1
+SpinSpeedDegPerSec = 70.0
+Pulse = true
+PulseSpeed = 2.5
+PulseMinEnergyScale = 0.4
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(1, 0.75, 0.15, 1)
+energy = 1.2
+texture = SubResource("GradientTexture2D_warn")
+texture_scale = 3.0
+height = 40.0

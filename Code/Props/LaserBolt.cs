@@ -7,10 +7,14 @@ using Godot;
 // chunk of damage, then it's gone — the danger comes from the turret's
 // aim/timing, not from standing in a damage-per-tick death ray.
 //
-// Known multiplayer gap, same as AcidSpit.gd: only ever spawned by
-// LaserTurret's own server-only AI, so this only ever exists in the
-// server's scene tree — invisible on clients until turret AI gets a proper
-// MultiplayerSpawner treatment. Out of scope for this pass.
+// Now spawned via LaserTurret's own MultiplayerSpawner (origin+direction
+// delivered as spawn data), so it's visible on every peer, not just the
+// server. Each peer's copy still moves/pops independently (simple
+// deterministic straight-line motion, no continuous position sync needed
+// for something this short-lived) — only the actual damage application is
+// authority-gated below, since the spawner defaults a spawned node's
+// multiplayer authority to whichever peer called Spawn() (the server, since
+// LaserTurret.Fire() only ever runs there).
 public partial class LaserBolt : Area2D
 {
 	[Export] public float Speed = 820f;
@@ -39,6 +43,8 @@ public partial class LaserBolt : Area2D
 		if (_spent) return;
 
 		GlobalPosition += _direction * Speed * (float)delta;
+		GasSimulation.Instance?.TryIgnite(GlobalPosition);
+
 		_lifeTimer -= (float)delta;
 		if (_lifeTimer <= 0f)
 		{
@@ -50,7 +56,7 @@ public partial class LaserBolt : Area2D
 	{
 		if (_spent) return;
 
-		if (body.IsInGroup("Player"))
+		if (body.IsInGroup("Player") && (!Multiplayer.HasMultiplayerPeer() || IsMultiplayerAuthority()))
 		{
 			HealthComponent health = body.GetNodeOrNull<HealthComponent>("HealthComponent");
 			health?.Damage(Damage, _direction);

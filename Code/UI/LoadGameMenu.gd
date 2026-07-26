@@ -17,6 +17,7 @@ var mode: int = Mode.LOAD
 
 @onready var title_label: Label = $VBoxContainer/Title
 @onready var back_button: Button = $VBoxContainer/BackButton
+@onready var clear_all_button: Button = $VBoxContainer/ClearAllButton
 @onready var confirm_dialog: ConfirmationDialog = $ConfirmDialog
 @onready var _rows: Array = [
 	$VBoxContainer/SlotList/Slot1Row,
@@ -42,6 +43,7 @@ func _ready() -> void:
 		_click_player.play()
 		back_pressed.emit()
 	)
+	clear_all_button.pressed.connect(_on_clear_all_pressed)
 	confirm_dialog.confirmed.connect(_on_confirm_dialog_confirmed)
 
 	for row in _rows:
@@ -121,6 +123,13 @@ func _on_action_pressed(row: Node) -> void:
 		confirm_dialog.dialog_text = "Overwrite \"%s\"?" % name_label.text
 		confirm_dialog.popup_centered()
 
+func _on_clear_all_pressed() -> void:
+	_click_player.play()
+	_pending_action = "delete_all"
+	_pending_slot = 0
+	confirm_dialog.dialog_text = "Clear ALL saves? This can't be undone."
+	confirm_dialog.popup_centered()
+
 func _on_delete_pressed(row: Node) -> void:
 	var delete_button: Button = row.get_node("DeleteButton")
 	var slot: int = delete_button.get_meta("slot")
@@ -137,6 +146,9 @@ func _on_confirm_dialog_confirmed() -> void:
 		_do_manual_save(_pending_slot)
 	elif _pending_action == "delete":
 		get_node("/root/SaveManager").DeleteSlot(_pending_slot)
+		refresh()
+	elif _pending_action == "delete_all":
+		get_node("/root/SaveManager").ClearAllSlots()
 		refresh()
 	_pending_action = ""
 

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bnr6plulp52ob"
+path="res://.godot/imported/steam hisses - 4.ogg-67c1834e7fb80798fb5ab30e3047ef95.oggvorbisstr"
+
+[deps]
+
+source_file="res://Sound/fx/steam hisses - 4.ogg"
+dest_files=["res://.godot/imported/steam hisses - 4.ogg-67c1834e7fb80798fb5ab30e3047ef95.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

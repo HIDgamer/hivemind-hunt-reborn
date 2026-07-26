@@ -26,6 +26,36 @@ public partial class TimedHazardEmitter : Area2D
 	[Export] public float DamageTickInterval = 0.4f;
 	[Export] public AudioStream TelegraphSound;
 	[Export] public AudioStream BurstSound;
+	// Optional pool of alternate burst sounds (e.g. several steam-hiss
+	// takes) — if set, StartBurst picks one at random each time instead of
+	// always playing BurstSound, so a vent firing repeatedly over a play
+	// session doesn't loop the exact same clip every time. Falls back to
+	// BurstSound when empty.
+	[Export] public AudioStream[] BurstSoundVariants;
+	// Opt-in: while bursting, also vents into GasSimulation's room-filling
+	// gas grid (see GasSimulation.EmitGas) on the same cadence as damage
+	// ticks — a steam/gas vent lingers and can fill an enclosed room, unlike
+	// the instantaneous per-tick burst damage below.
+	[Export] public bool EmitsGas = false;
+	[Export] public float GasEmissionAmount = 0.25f;
+	[Export] public GasSimulation.GasType EmittedGasType = GasSimulation.GasType.Toxic;
+	// Degrees — defaults to ambient; a steam-style burst vent would want
+	// this pushed up so its gas rises rather than pooling at the floor.
+	[Export] public float EmittedTemperature = 20f;
+
+	[ExportGroup("Damage")]
+	// A destroyed hazard (see Break()) permanently stops its telegraph/
+	// burst/cooldown cycle and switches to whatever "broken" SpriteFrames
+	// animation the scene already has authored (SteamVent.tscn has one
+	// sitting unused, lowercase "broken").
+	[Export] public string BrokenAnimationName = "broken";
+	// Defaults FALSE — this component also drives non-vent hazards
+	// (electrified floor panels, etc.) that shouldn't blow up just because
+	// a gas explosion happened nearby. Flip on per-instance for actual
+	// vent-themed uses (SteamVent.tscn sets this true).
+	[Export] public bool DestructibleByExplosion = false;
+
+	public bool IsBroken { get; private set; }
 
 	[Signal] public delegate void TelegraphStartedEventHandler();
 	[Signal] public delegate void BurstStartedEventHandler();
@@ -40,6 +70,7 @@ public partial class TimedHazardEmitter : Area2D
 	private CpuParticles2D _particles;
 	private PointLight2D _light;
 	private AudioStreamPlayer2D _audio;
+	private AnimatedSprite2D _sprite;
 	private float _lightBaseEnergy = 1f;
 
 	public override void _Ready()
@@ -47,7 +78,9 @@ public partial class TimedHazardEmitter : Area2D
 		_particles = GetNodeOrNull<CpuParticles2D>("Particles");
 		_light = GetNodeOrNull<PointLight2D>("PointLight2D");
 		_audio = GetNodeOrNull<AudioStreamPlayer2D>("AudioStreamPlayer2D");
+		_sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
 		if (_light != null) _lightBaseEnergy = _light.Energy;
+		if (DestructibleByExplosion) AddToGroup("ExplodableVent");
 
 		_rng.Randomize();
 		// Desync instances of the same trap placed near each other so a row
@@ -56,8 +89,27 @@ public partial class TimedHazardEmitter : Area2D
 		SetBurstActive(false);
 	}
 
+	// Permanently destroys this hazard — freezes the telegraph/burst/
+	// cooldown cycle, kills any active burst, and swaps to the pre-authored
+	// broken sprite. Idempotent; safe to call more than once.
+	public void Break()
+	{
+		if (IsBroken) return;
+		IsBroken = true;
+
+		SetBurstActive(false);
+		if (_light != null) _light.Energy = _lightBaseEnergy;
+		_audio?.Stop();
+		if (_sprite != null && _sprite.SpriteFrames != null && _sprite.SpriteFrames.HasAnimation(BrokenAnimationName))
+		{
+			_sprite.Play(BrokenAnimationName);
+		}
+	}
+
 	public override void _Process(double delta)
 	{
+		if (IsBroken) return;
+
 		float dt = (float)delta;
 		switch (_state)
 		{
@@ -85,6 +137,7 @@ public partial class TimedHazardEmitter : Area2D
 				{
 					_damageTimer = DamageTickInterval;
 					DamageOverlapping();
+					if (EmitsGas) GasSimulation.Instance?.EmitGas(GlobalPosition, EmittedGasType, GasEmissionAmount, EmittedTemperature);
 				}
 				if (_timer <= 0f) EndBurst();
 				break;
@@ -118,9 +171,12 @@ public partial class TimedHazardEmitter : Area2D
 		_timer = BurstDuration;
 		_damageTimer = 0f;
 		SetBurstActive(true);
-		if (_audio != null && BurstSound != null)
+		AudioStream burstSound = BurstSoundVariants != null && BurstSoundVariants.Length > 0
+			? BurstSoundVariants[_rng.RandiRange(0, BurstSoundVariants.Length - 1)]
+			: BurstSound;
+		if (_audio != null && burstSound != null)
 		{
-			_audio.Stream = BurstSound;
+			_audio.Stream = burstSound;
 			_audio.Play();
 		}
 		EmitSignal(SignalName.BurstStarted);

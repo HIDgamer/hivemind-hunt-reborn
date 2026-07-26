@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 // Tile-grid line-of-sight: darkens every tile the local player doesn't
 // currently have an unobstructed line to, using the level's own "Solid"
@@ -26,6 +27,8 @@ using Godot;
 // this is networked — every peer computes and draws only their own view.
 public partial class LineOfSightSystem : Node2D
 {
+	public static LineOfSightSystem Instance { get; private set; }
+
 	public enum Backend { Auto, Gpu, Cpu }
 
 	[Export] public NodePath TileMapPath = "../TileMap";
@@ -34,6 +37,30 @@ public partial class LineOfSightSystem : Node2D
 	// sight purposes, exactly like it already does for physics.
 	[Export] public int SolidLayer = 2;
 	[Export] public int SightRadiusTiles = 11;
+	// Flat heuristic applied to every scene-authored Light2D auto-registered
+	// at _Ready (see SweepAndRegisterLights) — not per-texture radius math,
+	// good enough for "a lit room stays lit through the fog" without fiddly
+	// texture-size introspection.
+	[Export] public float DefaultLightSightRadiusTiles = 6f;
+
+	// Things that push back darkness independent of the player's own sight
+	// radius — every scene-authored Light2D (auto-registered below) plus
+	// anything dynamic that calls RegisterLight itself (FlashlightComponent).
+	// Culled/disabled lights (Light2D.Enabled == false) are skipped when
+	// tracing, not removed from this list, since GraphicsQualityApplier
+	// toggles Enabled on and off constantly as the player moves.
+	private readonly List<(Light2D Light, float RadiusTiles)> _registeredLights = new();
+
+	public void RegisterLight(Light2D light, float sightRadiusTiles)
+	{
+		if (light == null) return;
+		_registeredLights.Add((light, sightRadiusTiles));
+	}
+
+	public void UnregisterLight(Light2D light)
+	{
+		_registeredLights.RemoveAll(entry => entry.Light == light);
+	}
 
 	// Filter mode is generated into the source rather than fixed, since it
 	// has to match LineOfSightQuality: Blocky wants nearest (a hard edge
@@ -114,9 +141,19 @@ void fragment() {{
 	private Rect2 _cpuViewRect;
 	private Rect2 _cpuGridRect;
 
-	public override void _Ready()
+	// Instance is set here rather than in _Ready() — Godot runs _EnterTree()
+	// for an entire scene batch (parent-first, top-down) before _ready() runs
+	// for ANY node in that batch, so setting it here guarantees every sibling
+	// consumer's own _Ready() sees a non-null Instance regardless of scene
+	// declaration order, instead of racing against this node's own _Ready().
+	public override void _EnterTree()
 	{
 		_tileMap = GetNodeOrNull<TileMap>(TileMapPath);
+		if (_tileMap != null) Instance = this;
+	}
+
+	public override void _Ready()
+	{
 		if (_tileMap == null)
 		{
 			GD.PushWarning($"LineOfSightSystem: no TileMap found at '{TileMapPath}' — disabling.");
@@ -142,11 +179,28 @@ void fragment() {{
 			_settings = GetNodeOrNull<GameSettings>("/root/GameSettings");
 			if (_settings != null) _settings.SettingsChanged += OnQualitySettingChanged;
 		}
+
+		Node scene = GetTree().CurrentScene;
+		if (scene != null) SweepAndRegisterLights(scene);
 	}
 
 	public override void _ExitTree()
 	{
+		if (Instance == this) Instance = null;
 		if (_settings != null) _settings.SettingsChanged -= OnQualitySettingChanged;
+	}
+
+	// Same recursive-sweep shape GraphicsQualityApplier already uses for its
+	// own Light2D pass — a second small local copy, not a shared method (this
+	// project's established "small enough to duplicate" precedent), since the
+	// two sweeps do different things with what they find.
+	private void SweepAndRegisterLights(Node node)
+	{
+		if (node is Light2D light) RegisterLight(light, DefaultLightSightRadiusTiles);
+		foreach (Node child in node.GetChildren())
+		{
+			SweepAndRegisterLights(child);
+		}
 	}
 
 	private void OnQualitySettingChanged()
@@ -395,21 +449,48 @@ void fragment() {{
 		RealignDisplayedDarkness(center);
 		System.Array.Clear(_visible, 0, _visible.Length);
 
-		int radiusSq = SightRadiusTiles * SightRadiusTiles;
-		for (int gy = 0; gy < _gridSize; gy++)
-		{
-			for (int gx = 0; gx < _gridSize; gx++)
-			{
-				int dx = gx - SightRadiusTiles;
-				int dy = gy - SightRadiusTiles;
-				if (dx * dx + dy * dy > radiusSq) continue; // circular sight, not a square
+		TraceFrom(center, SightRadiusTiles, center);
 
-				TraceLine(center, center + new Vector2I(dx, dy));
-			}
+		// Registered lights (scene-authored, auto-swept at _Ready, plus
+		// anything dynamic like FlashlightComponent) push back darkness too
+		// — a lit room stays lit through the fog even where the player
+		// hasn't personally traced sight. Culled/disabled lights are simply
+		// skipped, not removed from the list (GraphicsQualityApplier toggles
+		// Enabled constantly as the player moves).
+		foreach ((Light2D light, float radiusTiles) in _registeredLights)
+		{
+			if (!IsInstanceValid(light) || !light.Enabled || !light.Visible) continue;
+
+			Vector2I lightTile = _tileMap.LocalToMap(_tileMap.ToLocal(light.GlobalPosition));
+			int radius = Mathf.CeilToInt(radiusTiles);
+			// Skip lights whose full radius can't reach the current grid
+			// window at all — no point tracing something nowhere near what's
+			// actually displayed.
+			if ((lightTile - center).Length() > SightRadiusTiles + radius) continue;
+
+			TraceFrom(lightTile, radius, center);
 		}
 		// Mask/rect drawing no longer happens here — UpdateDarknessFade picks
 		// up the new targets and eases the actually-displayed darkness toward
 		// them over the next several frames instead of snapping immediately.
+	}
+
+	// Reveals every tile within radiusTiles of origin (circular, not square)
+	// that has an unobstructed line to it — used for both the player's own
+	// sight and each registered light's push-back radius. gridCenter is
+	// ALWAYS the player's own tile (what _visible is actually indexed
+	// against), which can differ from origin when tracing from a light.
+	private void TraceFrom(Vector2I origin, int radiusTiles, Vector2I gridCenter)
+	{
+		int radiusSq = radiusTiles * radiusTiles;
+		for (int dy = -radiusTiles; dy <= radiusTiles; dy++)
+		{
+			for (int dx = -radiusTiles; dx <= radiusTiles; dx++)
+			{
+				if (dx * dx + dy * dy > radiusSq) continue; // circular, not a square
+				TraceLine(origin, origin + new Vector2I(dx, dy), gridCenter);
+			}
+		}
 	}
 
 	// Upsamples the coarse boolean visibility grid (nearest-neighbor, one
@@ -477,7 +558,11 @@ void fragment() {{
 	// Walks a Bresenham line from the player's tile to target, revealing
 	// every tile along the way up to and including the first solid tile
 	// encountered — you can see the wall you're looking at, nothing behind it.
-	private void TraceLine(Vector2I origin, Vector2I target)
+	// origin is where the trace radiates FROM (the player's own tile, or a
+	// light's tile); gridCenter is always the player's own tile — the frame
+	// of reference _visible is indexed against. They're the same value for
+	// the player's own trace, but differ when tracing outward from a light.
+	private void TraceLine(Vector2I origin, Vector2I target, Vector2I gridCenter)
 	{
 		int x0 = origin.X, y0 = origin.Y;
 		int x1 = target.X, y1 = target.Y;
@@ -488,7 +573,7 @@ void fragment() {{
 		while (true)
 		{
 			var current = new Vector2I(x0, y0);
-			Reveal(current, origin);
+			Reveal(current, gridCenter);
 
 			if (current != origin && IsSolid(current)) break;
 			if (x0 == x1 && y0 == y1) break;

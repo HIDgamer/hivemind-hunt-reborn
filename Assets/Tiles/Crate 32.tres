@@ -1,8 +1,0 @@
-[gd_resource type="CanvasTexture" format=3 uid="uid://cq268rkaiwbs"]
-
-[ext_resource type="Texture2D" uid="uid://mkc6rfb5740d" path="res://Assets/Tiles/Crate 32.png" id="1_348c7"]
-[ext_resource type="Texture2D" uid="uid://gt34r06vtjkd" path="res://Assets/Tiles/Crate 32_n.png" id="2_6tbyo"]
-
-[resource]
-diffuse_texture = ExtResource("1_348c7")
-normal_texture = ExtResource("2_6tbyo")

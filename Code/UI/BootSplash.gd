@@ -22,6 +22,14 @@ const OFF := Color(0.05, 0.05, 0.05, 1.0)
 
 var _advancing := false
 var _ambient_active := false
+# The ambient surge/flicker loop creates a fresh Tween every cycle with no
+# stored reference — _advance() couldn't stop whichever one happened to be
+# mid-flight, so a skip pressed right as a surge/flicker tween was still
+# animating reborn_label could leave it wherever that tween was headed
+# (e.g. a bright surge peak) instead of OFF, even though _ambient_active was
+# already set false. Tracking the current one here lets _advance() kill it
+# outright before its own power-down tween runs.
+var _ambient_tween: Tween = null
 
 func _ready() -> void:
 	# Not calling super._ready() — MenuBase's uniform fade-in doesn't fit a
@@ -76,6 +84,7 @@ func _run_reborn_cycle() -> void:
 	if not _ambient_active:
 		return
 	var surge := create_tween()
+	_ambient_tween = surge
 	surge.tween_property(reborn_label, "modulate", Color(1.12, 0.96, 0.94, 1.0), 1.7) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	surge.tween_property(reborn_label, "modulate", Color(0.9, 0.82, 0.8, 0.96), 1.7) \
@@ -90,6 +99,7 @@ func _maybe_flicker_reborn() -> void:
 		return
 
 	var flick := create_tween()
+	_ambient_tween = flick
 	flick.tween_property(reborn_label, "modulate", Color(0.25, 0.16, 0.15, 0.7), 0.05)
 	flick.tween_property(reborn_label, "modulate", Color(1.5, 1.2, 1.15, 1.0), 0.06)
 	flick.tween_property(reborn_label, "modulate", Color(0.4, 0.26, 0.24, 0.8), 0.04)
@@ -97,7 +107,14 @@ func _maybe_flicker_reborn() -> void:
 	flick.tween_callback(_run_reborn_cycle)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _advancing:
+	# Gated on _ambient_active (only true once the ignition reveal has fully
+	# finished, see _run_ignition/_pulse_skip_hint) instead of just
+	# _advancing — mashing input during the ignition sequence used to let
+	# _advance()'s power-down tween start fighting the still-running ignition
+	# reveal loops over the same label modulate properties in the same frame,
+	# which read as a jarring flash/stutter. Waiting for ambient means the
+	# reveal is always fully done before a skip can even begin.
+	if _advancing or not _ambient_active:
 		return
 	if (event is InputEventKey and event.pressed and not event.echo) \
 		or (event is InputEventMouseButton and event.pressed):
@@ -108,6 +125,8 @@ func _advance() -> void:
 		return
 	_advancing = true
 	_ambient_active = false
+	if _ambient_tween and _ambient_tween.is_running():
+		_ambient_tween.kill()
 
 	var power_down := create_tween()
 	power_down.tween_property(skip_hint, "modulate:a", 0.0, 0.15)

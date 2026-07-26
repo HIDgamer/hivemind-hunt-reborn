@@ -6,12 +6,18 @@ public partial class AbilityPickupComponent : Area2D
 	{
 		ExtraJump,
 		Dash,
-		MaxHealth
+		MaxHealth,
+		// Consumable, not a permanent unlock — deliberately never recorded
+		// in SquadAbilityState (see GrantTo/_Ready): a health pack should
+		// stay collectible on rejoin if it hasn't actually been picked up
+		// yet, not self-consume the way permanent upgrades correctly do.
+		HealthPack
 	}
 
 	[Export] public AbilityKind Ability { get; set; } = AbilityKind.ExtraJump;
 	[Export] public int ExtraJumpCount { get; set; } = 1;
 	[Export] public int MaxHealthIncrease { get; set; } = 1;
+	[Export] public int HealAmount { get; set; } = 2;
 	[Export] public bool ConsumeOnPickup { get; set; } = true;
 	[Export] public AudioStream PickupSound { get; set; }
 
@@ -126,6 +132,11 @@ public partial class AbilityPickupComponent : Area2D
 			case AbilityKind.MaxHealth:
 				player.GetNodeOrNull<HealthComponent>("HealthComponent")?.IncreaseMaxHealth(MaxHealthIncrease);
 				squad?.RecordAbility(Ability, MaxHealthIncrease);
+				break;
+			case AbilityKind.HealthPack:
+				// One-shot consumable — intentionally no squad?.RecordAbility
+				// call, see the enum comment.
+				player.GetNodeOrNull<HealthComponent>("HealthComponent")?.Heal(HealAmount);
 				break;
 		}
 	}

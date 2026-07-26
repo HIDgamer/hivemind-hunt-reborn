@@ -53,6 +53,19 @@ public partial class GameSettings : Node
 	// the settings-menu mic-test meter, so the meter reflects what actually
 	// gets sent.
 	public float MicGainLinear { get; private set; } = 1.0f;
+	// PushToTalk (default) requires holding the PushToTalk action; OpenMic
+	// captures/transmits continuously whenever voice chat is otherwise
+	// allowed (connected + not muted) — hands-free, no button. Read directly
+	// in VoiceChatManager._Process, same "local gate at the point of use"
+	// shape as VoiceChatDisabled.
+	public string[] VoiceActivationModeNames { get; private set; } = { "PUSH TO TALK", "OPEN MIC" };
+	public int VoiceActivationMode { get; private set; } = 0;
+	// Scales the flashlight's aim-toward-cursor response speed (see
+	// FlashlightComponent.cs) — the only mouse-driven mechanic in the
+	// project today, so that's the sole current consumer. Narrow range
+	// (0.5-2.0), same "correction, not extreme tuning" spirit as
+	// BrightnessLevel.
+	public float MouseSensitivity { get; private set; } = 1.0f;
 
 	// Recolors every CRT-shaded overlay (menus' CRTOverlay.tscn, SamHUD's
 	// corner panel) — a plain index rather than a C# enum so GDScript's
@@ -142,6 +155,7 @@ public partial class GameSettings : Node
 	public override void _Ready()
 	{
 		Load();
+		ApplyPersistedKeybinds();
 		ApplyMasterVolume();
 		ApplyMusicVolume();
 		ApplySFXVolume();
@@ -210,6 +224,20 @@ public partial class GameSettings : Node
 	public void SetVoiceChatDisabled(bool disabled)
 	{
 		VoiceChatDisabled = disabled;
+		Save();
+		EmitSignal(SignalName.SettingsChanged);
+	}
+
+	public void SetVoiceActivationMode(int mode)
+	{
+		VoiceActivationMode = Mathf.Clamp(mode, 0, VoiceActivationModeNames.Length - 1);
+		Save();
+		EmitSignal(SignalName.SettingsChanged);
+	}
+
+	public void SetMouseSensitivity(float sensitivity)
+	{
+		MouseSensitivity = Mathf.Clamp(sensitivity, 0.5f, 2.0f);
 		Save();
 		EmitSignal(SignalName.SettingsChanged);
 	}
@@ -405,6 +433,108 @@ public partial class GameSettings : Node
 		Engine.MaxFps = MaxFps;
 	}
 
+	// Separate file from settings.cfg, deliberately — Save() above rewrites
+	// the whole settings.cfg from a fresh ConfigFile every time any setting
+	// changes, which would silently wipe a shared [keybinds] section on the
+	// very next unrelated volume/brightness/etc. change. Keybinds get their
+	// own small file with their own independent load/save so the two never
+	// stomp on each other.
+	private const string KeybindsPath = "user://keybinds.cfg";
+
+	// Called by KeybindRow.gd once a rebind is confirmed — always writes
+	// BOTH slots (key/mouse + gamepad) for the action together, even though
+	// only one changed, so ApplyPersistedKeybinds can reconstruct the full,
+	// unambiguous 2-event list for that action from scratch every time
+	// rather than guessing how to merge a partial override onto defaults.
+	// Either event may be null (unbound).
+	public void SaveKeybindPair(string action, InputEvent keyOrMouseEvent, InputEvent joypadEvent)
+	{
+		var config = new ConfigFile();
+		config.Load(KeybindsPath); // ignore error — a missing file just starts empty
+
+		config.SetValue(action, "key", EncodeEvent(keyOrMouseEvent));
+		config.SetValue(action, "joy", EncodeEvent(joypadEvent));
+		config.Save(KeybindsPath);
+	}
+
+	// Applied once at startup, before anything reads input — reconstructs
+	// every action with a saved override from scratch (erase then re-add),
+	// leaving actions with no saved override untouched (still whatever
+	// project.godot shipped with).
+	public void ApplyPersistedKeybinds()
+	{
+		var config = new ConfigFile();
+		if (config.Load(KeybindsPath) != Error.Ok) return;
+
+		foreach (string action in config.GetSections())
+		{
+			if (!InputMap.HasAction(action)) continue;
+			InputMap.ActionEraseEvents(action);
+
+			if (config.HasSectionKey(action, "key"))
+			{
+				InputEvent keyEvt = DecodeEvent((Godot.Collections.Dictionary)config.GetValue(action, "key"));
+				if (keyEvt != null) InputMap.ActionAddEvent(action, keyEvt);
+			}
+			if (config.HasSectionKey(action, "joy"))
+			{
+				InputEvent joyEvt = DecodeEvent((Godot.Collections.Dictionary)config.GetValue(action, "joy"));
+				if (joyEvt != null) InputMap.ActionAddEvent(action, joyEvt);
+			}
+		}
+	}
+
+	// Manual primitive decomposition rather than letting ConfigFile try to
+	// serialize the InputEvent Resource directly — deliberately avoids any
+	// uncertainty about round-tripping a Resource type through the text
+	// config format; a plain Dictionary of ints/strings is unambiguous.
+	private static Godot.Collections.Dictionary EncodeEvent(InputEvent evt)
+	{
+		var dict = new Godot.Collections.Dictionary();
+		switch (evt)
+		{
+			case InputEventKey key:
+				dict["type"] = "key";
+				dict["code"] = (int)key.PhysicalKeycode;
+				break;
+			case InputEventMouseButton mouse:
+				dict["type"] = "mouse";
+				dict["code"] = (int)mouse.ButtonIndex;
+				break;
+			case InputEventJoypadButton joyButton:
+				dict["type"] = "joybutton";
+				dict["code"] = (int)joyButton.ButtonIndex;
+				break;
+			case InputEventJoypadMotion joyMotion:
+				dict["type"] = "joyaxis";
+				dict["code"] = (int)joyMotion.Axis;
+				dict["sign"] = joyMotion.AxisValue >= 0 ? 1 : -1;
+				break;
+			default:
+				dict["type"] = "";
+				break;
+		}
+		return dict;
+	}
+
+	private static InputEvent DecodeEvent(Godot.Collections.Dictionary dict)
+	{
+		string type = dict.TryGetValue("type", out Variant t) ? t.AsString() : "";
+		switch (type)
+		{
+			case "key":
+				return new InputEventKey { PhysicalKeycode = (Key)(int)dict["code"] };
+			case "mouse":
+				return new InputEventMouseButton { ButtonIndex = (MouseButton)(int)dict["code"] };
+			case "joybutton":
+				return new InputEventJoypadButton { ButtonIndex = (JoyButton)(int)dict["code"] };
+			case "joyaxis":
+				return new InputEventJoypadMotion { Axis = (JoyAxis)(int)dict["code"], AxisValue = (int)dict["sign"] };
+			default:
+				return null;
+		}
+	}
+
 	private void Load()
 	{
 		var config = new ConfigFile();
@@ -416,6 +546,8 @@ public partial class GameSettings : Node
 		VoiceVolumeLinear = (float)config.GetValue(SectionMain, "voice_volume", VoiceVolumeLinear);
 		IdleBarksMuted = (bool)config.GetValue(SectionMain, "idle_barks_muted", IdleBarksMuted);
 		VoiceChatDisabled = (bool)config.GetValue(SectionMain, "voice_chat_disabled", VoiceChatDisabled);
+		VoiceActivationMode = (int)config.GetValue(SectionMain, "voice_activation_mode", VoiceActivationMode);
+		MouseSensitivity = (float)config.GetValue(SectionMain, "mouse_sensitivity", MouseSensitivity);
 		MicDeviceName = (string)config.GetValue(SectionMain, "mic_device", MicDeviceName);
 		MicGainLinear = (float)config.GetValue(SectionMain, "mic_gain", MicGainLinear);
 		CrtThemeIndex = (int)config.GetValue(SectionMain, "crt_theme_index", CrtThemeIndex);
@@ -440,6 +572,8 @@ public partial class GameSettings : Node
 		config.SetValue(SectionMain, "voice_volume", VoiceVolumeLinear);
 		config.SetValue(SectionMain, "idle_barks_muted", IdleBarksMuted);
 		config.SetValue(SectionMain, "voice_chat_disabled", VoiceChatDisabled);
+		config.SetValue(SectionMain, "voice_activation_mode", VoiceActivationMode);
+		config.SetValue(SectionMain, "mouse_sensitivity", MouseSensitivity);
 		config.SetValue(SectionMain, "mic_device", MicDeviceName);
 		config.SetValue(SectionMain, "mic_gain", MicGainLinear);
 		config.SetValue(SectionMain, "crt_theme_index", CrtThemeIndex);

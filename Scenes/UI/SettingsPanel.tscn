@@ -4,13 +4,25 @@
 [ext_resource type="Theme" uid="uid://bda50snfg8lq2" path="res://Scenes/UI/SciFiButtonTheme.tres" id="2_theme"]
 
 [node name="SettingsPanel" type="Control" unique_id=964316533]
-custom_minimum_size = Vector2(460, 400)
+custom_minimum_size = Vector2(480, 640)
 layout_mode = 3
 anchors_preset = 0
 theme = ExtResource("2_theme")
 script = ExtResource("1_panel")
 
-[node name="ScrollContainer" type="ScrollContainer" parent="."]
+[node name="TabContainer" type="TabContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -48.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Audio" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Audio"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,242 +31,153 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=1333923959]
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Audio/ScrollContainer" unique_id=1333923959]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 18
 
-[node name="VolumeRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=1992272949]
+[node name="VolumeRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=1992272949]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/VolumeRow" unique_id=1690520688]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VolumeRow" unique_id=1690520688]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MASTER VOLUME"
 
-[node name="VolumeSlider" type="HSlider" parent="ScrollContainer/VBoxContainer/VolumeRow" unique_id=1869864611]
+[node name="VolumeSlider" type="HSlider" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VolumeRow" unique_id=1869864611]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 max_value = 1.0
 step = 0.01
 value = 1.0
 
-[node name="BrightnessRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="MusicVolumeRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=15011173]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/BrightnessRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "BRIGHTNESS"
-
-[node name="BrightnessSlider" type="HSlider" parent="ScrollContainer/VBoxContainer/BrightnessRow"]
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-min_value = 0.5
-max_value = 1.5
-step = 0.01
-value = 1.0
-
-[node name="MusicVolumeRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=15011173]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/MusicVolumeRow" unique_id=1963646825]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MusicVolumeRow" unique_id=1963646825]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MUSIC VOLUME"
 
-[node name="MusicVolumeSlider" type="HSlider" parent="ScrollContainer/VBoxContainer/MusicVolumeRow" unique_id=25572457]
+[node name="MusicVolumeSlider" type="HSlider" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MusicVolumeRow" unique_id=25572457]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 max_value = 1.0
 step = 0.01
 value = 1.0
 
-[node name="SFXVolumeRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=154082865]
+[node name="SFXVolumeRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=154082865]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/SFXVolumeRow" unique_id=189415410]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/SFXVolumeRow" unique_id=189415410]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "SFX VOLUME"
 
-[node name="SFXVolumeSlider" type="HSlider" parent="ScrollContainer/VBoxContainer/SFXVolumeRow" unique_id=320664548]
+[node name="SFXVolumeSlider" type="HSlider" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/SFXVolumeRow" unique_id=320664548]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 max_value = 1.0
 step = 0.01
 value = 1.0
 
-[node name="VoiceVolumeRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=12106750]
+[node name="VoiceVolumeRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=12106750]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/VoiceVolumeRow" unique_id=127477534]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceVolumeRow" unique_id=127477534]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "VOICE VOLUME"
 
-[node name="VoiceVolumeSlider" type="HSlider" parent="ScrollContainer/VBoxContainer/VoiceVolumeRow" unique_id=1304753621]
+[node name="VoiceVolumeSlider" type="HSlider" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceVolumeRow" unique_id=1304753621]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 max_value = 1.0
 step = 0.01
 value = 1.0
 
-[node name="CrtThemeRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="IdleBarksRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=1556537829]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/CrtThemeRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "CRT THEME"
-
-[node name="CrtThemeOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/CrtThemeRow"]
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-
-[node name="GraphicsPresetRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/GraphicsPresetRow"]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/IdleBarksRow" unique_id=1870327629]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
-text = "GRAPHICS PRESET"
+text = "MUTE NARRATOR CHATTER"
 
-[node name="GraphicsPresetOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/GraphicsPresetRow"]
-custom_minimum_size = Vector2(160, 0)
+[node name="IdleBarksCheck" type="CheckBox" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/IdleBarksRow" unique_id=748674255]
 layout_mode = 2
 
-[node name="ShadowQualityRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="VoiceChatDisabledRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=910442371]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/ShadowQualityRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "SHADOW QUALITY"
-
-[node name="ShadowQualityOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/ShadowQualityRow"]
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-
-[node name="LineOfSightRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/LineOfSightRow"]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceChatDisabledRow" unique_id=204958617]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
-text = "LINE OF SIGHT"
+text = "DISABLE VOICE CHAT"
 
-[node name="LineOfSightOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/LineOfSightRow"]
-custom_minimum_size = Vector2(160, 0)
+[node name="VoiceChatDisabledCheck" type="CheckBox" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceChatDisabledRow"]
 layout_mode = 2
 
-[node name="LineOfSightQualityRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="MicDeviceRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=384710265]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/LineOfSightQualityRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "LOS SMOOTHING"
-
-[node name="LineOfSightQualityOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/LineOfSightQualityRow"]
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-
-[node name="IdleBarksRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=1556537829]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/IdleBarksRow" unique_id=1870327629]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "MUTE NARRATOR IDLE CHATTER"
-autowrap_mode = 2
-
-[node name="IdleBarksCheck" type="CheckBox" parent="ScrollContainer/VBoxContainer/IdleBarksRow" unique_id=748674255]
-layout_mode = 2
-
-[node name="VoiceChatDisabledRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=910442371]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/VoiceChatDisabledRow" unique_id=204958617]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "DISABLE VOICE CHAT (PUSH-TO-TALK)"
-autowrap_mode = 2
-
-[node name="VoiceChatDisabledCheck" type="CheckBox" parent="ScrollContainer/VBoxContainer/VoiceChatDisabledRow"]
-layout_mode = 2
-
-[node name="MicDeviceRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=384710265]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/MicDeviceRow" unique_id=926457183]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicDeviceRow" unique_id=926457183]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MIC DEVICE"
 
-[node name="MicDeviceOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/MicDeviceRow"]
+[node name="MicDeviceOption" type="OptionButton" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicDeviceRow"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
+clip_text = true
 
-[node name="MicGainRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=473019582]
+[node name="MicGainRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=473019582]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/MicGainRow" unique_id=612958734]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicGainRow" unique_id=612958734]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MIC GAIN"
 
-[node name="MicGainSlider" type="HSlider" parent="ScrollContainer/VBoxContainer/MicGainRow"]
+[node name="MicGainSlider" type="HSlider" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicGainRow"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="MicTestRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=558213904]
+[node name="MicTestRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=558213904]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/MicTestRow" unique_id=671829340]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicTestRow" unique_id=671829340]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MIC TEST"
 
-[node name="MicTestButton" type="Button" parent="ScrollContainer/VBoxContainer/MicTestRow"]
+[node name="MicTestButton" type="Button" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicTestRow"]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 text = "HOLD TO TEST"
 
-[node name="MicTestBar" type="ProgressBar" parent="ScrollContainer/VBoxContainer/MicTestRow"]
+[node name="MicTestBar" type="ProgressBar" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicTestRow"]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 max_value = 1.0
@@ -262,10 +185,202 @@ step = 0.01
 value = 0.0
 show_percentage = false
 
-[node name="SteadyCamRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=642441890]
+[node name="VoiceModeRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/SteadyCamRow" unique_id=1990587482]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "VOICE MODE"
+
+[node name="VoiceModeOption" type="OptionButton" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceModeRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="Graphics" type="Control" parent="TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Graphics"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Graphics/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 18
+
+[node name="BrightnessRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/BrightnessRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "BRIGHTNESS"
+
+[node name="BrightnessSlider" type="HSlider" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/BrightnessRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 0.5
+max_value = 1.5
+step = 0.01
+value = 1.0
+
+[node name="CrtThemeRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/CrtThemeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "CRT THEME"
+
+[node name="CrtThemeOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/CrtThemeRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="GraphicsPresetRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/GraphicsPresetRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "GRAPHICS PRESET"
+
+[node name="GraphicsPresetOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/GraphicsPresetRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="ShadowQualityRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/ShadowQualityRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "SHADOW QUALITY"
+
+[node name="ShadowQualityOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/ShadowQualityRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="LineOfSightRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "LINE OF SIGHT"
+
+[node name="LineOfSightOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="LineOfSightQualityRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightQualityRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "LOS SMOOTHING"
+
+[node name="LineOfSightQualityOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightQualityRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="FullscreenRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=439026783]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/FullscreenRow" unique_id=1198145296]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "FULLSCREEN"
+
+[node name="FullscreenCheck" type="CheckBox" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/FullscreenRow" unique_id=1378821416]
+layout_mode = 2
+
+[node name="ResolutionRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=601804183]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/ResolutionRow" unique_id=1789881845]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "RESOLUTION"
+
+[node name="ResolutionOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/ResolutionRow" unique_id=906026203]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="VsyncRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=356092557]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/VsyncRow" unique_id=335787889]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "V-SYNC"
+
+[node name="VsyncCheck" type="CheckBox" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/VsyncRow" unique_id=1159795773]
+layout_mode = 2
+
+[node name="FpsRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=1334016683]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/FpsRow" unique_id=379023410]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "MAX FRAMERATE"
+
+[node name="FpsOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/FpsRow" unique_id=67560667]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="Gameplay" type="Control" parent="TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Gameplay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Gameplay/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 18
+
+[node name="SteadyCamRow" type="HBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer" unique_id=642441890]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/SteadyCamRow" unique_id=1990587482]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
@@ -273,64 +388,69 @@ theme_override_font_sizes/font_size = 18
 text = "STEADY CAMERA (REDUCED MOTION)"
 autowrap_mode = 2
 
-[node name="SteadyCamCheck" type="CheckBox" parent="ScrollContainer/VBoxContainer/SteadyCamRow" unique_id=936030288]
+[node name="SteadyCamCheck" type="CheckBox" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/SteadyCamRow" unique_id=936030288]
 layout_mode = 2
 
-[node name="FullscreenRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=439026783]
+[node name="ClearSavesRow" type="HBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/FullscreenRow" unique_id=1198145296]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "FULLSCREEN"
-
-[node name="FullscreenCheck" type="CheckBox" parent="ScrollContainer/VBoxContainer/FullscreenRow" unique_id=1378821416]
-layout_mode = 2
-
-[node name="ResolutionRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=601804183]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/ResolutionRow" unique_id=1789881845]
+[node name="Label" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/ClearSavesRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
-text = "RESOLUTION"
+text = "SAVE DATA"
+autowrap_mode = 2
 
-[node name="ResolutionOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/ResolutionRow" unique_id=906026203]
+[node name="ClearSavesButton" type="Button" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/ClearSavesRow"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
+text = "CLEAR ALL SAVES"
 
-[node name="VsyncRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=356092557]
+[node name="MouseSensitivityRow" type="HBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/VsyncRow" unique_id=335787889]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "V-SYNC"
-
-[node name="VsyncCheck" type="CheckBox" parent="ScrollContainer/VBoxContainer/VsyncRow" unique_id=1159795773]
-layout_mode = 2
-
-[node name="FpsRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=1334016683]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/FpsRow" unique_id=379023410]
+[node name="Label" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/MouseSensitivityRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
-text = "MAX FRAMERATE"
+text = "MOUSE SENSITIVITY"
 
-[node name="FpsOption" type="OptionButton" parent="ScrollContainer/VBoxContainer/FpsRow" unique_id=67560667]
+[node name="MouseSensitivitySlider" type="HSlider" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/MouseSensitivityRow"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
+min_value = 0.5
+max_value = 2.0
+step = 0.01
+value = 1.0
 
-[node name="BackButton" type="Button" parent="ScrollContainer/VBoxContainer" unique_id=1773121348]
+[node name="KeybindsLabel" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 1, 0.85, 1)
+theme_override_font_sizes/font_size = 20
+text = "CONTROLS"
+
+[node name="KeybindsContainer" type="VBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ConfirmDialog" type="ConfirmationDialog" parent="."]
+title = "CONFIRM"
+initial_position = 1
+size = Vector2i(360, 120)
+ok_button_text = "YES"
+cancel_button_text = "CANCEL"
+dialog_text = "Clear ALL saves? This can't be undone."
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+grow_horizontal = 2
+grow_vertical = 0
 size_flags_vertical = 8
 text = "BACK"

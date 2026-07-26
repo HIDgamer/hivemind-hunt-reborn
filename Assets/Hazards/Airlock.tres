@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" format=3 uid="uid://bnl0bajxu6qs4"]
+
+[ext_resource type="Texture2D" uid="uid://ct03qinou144j" path="res://Assets/Hazards/Airlock.png" id="1_oo7wu"]
+[ext_resource type="Texture2D" uid="uid://c6h67jthej8fi" path="res://Assets/Hazards/Airlock_n.png" id="2_5v0f3"]
+
+[resource]
+diffuse_texture = ExtResource("1_oo7wu")
+normal_texture = ExtResource("2_5v0f3")

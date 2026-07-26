@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bchqabnvy3dup"]
 
 [ext_resource type="Texture2D" uid="uid://diwreabpfsge4" path="res://Assets/Light/Light_cone_conical.png" id="1_rn5e5"]
-[ext_resource type="Texture2D" uid="uid://c25ihpq2umiy5" path="res://Assets/Tiles/Light.png" id="1_trad4"]
+[ext_resource type="Texture2D" uid="uid://c25ihpq2umiy5" path="res://Assets/Hazards/Light.png" id="1_trad4"]
 [ext_resource type="Script" uid="uid://qqmoqitjel4u" path="res://Code/Props/FlickeringLight.cs" id="2_flicker"]
 [ext_resource type="AudioStream" uid="uid://ckxidlcs3jjq2" path="res://Sound/fx/spark.ogg" id="3_spark"]
 [ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="4_gas_smoke"]
@@ -35,9 +35,11 @@ script = ExtResource("2_flicker")
 SparkSound = ExtResource("3_spark")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1585390356]
+position = Vector2(0, 17)
 texture = ExtResource("1_trad4")
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=51708380]
+position = Vector2(0, 17)
 scale = Vector2(2.5, 3)
 color = Color(0.9411765, 0.9411765, 0.9411765, 1)
 energy = 0.3
@@ -53,6 +55,7 @@ height = 250.0
 [node name="Aura" type="PointLight2D" parent="." unique_id=454541984]
 light_mask = 2
 visibility_layer = 2
+position = Vector2(0, 17)
 energy = 0.5
 range_item_cull_mask = 3
 shadow_enabled = true
@@ -66,7 +69,7 @@ height = 250.0
 
 [node name="SparkParticles" type="CPUParticles2D" parent="." unique_id=1102938475]
 material = SubResource("ShaderMaterial_light_spark")
-position = Vector2(1, -27.5)
+position = Vector2(1, -10.5)
 emitting = false
 amount = 16
 lifetime = 0.35
@@ -83,6 +86,7 @@ color_ramp = SubResource("Gradient_spark")
 anim_offset_max = 0.99
 
 [node name="SparkAudio" type="AudioStreamPlayer2D" parent="." unique_id=760194833]
+position = Vector2(0, 17)
 stream = ExtResource("3_spark")
 volume_db = -15.0
 max_distance = 900.0

@@ -3,9 +3,12 @@ using System.Collections.Generic;
 
 // Patrols between child Marker2D waypoints, in the order they appear in the
 // scene tree, starting from and returning to its own spawn position.
-// Riders are carried automatically — Godot's CharacterBody2D already
-// propagates a moving platform's velocity to anything standing on it via
-// move_and_slide(), so nothing extra is needed on the player's side.
+// Riders are NOT carried automatically — Rapier2D (this project's physics
+// backend) doesn't reliably propagate a moving platform's velocity to
+// whatever's standing on it via move_and_slide() (the same gap that made
+// Sam.UpdatePlayerRiding a hand-rolled workaround for standing on another
+// player). See Sam.UpdatePlatformRiding for the matching hand-rolled carry
+// on the player's side — this component only has to move itself correctly.
 // With no Marker2D children placed, it just sits still (a plain static
 // platform), so the base scene is safe to instance without configuration.
 public partial class MovingPlatform : CharacterBody2D
@@ -35,6 +38,19 @@ public partial class MovingPlatform : CharacterBody2D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		// Networked: only the authority (the host — this is static level
+		// content, never spawned per-peer, so a node's multiplayer authority
+		// already defaults to the server with no extra plumbing) actually
+		// simulates the patrol. Every other peer used to run its own
+		// independent copy of this same waypoint loop, relying purely on
+		// cross-peer determinism (same fixed Speed/waypoints) to stay in
+		// sync, with no correction if timing/physics ever drifted — a real
+		// risk for anything riding it (see Sam.UpdatePlatformRiding). Now
+		// clients just receive the authoritative `position` via the
+		// MultiplayerSynchronizer on this scene instead of simulating their
+		// own copy at all.
+		if (Multiplayer.HasMultiplayerPeer() && !IsMultiplayerAuthority()) return;
+
 		if (_waypoints.Count < 2)
 		{
 			Velocity = Vector2.Zero;
@@ -55,19 +71,24 @@ public partial class MovingPlatform : CharacterBody2D
 		float distance = toTarget.Length();
 		float step = Speed * (float)delta;
 
-		if (distance <= step)
+		// Never assign GlobalPosition directly — arriving at a waypoint caps
+		// Velocity to exactly the distance left this frame instead, so
+		// MoveAndSlide() alone carries the platform the last short stretch.
+		// A manual position write here would be a one-frame teleport outside
+		// the physics-integrated motion, which is exactly the kind of jitter
+		// a rider (see Sam.UpdatePlatformRiding, which reads this platform's
+		// GlobalPosition delta every frame) would otherwise pick up as a pop.
+		bool arriving = distance <= step;
+		Velocity = arriving ? toTarget / (float)delta : toTarget.Normalized() * Speed;
+
+		MoveAndSlide();
+
+		if (arriving)
 		{
-			GlobalPosition = target;
 			Velocity = Vector2.Zero;
 			_pauseTimer = PauseDuration;
 			AdvanceWaypoint();
 		}
-		else
-		{
-			Velocity = toTarget.Normalized() * Speed;
-		}
-
-		MoveAndSlide();
 	}
 
 	private void AdvanceWaypoint()

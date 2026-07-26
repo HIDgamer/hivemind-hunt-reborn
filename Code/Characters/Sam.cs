@@ -119,6 +119,14 @@ public partial class Sam : CharacterBody2D
 	[Export] public float SprintPowerDrainPerSecond { get; set; } = 18f;
 	[Export] public float MinimumPowerToSprint { get; set; } = 8f;
 
+	[ExportCategory("Status Effects")]
+	// Paced at 0.8s deliberately — HealthComponent's own invulnerability
+	// window (0.5s after any hit) blocks further Damage() calls, so a tick
+	// interval right at that edge is timing-fragile (frame jitter could eat
+	// a tick); comfortably past it lands every tick cleanly.
+	[Export] public int BurnDamagePerTick { get; set; } = 1;
+	[Export] public float BurnTickInterval { get; set; } = 0.8f;
+
 	[ExportCategory("Sound")]
 	[Export] public AudioStream FootstepSound { get; set; }
 	[Export] public AudioStream JumpSound { get; set; }
@@ -185,6 +193,9 @@ private CpuParticles2D _dashParticles;
 	private float _footstepTimer = 0f;
 	private float _movementSlowMultiplier = 1f;
 	private float _movementSlowTimer = 0f;
+	private float _burningTimer = 0f;
+	private float _burnTickTimer = 0f;
+	private CpuParticles2D _burningParticles;
 	private float _powerRegenTimer = 0f;
 	private int _extraJumpsUsed = 0;
 	private int _extraJumpCapacity = 0;
@@ -253,6 +264,14 @@ private CpuParticles2D _dashParticles;
 	// Exposed so ApplyPlayerSeparation (see below) can tell a ride-along
 	// pair apart from an ordinary side-by-side encounter and leave it alone.
 	public Sam RidingOnPlayer => _ridingOnPlayer;
+
+	// Same hand-rolled carry as _ridingOnPlayer above, kept as its own
+	// separate pair rather than generalized — MovingPlatform is a distinct
+	// collider type, and duplicating this small a mechanism is cheaper than
+	// risking a regression in the already-proven player-riding path. See
+	// UpdatePlatformRiding.
+	private MovingPlatform _ridingOnPlatform;
+	private Vector2 _ridingOnPlatformLastPosition;
 
 	// True while a UI element (dialogue box, chat input) owns the keyboard —
 	// all gameplay input reads as neutral so typing "wasd" in chat doesn't
@@ -512,6 +531,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		ApplyPlayerSeparation();
 		MoveAndSlide();
 		UpdatePlayerRiding();
+		UpdatePlatformRiding();
 		HandleLanding(wasOnFloorBeforeMove, fallSpeedBeforeMove);
 		UpdatePower(deltaTime);
 
@@ -957,6 +977,45 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		}
 	}
 
+	// Byte-for-byte the same shape as UpdatePlayerRiding — carries this Sam
+	// along with a MovingPlatform's frame-to-frame motion, since Rapier2D
+	// doesn't reliably propagate a CharacterBody2D platform's velocity via
+	// MoveAndSlide (see MovingPlatform.cs's own header comment).
+	private void UpdatePlatformRiding()
+	{
+		MovingPlatform standingOn = null;
+		if (IsOnFloor())
+		{
+			int count = GetSlideCollisionCount();
+			for (int i = 0; i < count; i++)
+			{
+				KinematicCollision2D collision = GetSlideCollision(i);
+				if (collision.GetCollider() is MovingPlatform platform)
+				{
+					standingOn = platform;
+					break;
+				}
+			}
+		}
+
+		if (standingOn != _ridingOnPlatform)
+		{
+			_ridingOnPlatform = standingOn;
+			_ridingOnPlatformLastPosition = standingOn?.GlobalPosition ?? Vector2.Zero;
+			return;
+		}
+
+		if (_ridingOnPlatform != null && IsInstanceValid(_ridingOnPlatform))
+		{
+			Vector2 delta = _ridingOnPlatform.GlobalPosition - _ridingOnPlatformLastPosition;
+			if (delta != Vector2.Zero)
+			{
+				GlobalPosition += delta;
+			}
+			_ridingOnPlatformLastPosition = _ridingOnPlatform.GlobalPosition;
+		}
+	}
+
 	private void HandleLanding(bool wasOnFloorBeforeMove, float fallSpeedBeforeMove)
 	{
 		if (!IsOnFloor()) return;
@@ -1339,13 +1398,78 @@ if (!IsOnFloor())
 
 	private void UpdateStatusEffects(float deltaTime)
 	{
-		if (_movementSlowTimer <= 0f) return;
-
-		_movementSlowTimer -= deltaTime;
-		if (_movementSlowTimer <= 0f)
+		if (_movementSlowTimer > 0f)
 		{
-			_movementSlowMultiplier = 1f;
+			_movementSlowTimer -= deltaTime;
+			if (_movementSlowTimer <= 0f)
+			{
+				_movementSlowMultiplier = 1f;
+			}
 		}
+
+		if (_burningTimer > 0f)
+		{
+			_burningTimer -= deltaTime;
+			_burnTickTimer -= deltaTime;
+			if (_burnTickTimer <= 0f)
+			{
+				_burnTickTimer = BurnTickInterval;
+				_health?.Damage(BurnDamagePerTick, Vector2.Zero);
+			}
+
+			if (_burningTimer <= 0f)
+			{
+				_burningTimer = 0f;
+				SetBurningVisual(false);
+			}
+		}
+	}
+
+	// Built once, lazily, and just toggled — burning is a state on a
+	// persistent character, not a one-shot event, so this reuses the same
+	// node rather than spawning/freeing every time (unlike this project's
+	// one-shot VFX convention elsewhere). Same fire-particle look as
+	// BurnableComponent's own burn effect (additive blend, small scale per
+	// this project's established particle-scale rule) for a consistent
+	// "this is what fire looks like here" read.
+	private void EnsureBurningParticles()
+	{
+		if (_burningParticles != null) return;
+
+		var fireRamp = new Gradient();
+		fireRamp.SetColor(0, new Color(1.3f, 0.95f, 0.45f, 1f));
+		fireRamp.SetColor(1, new Color(0.35f, 0.06f, 0.02f, 0f));
+		fireRamp.AddPoint(0.45f, new Color(1f, 0.4f, 0.08f, 0.9f));
+
+		_burningParticles = new CpuParticles2D
+		{
+			Name = "BurningParticles",
+			Emitting = false,
+			Amount = 12,
+			Lifetime = 0.5f,
+			Randomness = 0.4f,
+			Texture = GD.Load<Texture2D>("res://Assets/FX/particles/alpha/muzzle_03_a.png"),
+			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add },
+			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
+			EmissionRectExtents = new Vector2(8f, 14f),
+			Position = new Vector2(0f, -14f),
+			Direction = new Vector2(0f, -1f),
+			Spread = 20f,
+			Gravity = new Vector2(0f, -60f),
+			InitialVelocityMin = 10f,
+			InitialVelocityMax = 24f,
+			ScaleAmountMin = 0.02f,
+			ScaleAmountMax = 0.036f,
+			ColorRamp = fireRamp,
+			ZIndex = 5,
+		};
+		AddChild(_burningParticles);
+	}
+
+	private void SetBurningVisual(bool active)
+	{
+		if (active) EnsureBurningParticles();
+		if (_burningParticles != null) _burningParticles.Emitting = active;
 	}
 
 	private void UpdateDashTrail(float deltaTime)
@@ -1843,6 +1967,21 @@ private void RemoteDashEffect(float facing)
 	{
 		_movementSlowMultiplier = Mathf.Clamp(multiplier, 0.1f, 1f);
 		_movementSlowTimer = Mathf.Max(_movementSlowTimer, duration);
+	}
+
+	// Same extend-not-overwrite shape as ApplyMovementSlow — a second
+	// ignition source (touching fire again, standing in an even hotter
+	// room) refreshes the burn instead of the shorter of the two winning.
+	// Callable from anywhere: GasSimulation's room-heat check,
+	// StatusEffectComponent's Burn case, FireEmitterHazard's touch damage.
+	public void ApplyBurning(float duration)
+	{
+		if (_burningTimer <= 0f)
+		{
+			SetBurningVisual(true);
+			_burnTickTimer = BurnTickInterval;
+		}
+		_burningTimer = Mathf.Max(_burningTimer, duration);
 	}
 
 	public bool TrySpendPower(float amount)

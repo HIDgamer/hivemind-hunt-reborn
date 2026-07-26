@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b3bda3442ll2y"]
 
-[ext_resource type="Texture2D" uid="uid://ch6rifkapaie7" path="res://Assets/Tiles/Laser.tres" id="1_kapjr"]
+[ext_resource type="Texture2D" uid="uid://ch6rifkapaie7" path="res://Assets/Hazards/Laser.tres" id="1_kapjr"]
 [ext_resource type="Script" uid="uid://buasvpdac577w" path="res://Code/Props/Laser.cs" id="1_laser_script"]
 [ext_resource type="Shader" uid="uid://c6h650ol8j5bs" path="res://Assets/Materials/laser.gdshader" id="2_631ej"]
 [ext_resource type="Texture2D" uid="uid://dvy1scgaochl5" path="res://Assets/FX/particles/alpha/spotlight_08_a.png" id="5_5nxcb"]
@@ -181,6 +181,7 @@ shader_parameter/v_frames = 1
 colors = PackedColorArray(0.14, 0.04, 0.04, 0.55, 0.07, 0.02, 0.02, 0)
 
 [node name="Laser" type="Node2D" unique_id=128976770]
+z_index = 2
 script = ExtResource("1_laser_script")
 Damage = 1
 
@@ -225,6 +226,7 @@ antialiased = true
 
 [node name="GlowLight" type="PointLight2D" parent="." unique_id=300000004]
 visibility_layer = 4
+position = Vector2(0, -2)
 scale = Vector2(0.16, 0.16)
 enabled = false
 color = Color(1, 0.6, 0.35, 1)
@@ -233,6 +235,7 @@ height = 40.0
 
 [node name="BeamLight" type="PointLight2D" parent="." unique_id=300000005]
 visibility_layer = 4
+position = Vector2(0, -2)
 enabled = false
 color = Color(0.85, 0.12, 0.06, 1)
 energy = 1.4
@@ -242,7 +245,7 @@ height = 30.0
 
 [node name="WarnLight" type="PointLight2D" parent="." unique_id=300000002]
 visibility_layer = 4
-position = Vector2(-1.0000001, -4.9999995)
+position = Vector2(-1, -7)
 scale = Vector2(0.18, 0.18)
 enabled = false
 color = Color(1, 0.15, 0.15, 1)
@@ -252,16 +255,17 @@ offset = Vector2(2.8, 0)
 height = 50.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1781439902]
-position = Vector2(0, 3)
+position = Vector2(0, 1)
 sprite_frames = SubResource("SpriteFrames_cikve")
 animation = &"On"
 
 [node name="RayCast2D" type="RayCast2D" parent="." unique_id=1397849729]
-position = Vector2(-1, 0)
+position = Vector2(-1, -2)
 target_position = Vector2(0, 0)
 collision_mask = 5
 
 [node name="BeamArea" type="Area2D" parent="." unique_id=262144000]
+position = Vector2(0, -2)
 collision_layer = 0
 collision_mask = 14
 
@@ -273,6 +277,7 @@ disabled = true
 
 [node name="SparkParticles" type="CPUParticles2D" parent="." unique_id=1674480101]
 material = SubResource("ShaderMaterial_laser_spark")
+position = Vector2(0, -2)
 emitting = false
 amount = 18
 texture = ExtResource("5_5nxcb")
@@ -292,6 +297,7 @@ anim_offset_max = 0.99
 
 [node name="SmokeParticles" type="CPUParticles2D" parent="." unique_id=300000003]
 material = SubResource("ShaderMaterial_laser_smoke")
+position = Vector2(0, -2)
 emitting = false
 texture = ExtResource("6_5nxcb")
 lifetime = 2.0
@@ -311,10 +317,12 @@ color_ramp = SubResource("Gradient_smoke_ramp")
 anim_offset_max = 0.99
 
 [node name="ActivationPlayer" type="AudioStreamPlayer2D" parent="." unique_id=2098155743]
+position = Vector2(0, -2)
 volume_db = -10.0
 max_distance = 300.0
 bus = &"SFX"
 
 [node name="IdlePlayer" type="AudioStreamPlayer2D" parent="." unique_id=1447022260]
+position = Vector2(0, -2)
 max_distance = 300.0
 bus = &"SFX"

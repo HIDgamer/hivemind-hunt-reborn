@@ -2,11 +2,94 @@
 
 [ext_resource type="Script" uid="uid://ds0a1oiralvay" path="res://Code/Props/TimedHazardEmitter.cs" id="1_hazard"]
 [ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="2_gas_smoke"]
+[ext_resource type="Texture2D" uid="uid://cc5xssv6irjt8" path="res://Assets/Hazards/Vent.png" id="2_je2ci"]
 [ext_resource type="Texture2D" uid="uid://b1s8k2haxbdq3" path="res://Assets/FX/generated/smoke_variants.png" id="3_smoke_variants"]
 [ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="4_ga76a"]
+[ext_resource type="AudioStream" uid="uid://cgf0rplxblsk1" path="res://Sound/fx/steam hisses - 1.ogg" id="5_hiss1"]
+[ext_resource type="AudioStream" uid="uid://brta0fg4wdfbu" path="res://Sound/fx/steam hisses - 2.ogg" id="6_hiss2"]
+[ext_resource type="AudioStream" uid="uid://di4lldruetvxv" path="res://Sound/fx/steam hisses - 3.ogg" id="7_hiss3"]
+[ext_resource type="Texture2D" uid="uid://ndouadkdf7gf" path="res://Assets/Tiles/Tileset_extra.tres" id="7_oyden"]
+[ext_resource type="AudioStream" uid="uid://bnr6plulp52ob" path="res://Sound/fx/steam hisses - 4.ogg" id="8_hiss4"]
+[ext_resource type="AudioStream" uid="uid://xnwfe0e1gk30" path="res://Sound/fx/steam hisses - 5.ogg" id="9_hiss5"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qaokm"]
+atlas = ExtResource("7_oyden")
+region = Rect2(32, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g8ccg"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bvuxe"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ven6i"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eq7p6"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qu1hw"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7qlc8"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_og6gk"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_whc2o"]
+atlas = ExtResource("2_je2ci")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_75lvo"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qaokm")
+}],
+"loop": 1,
+"name": &"broken",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g8ccg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bvuxe")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ven6i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eq7p6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qu1hw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7qlc8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_og6gk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_whc2o")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 15.0
+}]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vent"]
-size = Vector2(28, 44)
+size = Vector2(32, 32)
 
 [sub_resource type="Gradient" id="Gradient_vent_glow"]
 colors = PackedColorArray(0.75, 0.9, 1, 1, 0.3, 0.5, 0.65, 0)
@@ -33,6 +116,7 @@ shader_parameter/v_frames = 2
 colors = PackedColorArray(0.85, 0.92, 1, 0.6, 0.7, 0.8, 0.85, 0)
 
 [node name="SteamVent" type="Area2D" unique_id=384756129]
+z_index = 3
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_hazard")
@@ -42,6 +126,13 @@ TelegraphDuration = 0.5
 BurstDuration = 0.9
 Damage = 8
 DamageTickInterval = 0.35
+BurstSoundVariants = Array[AudioStream]([ExtResource("5_hiss1"), ExtResource("6_hiss2"), ExtResource("7_hiss3"), ExtResource("8_hiss4"), ExtResource("9_hiss5")])
+DestructibleByExplosion = true
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=2079913688]
+sprite_frames = SubResource("SpriteFrames_75lvo")
+animation = &"broken"
+autoplay = "default"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=716283945]
 shape = SubResource("RectangleShape2D_vent")

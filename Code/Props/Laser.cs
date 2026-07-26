@@ -23,6 +23,12 @@ public partial class Laser : Node2D
 	[Export] public int    Damage         = 2;
 	[Export] public double DamageCooldown = 0.15; // Seconds between hit ticks
 
+	// Sustained contact with a wall slowly chars it — small per-second
+	// amount since this accumulates every physics frame the beam sits on
+	// the same spot, not a one-off hit like Damage above.
+	[Export] public float BeamScorchPerSecond = 0.08f;
+	[Export] public float BeamScorchRadius = 10f;
+
 	// ── Beam ──────────────────────────────────────────────────────────────────
 	[ExportGroup("Beam")]
 	[Export] public float CastSpeed    = 7000.0f; // Extension speed (px/sec)
@@ -143,7 +149,15 @@ public partial class Laser : Node2D
 		if (_beamRect != null)
 			_beamRect.Size = Vector2.Zero;
 
-		_timer.WaitTime  = OffTime;
+		// Randomized only for this FIRST off-phase — every free-running laser
+		// otherwise starts its cycle at the exact same moment (scene load)
+		// with the exact same OffTime, so a room full of them flashes in
+		// perfect unison. Subsequent cycles resume the normal authored
+		// OnTime/OffTime rhythm via OnTimerTimeout, unchanged. Stays inside
+		// the existing server/single-player-only gate below, so it can't
+		// touch the server-vs-client phase-sync guarantee the comment above
+		// describes.
+		_timer.WaitTime  = (float)GD.RandRange(0.0, OffTime);
 		_timer.Timeout  += OnTimerTimeout;
 		// Cycle timing is server-authoritative in a networked session: each
 		// peer's timer starts whenever ITS scene finished loading, so
@@ -242,6 +256,8 @@ public partial class Laser : Node2D
 		{
 			CheckBeamDamage();
 			CheckBeamBurn((float)delta);
+			CheckBeamIgnition(beamEnd);
+			CheckBeamScorch(beamEnd, colliding, (float)delta);
 		}
 	}
 
@@ -676,6 +692,37 @@ public partial class Laser : Node2D
 		{
 			body.GetNodeOrNull<BurnableComponent>("BurnableComponent")?.ApplyBurn(deltaTime);
 		}
+	}
+
+	// Samples a handful of points along the beam's current length each tick
+	// and asks GasSimulation to ignite any flammable gas it finds there —
+	// a real beam sets alight everything it passes through, not just
+	// whatever's sitting at the exact impact point. GasSimulation.TryIgnite
+	// caches its own solidity checks per simulation tick, so repeatedly
+	// re-sampling the same handful of tiles here every physics frame stays
+	// cheap after the first hit.
+	private const int IgnitionSamples = 4;
+
+	private void CheckBeamIgnition(Vector2 localBeamEnd)
+	{
+		if (GasSimulation.Instance == null) return;
+
+		Vector2 origin = ToGlobal(BeamDir * StartDistance);
+		Vector2 end = ToGlobal(localBeamEnd);
+		for (int i = 0; i <= IgnitionSamples; i++)
+		{
+			Vector2 point = origin.Lerp(end, i / (float)IgnitionSamples);
+			GasSimulation.Instance.TryIgnite(point);
+		}
+	}
+
+	// Only chars where the beam is actually HITTING something solid, not
+	// along the open-air stretch before it — a wall the beam has been
+	// resting against for a while visibly scorches at that exact spot.
+	private void CheckBeamScorch(Vector2 localBeamEnd, bool colliding, float deltaTime)
+	{
+		if (!colliding || EnvironmentDamage.Instance == null) return;
+		EnvironmentDamage.Instance.ApplyScorch(ToGlobal(localBeamEnd), BeamScorchPerSecond * deltaTime, BeamScorchRadius);
 	}
 
 	private bool TryDamage(Node2D target)

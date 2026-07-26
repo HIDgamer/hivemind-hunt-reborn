@@ -18,7 +18,10 @@ class_name PlayerCamera
 @export var target_path: NodePath
 
 @export_group("Movement")
-@export var camera_speed: float = 3.0  # Lower = smoother but slower
+# Raised from 3.0 — the old value read as laggy/floaty for precise
+# platforming; this tracks noticeably more crisply while still being smoothed
+# rather than a hard lock.
+@export var camera_speed: float = 6.0  # Lower = smoother but slower
 @export var deadzone_size: Vector2 = Vector2(10, 10)
 # Disables look-ahead and screen shake for a rock-steady, motion-sickness-friendly camera.
 @export var steady_cam: bool = false
@@ -28,25 +31,36 @@ class_name PlayerCamera
 @export var zoom_speed: float = 3.0
 @export var min_zoom: float = 0.5
 @export var max_zoom: float = 3.0
+# How much each mouse-wheel notch changes the zoom level — set_zoom_level and
+# min_zoom/max_zoom already existed, but nothing ever called them; this is
+# what actually lets the player reach them.
+@export var zoom_step: float = 0.1
 
 @export_group("Look Ahead")
-@export var look_ahead_factor: float = 0.1
-@export var max_look_ahead: float = 80.0
+# Both trimmed from 0.1/80 — at the old values the view visibly slid around
+# during fast movement/jumps, which read as the camera anticipating rather
+# than following. Still a little anticipation, just far less floaty.
+@export var look_ahead_factor: float = 0.06
+@export var max_look_ahead: float = 40.0
 @export var look_ahead_smoothing: float = 0.15
 
 @export_group("Screen Shake")
 @export var trauma_reduction_rate: float = 1.2
 @export var max_trauma: float = 1.0
-@export var max_shake_offset: Vector2 = Vector2(25, 15)
+# Roughly halved from (25, 15) — the hit reaction was reading as excessive on
+# a 3-HP health pool where every hit already triggers it.
+@export var max_shake_offset: Vector2 = Vector2(15, 9)
 @export var max_shake_rotation: float = 0.02
 @export var noise_shake_speed: float = 20.0
 @export var trauma_exponent: float = 2.0  # Higher = more easing (2.0 = quadratic falloff)
-@export var damage_shake_trauma: float = 0.15
+# Halved from 0.15 — same "excessive hit reaction" reasoning as max_shake_offset.
+@export var damage_shake_trauma: float = 0.08
 
 @export_group("Damage Flash")
 @export var damage_flash_duration: float = 0.12
 @export var damage_flash_color: Color = Color(1.0, 0.05, 0.02, 0.34)
-@export var hurt_zoom_punch: float = 0.12
+# Halved from 0.12 — same reasoning as damage_shake_trauma/max_shake_offset.
+@export var hurt_zoom_punch: float = 0.06
 
 @onready var noise: FastNoiseLite = FastNoiseLite.new()
 
@@ -255,6 +269,15 @@ func shake_camera(intensity: float, duration: float = 0.5) -> void:
 func set_zoom_level(level: float) -> void:
 	var new_zoom = clamp(level, min_zoom, max_zoom)
 	target_zoom = Vector2(new_zoom, new_zoom)
+
+# Mouse wheel — set_zoom_level/min_zoom/max_zoom already existed but nothing
+# ever called them; this is the actual player-facing zoom control.
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			set_zoom_level(target_zoom.x + zoom_step)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			set_zoom_level(target_zoom.x - zoom_step)
 
 func toggle_steady_cam(enable: bool) -> void:
 	steady_cam = enable

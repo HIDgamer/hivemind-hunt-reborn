@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://cbi3p44vh5cba"]
 
 [ext_resource type="Script" uid="uid://br8liqjdjeacf" path="res://Code/Props/Door.cs" id="2_door_script"]
-[ext_resource type="Texture2D" uid="uid://bnl0bajxu6qs4" path="res://Assets/Tiles/Airlock.tres" id="2_sc646"]
+[ext_resource type="Texture2D" uid="uid://bnl0bajxu6qs4" path="res://Assets/Hazards/Airlock.tres" id="2_sc646"]
 [ext_resource type="AudioStream" uid="uid://c4ma3ypirj7om" path="res://Sound/UI/Flashpoint001b.ogg" id="3_doorsound"]
+[ext_resource type="Script" uid="uid://6cserqf7svqe" path="res://Code/Props/AirlockDepthSort.cs" id="4_depthsort"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bplwt"]
 atlas = ExtResource("2_sc646")
@@ -187,18 +188,21 @@ size = Vector2(46, 51)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bplwt"]
 size = Vector2(20, 43)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_depthsort"]
+size = Vector2(90, 60)
+
 [node name="Door" type="StaticBody2D" unique_id=134012080]
 scale = Vector2(1.2, 1.2)
 script = ExtResource("2_door_script")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1947808860]
-z_index = -1
-y_sort_enabled = true
+position = Vector2(0, -15.000004)
 sprite_frames = SubResource("SpriteFrames_2l0oy")
 animation = &"Open"
 autoplay = "IdleClose"
 
 [node name="Area2D" type="Area2D" parent="." unique_id=336485589]
+position = Vector2(0, -15.000004)
 collision_layer = 0
 collision_mask = 2
 
@@ -207,9 +211,22 @@ position = Vector2(0, 1.5)
 shape = SubResource("RectangleShape2D_4m525")
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=520692883]
+position = Vector2(0, -15.000004)
 stream = ExtResource("3_doorsound")
 bus = &"SFX"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1061340583]
-position = Vector2(0, 5.5)
+position = Vector2(0, -9.500011)
 shape = SubResource("RectangleShape2D_bplwt")
+
+[node name="DepthSort" type="Node2D" parent="." unique_id=1327234650]
+position = Vector2(0, -15.000004)
+script = ExtResource("4_depthsort")
+
+[node name="Area2D" type="Area2D" parent="DepthSort" unique_id=240171319]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DepthSort/Area2D" unique_id=1077545191]
+position = Vector2(0, 1.5)
+shape = SubResource("RectangleShape2D_depthsort")

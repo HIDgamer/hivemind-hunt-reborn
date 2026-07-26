@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://daf0bl03h0qgv"]
 
 [ext_resource type="Script" uid="uid://cxbbu2x8bi5h" path="res://Code/Characters/StatusEffectComponent.cs" id="1_status"]
-[ext_resource type="Texture2D" uid="uid://cc5xssv6irjt8" path="res://Assets/Tiles/Vent.png" id="2_1o45t"]
+[ext_resource type="Texture2D" uid="uid://cc5xssv6irjt8" path="res://Assets/Hazards/Vent.png" id="2_1o45t"]
 [ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="3_1o45t"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_g8ccg"]
@@ -76,7 +76,7 @@ collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_status")
 
-[node name="Sprite2D" type="AnimatedSprite2D" parent="." unique_id=1905152725]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1905152725]
 sprite_frames = SubResource("SpriteFrames_qkled")
 autoplay = "default"
 frame_progress = 0.13224435
