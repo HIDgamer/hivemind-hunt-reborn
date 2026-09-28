@@ -1,10 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dcjegmvfstb1j"]
 
-[ext_resource type="Script" path="res://Code/UI/LoadGameMenu.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bjaacem6f82d8" path="res://Code/UI/LoadGameMenu.gd" id="1_script"]
 [ext_resource type="Theme" uid="uid://bda50snfg8lq2" path="res://Scenes/UI/SciFiButtonTheme.tres" id="2_theme"]
 [ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="3_alienbold"]
 
-[node name="LoadGameMenu" type="Control"]
+[node name="LoadGameMenu" type="Control" unique_id=1529492621]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -14,7 +14,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=2011226355]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,7 +23,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.02, 0.03, 0.05, 0.85)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1677620759]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -38,7 +38,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 
-[node name="Title" type="Label" parent="VBoxContainer"]
+[node name="Title" type="Label" parent="VBoxContainer" unique_id=559704514]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
 theme_override_fonts/font = ExtResource("3_alienbold")
@@ -46,206 +46,201 @@ theme_override_font_sizes/font_size = 32
 text = "LOAD GAME"
 horizontal_alignment = 1
 
-[node name="SlotList" type="VBoxContainer" parent="VBoxContainer"]
+[node name="SlotList" type="VBoxContainer" parent="VBoxContainer" unique_id=185641898]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Slot1Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+[node name="Slot1Row" type="HBoxContainer" parent="VBoxContainer/SlotList" unique_id=2041453856]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot1Row"]
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot1Row" unique_id=1162590087]
 custom_minimum_size = Vector2(96, 54)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot1Row"]
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot1Row" unique_id=514477008]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot1Row/Info"]
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot1Row/Info" unique_id=2025894031]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "EMPTY"
 
-[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot1Row/Info"]
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot1Row/Info" unique_id=1783610879]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
 theme_override_font_sizes/font_size = 13
-text = ""
 
-[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot1Row"]
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot1Row" unique_id=995542207]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "LOAD"
 
-[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot1Row"]
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot1Row" unique_id=414644298]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "DELETE"
 
-[node name="Slot2Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+[node name="Slot2Row" type="HBoxContainer" parent="VBoxContainer/SlotList" unique_id=1759740943]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot2Row"]
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot2Row" unique_id=1026594416]
 custom_minimum_size = Vector2(96, 54)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot2Row"]
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot2Row" unique_id=1969763304]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot2Row/Info"]
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot2Row/Info" unique_id=1459143687]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "EMPTY"
 
-[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot2Row/Info"]
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot2Row/Info" unique_id=1113773272]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
 theme_override_font_sizes/font_size = 13
-text = ""
 
-[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot2Row"]
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot2Row" unique_id=301194116]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "LOAD"
 
-[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot2Row"]
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot2Row" unique_id=223755560]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "DELETE"
 
-[node name="Slot3Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+[node name="Slot3Row" type="HBoxContainer" parent="VBoxContainer/SlotList" unique_id=1624176678]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot3Row"]
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot3Row" unique_id=1962673064]
 custom_minimum_size = Vector2(96, 54)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot3Row"]
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot3Row" unique_id=1328765602]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot3Row/Info"]
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot3Row/Info" unique_id=1425868377]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "EMPTY"
 
-[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot3Row/Info"]
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot3Row/Info" unique_id=1132033957]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
 theme_override_font_sizes/font_size = 13
-text = ""
 
-[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot3Row"]
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot3Row" unique_id=495647674]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "LOAD"
 
-[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot3Row"]
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot3Row" unique_id=756140291]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "DELETE"
 
-[node name="Slot4Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+[node name="Slot4Row" type="HBoxContainer" parent="VBoxContainer/SlotList" unique_id=2092433948]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot4Row"]
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot4Row" unique_id=1695325802]
 custom_minimum_size = Vector2(96, 54)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot4Row"]
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot4Row" unique_id=247559995]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot4Row/Info"]
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot4Row/Info" unique_id=1761672124]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "EMPTY"
 
-[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot4Row/Info"]
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot4Row/Info" unique_id=504860194]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
 theme_override_font_sizes/font_size = 13
-text = ""
 
-[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot4Row"]
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot4Row" unique_id=1809360315]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "LOAD"
 
-[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot4Row"]
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot4Row" unique_id=767599877]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "DELETE"
 
-[node name="Slot5Row" type="HBoxContainer" parent="VBoxContainer/SlotList"]
+[node name="Slot5Row" type="HBoxContainer" parent="VBoxContainer/SlotList" unique_id=2097490319]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot5Row"]
+[node name="Thumbnail" type="TextureRect" parent="VBoxContainer/SlotList/Slot5Row" unique_id=1282730240]
 custom_minimum_size = Vector2(96, 54)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot5Row"]
+[node name="Info" type="VBoxContainer" parent="VBoxContainer/SlotList/Slot5Row" unique_id=1620966913]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot5Row/Info"]
+[node name="NameLabel" type="Label" parent="VBoxContainer/SlotList/Slot5Row/Info" unique_id=1778502894]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "EMPTY"
 
-[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot5Row/Info"]
+[node name="TimeLabel" type="Label" parent="VBoxContainer/SlotList/Slot5Row/Info" unique_id=396033692]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 0.8, 0.8)
 theme_override_font_sizes/font_size = 13
-text = ""
 
-[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot5Row"]
+[node name="ActionButton" type="Button" parent="VBoxContainer/SlotList/Slot5Row" unique_id=1058137590]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "LOAD"
 
-[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot5Row"]
+[node name="DeleteButton" type="Button" parent="VBoxContainer/SlotList/Slot5Row" unique_id=6293977]
 layout_mode = 2
 size_flags_vertical = 4
 disabled = true
 text = "DELETE"
 
-[node name="ClearAllButton" type="Button" parent="VBoxContainer"]
+[node name="ClearAllButton" type="Button" parent="VBoxContainer" unique_id=273280224]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "CLEAR ALL SAVES"
 
-[node name="BackButton" type="Button" parent="VBoxContainer"]
+[node name="BackButton" type="Button" parent="VBoxContainer" unique_id=241216494]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "BACK"
 
-[node name="ConfirmDialog" type="ConfirmationDialog" parent="."]
+[node name="ConfirmDialog" type="ConfirmationDialog" parent="." unique_id=1007895204]
 title = "CONFIRM"
 initial_position = 1
 size = Vector2i(360, 120)

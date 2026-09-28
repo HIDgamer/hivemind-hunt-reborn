@@ -1,12 +1,12 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cs0dj6wus5c1t"]
 
-[ext_resource type="Script" path="res://Code/UI/Lobby.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cwp1ok4yihdtg" path="res://Code/UI/Lobby.gd" id="1_script"]
 [ext_resource type="Theme" uid="uid://bda50snfg8lq2" path="res://Scenes/UI/SciFiButtonTheme.tres" id="2_theme"]
-[ext_resource type="PackedScene" path="res://Scenes/UI/CRTOverlay.tscn" id="3_crt"]
+[ext_resource type="PackedScene" uid="uid://c0irqm7n43qu7" path="res://Scenes/UI/CRTOverlay.tscn" id="3_crt"]
 [ext_resource type="PackedScene" uid="uid://cwkxtm0y5wvxk" path="res://Scenes/Background/ParallaxBackground.tscn" id="4_parallax"]
-[ext_resource type="FontFile" path="res://Assets/Font/alienleaguebold.ttf" id="5_alienbold"]
+[ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="5_alienbold"]
 
-[node name="Lobby" type="Control"]
+[node name="Lobby" type="Control" unique_id=1099440841]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,15 +16,15 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
-[node name="ParallaxBackground" parent="." instance=ExtResource("4_parallax")]
+[node name="ParallaxBackground" parent="." unique_id=787132380 instance=ExtResource("4_parallax")]
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1055044956]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.04, 0.05, 0.045, 0.55)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=703488223]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
@@ -37,7 +37,7 @@ offset_bottom = 170.0
 theme_override_constants/separation = 14
 alignment = 1
 
-[node name="Title" type="Label" parent="VBoxContainer"]
+[node name="Title" type="Label" parent="VBoxContainer" unique_id=1149895433]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
 theme_override_fonts/font = ExtResource("5_alienbold")
@@ -46,79 +46,78 @@ text = "MULTIPLAYER"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="NameRow" type="HBoxContainer" parent="VBoxContainer"]
+[node name="NameRow" type="HBoxContainer" parent="VBoxContainer" unique_id=162235946]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/NameRow"]
+[node name="Label" type="Label" parent="VBoxContainer/NameRow" unique_id=66841946]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "CALLSIGN"
 
-[node name="NameField" type="LineEdit" parent="VBoxContainer/NameRow"]
+[node name="NameField" type="LineEdit" parent="VBoxContainer/NameRow" unique_id=1596982058]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 placeholder_text = "PLAYER"
 max_length = 16
 
-[node name="PortRow" type="HBoxContainer" parent="VBoxContainer"]
+[node name="PortRow" type="HBoxContainer" parent="VBoxContainer" unique_id=969349117]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/PortRow"]
+[node name="Label" type="Label" parent="VBoxContainer/PortRow" unique_id=210543291]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "PORT"
 
-[node name="PortField" type="LineEdit" parent="VBoxContainer/PortRow"]
+[node name="PortField" type="LineEdit" parent="VBoxContainer/PortRow" unique_id=412365761]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 placeholder_text = "8791"
 max_length = 5
 
-[node name="PortHint" type="Label" parent="VBoxContainer"]
+[node name="PortHint" type="Label" parent="VBoxContainer" unique_id=53763379]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.75, 0.65, 0.6)
 theme_override_font_sizes/font_size = 11
-autowrap_mode = 2
 text = "Forward this UDP port on your router to host over the internet."
+autowrap_mode = 2
 
-[node name="HostButton" type="Button" parent="VBoxContainer"]
+[node name="HostButton" type="Button" parent="VBoxContainer" unique_id=1634720822]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "HOST GAME"
 
-[node name="JoinRow" type="HBoxContainer" parent="VBoxContainer"]
+[node name="JoinRow" type="HBoxContainer" parent="VBoxContainer" unique_id=1516428374]
 layout_mode = 2
 
-[node name="IPField" type="LineEdit" parent="VBoxContainer/JoinRow"]
+[node name="IPField" type="LineEdit" parent="VBoxContainer/JoinRow" unique_id=1296804933]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 placeholder_text = "127.0.0.1"
 
-[node name="JoinButton" type="Button" parent="VBoxContainer/JoinRow"]
+[node name="JoinButton" type="Button" parent="VBoxContainer/JoinRow" unique_id=1928283507]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 20
 text = "JOIN"
 
-[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+[node name="StatusLabel" type="Label" parent="VBoxContainer" unique_id=1831169721]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.75, 0.65, 0.8)
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 autowrap_mode = 2
-text = ""
 
-[node name="BackButton" type="Button" parent="VBoxContainer"]
+[node name="BackButton" type="Button" parent="VBoxContainer" unique_id=48403273]
 layout_mode = 2
 size_flags_vertical = 8
 text = "BACK"
 
-[node name="CRTOverlay" parent="." instance=ExtResource("3_crt")]
+[node name="CRTOverlay" parent="." unique_id=610387073 instance=ExtResource("3_crt")]
 layout_mode = 0
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 0
+grow_horizontal = 1
+grow_vertical = 1

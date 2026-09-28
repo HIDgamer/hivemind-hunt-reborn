@@ -1,10 +1,21 @@
 using Godot;
 
-// Rotation/color puppeteer over a child PointLight2D — warning/emergency/
+// Rotation/color puppeteer over child PointLight2D(s) — warning/emergency/
 // disco beacon behaviors. A sibling to FlickeringLight, not merged into it:
 // different concern (rotation/color vs. noise-driven energy), each fully
 // independent and composable on separate PointLight2D children if a scene
 // wants both.
+//
+// Spin targets an optional "ConeLight" child (same cone-shaped-texture idea
+// FlashlightComponent uses, e.g. Light_cone_conical.png) instead of the main
+// PointLight2D when one exists — a plain round glow looks identical no
+// matter how it's rotated, so spinning IT never actually reads as
+// "spinning." Pulse/ColorCycle always drive the main PointLight2D
+// regardless, so a beacon reads as a steady pulsing glow with a distinct
+// sweeping beam layered on top, not one light doing both jobs at once. Only
+// falls back to spinning the main light itself if no ConeLight child exists,
+// preserving the original single-light behavior for any scene still set up
+// that way.
 public partial class BeaconLight : Node2D
 {
 	public enum SpinMode { None, Smooth, SteppedAxis }
@@ -32,6 +43,7 @@ public partial class BeaconLight : Node2D
 	[Export] public float ColorCycleSpeed = 1f;
 
 	private PointLight2D _light;
+	private PointLight2D _coneLight;
 	private float _baseEnergy = 1f;
 	private float _pulseTime;
 	private float _colorCycleTime;
@@ -42,33 +54,37 @@ public partial class BeaconLight : Node2D
 	{
 		_light = GetNodeOrNull<PointLight2D>("PointLight2D");
 		if (_light != null) _baseEnergy = _light.Energy;
+
+		_coneLight = GetNodeOrNull<PointLight2D>("ConeLight");
 	}
 
 	public override void _Process(double delta)
 	{
-		if (_light == null) return;
 		float dt = (float)delta;
 
-		TickSpin(dt);
+		PointLight2D spinTarget = _coneLight ?? _light;
+		if (spinTarget != null) TickSpin(spinTarget, dt);
+
+		if (_light == null) return;
 		TickPulse(dt);
 		TickColorCycle(dt);
 	}
 
-	private void TickSpin(float dt)
+	private void TickSpin(PointLight2D target, float dt)
 	{
 		switch (Spin)
 		{
 			case SpinMode.Smooth:
-				_light.Rotation += Mathf.DegToRad(SpinSpeedDegPerSec) * dt;
+				target.Rotation += Mathf.DegToRad(SpinSpeedDegPerSec) * dt;
 				break;
 			case SpinMode.SteppedAxis:
-				TickSteppedAxis(dt);
+				TickSteppedAxis(target, dt);
 				break;
 			// None: leave whatever rotation was authored alone.
 		}
 	}
 
-	private void TickSteppedAxis(float dt)
+	private void TickSteppedAxis(PointLight2D target, float dt)
 	{
 		int stepCount = Mathf.Max(1, AxisStepCount);
 		_stepHoldTimer -= dt;
@@ -76,7 +92,7 @@ public partial class BeaconLight : Node2D
 
 		_stepHoldTimer = StepHoldSeconds;
 		_stepIndex = (_stepIndex + 1) % stepCount;
-		_light.Rotation = Mathf.Tau * _stepIndex / stepCount;
+		target.Rotation = Mathf.Tau * _stepIndex / stepCount;
 	}
 
 	private void TickPulse(float dt)

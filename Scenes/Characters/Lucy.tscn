@@ -12,6 +12,7 @@
 [ext_resource type="AudioStream" uid="uid://caffr2oy4fefs" path="res://Sound/fx/alien-talk-2.ogg" id="10_attack_sound"]
 [ext_resource type="AudioStream" uid="uid://coaokmgtn7jq" path="res://Sound/fx/alien-talk-1.ogg" id="11_hurt_sound"]
 [ext_resource type="AudioStream" uid="uid://3j6bjw2xkvux" path="res://Sound/fx/alien-talk-3.ogg" id="12_death_sound"]
+[ext_resource type="AudioStream" uid="uid://4kk3uphskmkl" path="res://Sound/fx/battle.ogg" id="13_boss_music"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_sf_19"]
 atlas = ExtResource("5_death")
@@ -223,6 +224,9 @@ alert_sound = ExtResource("9_alert_sound")
 attack_sound = ExtResource("10_attack_sound")
 hurt_sound = ExtResource("11_hurt_sound")
 death_sound = ExtResource("12_death_sound")
+is_boss = true
+boss_display_name = "LUCY"
+boss_music = ExtResource("13_boss_music")
 
 [node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=497149454]
 path_postprocessing = 1
@@ -272,8 +276,8 @@ MaxHealth = 650
 InvulnerabilityDuration = 0.6
 
 [node name="VoiceAudio" type="AudioStreamPlayer2D" parent="." unique_id=712647128]
-bus = &"Voice"
 max_distance = 900.0
+bus = &"Voice"
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1132562824]
 replication_config = SubResource("SceneReplicationConfig_lucy")

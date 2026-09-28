@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://bchqabnvy3dup"]
 
 [ext_resource type="Texture2D" uid="uid://diwreabpfsge4" path="res://Assets/Light/Light_cone_conical.png" id="1_rn5e5"]
-[ext_resource type="Texture2D" uid="uid://c25ihpq2umiy5" path="res://Assets/Hazards/Light.png" id="1_trad4"]
 [ext_resource type="Script" uid="uid://qqmoqitjel4u" path="res://Code/Props/FlickeringLight.cs" id="2_flicker"]
+[ext_resource type="Texture2D" uid="uid://bjpc4iftrnp0v" path="res://Assets/Hazards/Wall_Light.tres" id="3_8mdf2"]
 [ext_resource type="AudioStream" uid="uid://ckxidlcs3jjq2" path="res://Sound/fx/spark.ogg" id="3_spark"]
 [ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="4_gas_smoke"]
 
@@ -36,10 +36,10 @@ SparkSound = ExtResource("3_spark")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1585390356]
 position = Vector2(0, 17)
-texture = ExtResource("1_trad4")
+texture = ExtResource("3_8mdf2")
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=51708380]
-position = Vector2(0, 17)
+position = Vector2(0, 57)
 scale = Vector2(2.5, 3)
 color = Color(0.9411765, 0.9411765, 0.9411765, 1)
 energy = 0.3

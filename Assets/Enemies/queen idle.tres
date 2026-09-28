@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" format=3]
+[gd_resource type="CanvasTexture" format=3 uid="uid://dole5ohxcbvf3"]
 
 [ext_resource type="Texture2D" uid="uid://dljd5mxigijb6" path="res://Assets/Enemies/queen idle.png" id="1_diffuse"]
 [ext_resource type="Texture2D" uid="uid://feg65eityok8" path="res://Assets/Enemies/queen idle_n.png" id="2_normal"]

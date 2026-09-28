@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://c8k2m5tstat1"]
+
+[ext_resource type="Script" uid="uid://bwa8o5o4icd4f" path="res://Code/Props/PipePatchStation.cs" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c8k2m5tpu00l2" path="res://Scenes/UI/PipePatchPuzzle.tscn" id="2_puzzle"]
+[ext_resource type="Texture2D" uid="uid://iw56m5v8delm" path="res://Assets/Hazards/Console.tres" id="3_console"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_range"]
+size = Vector2(48, 44)
+
+[node name="PipePatchStation" type="Area2D" unique_id=638764945]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+PuzzleScene = ExtResource("2_puzzle")
+Title = "PIPE PATCH"
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1718339704]
+texture = ExtResource("3_console")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2101029830]
+position = Vector2(0, 2)
+shape = SubResource("RectangleShape2D_range")

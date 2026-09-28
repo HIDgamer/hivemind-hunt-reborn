@@ -1,9 +1,15 @@
 using Godot;
 
-// Server-authoritative: spawns a NetworkPlayer for every connected peer
-// (including the host itself) and despawns it on disconnect. A plain
-// single-player load of this level never touches multiplayer at all — this
-// entire node is a no-op unless NetworkManager reports an active connection.
+// Single source of truth for where Sam appears in a level, networked or not.
+// Server-authoritative in multiplayer: spawns a NetworkPlayer for every
+// connected peer (including the host itself) and despawns it on disconnect.
+// Plain single-player never touches any of that networking machinery, but
+// still comes through here — levels no longer ship their own hardcoded Sam
+// node (see SpawnSinglePlayer), so this is the only place a level's spawn
+// position is authored at all. Sam's own _Ready() still overrides wherever
+// this puts her with a checkpoint or exit-door arrival position when one
+// applies (see CheckpointManager) — this is only the fallback for reaching
+// a level with neither, i.e. a genuinely fresh arrival.
 //
 // Deliberately out of scope for this pass: reconnection/rejoin handling,
 // spawn-point selection beyond a single fixed point, and mid-session host
@@ -13,7 +19,14 @@ public partial class PlayerSpawner : Node
 {
 	[Export] public NodePath PlayersRootPath = "../PlayersRoot";
 	[Export] public PackedScene NetworkPlayerScene;
+	// Single-player fallback — left unset on every level, since it always
+	// resolves to the same plain, non-networked player scene regardless of
+	// which level this is (see SpawnSinglePlayer). Exists as an export
+	// mainly so a level could override it later if that ever changes.
+	[Export] public PackedScene SinglePlayerScene;
 	[Export] public Vector2 SpawnPosition = Vector2.Zero;
+
+	private const string DefaultSinglePlayerScenePath = "res://Scenes/Characters/Sam.tscn";
 
 	private Node _playersRoot;
 	private MultiplayerSpawner _spawner;
@@ -31,21 +44,25 @@ public partial class PlayerSpawner : Node
 		//    them. Connecting from inside the Lobby made every spawn packet
 		//    arrive before this node existed and vanish, which is exactly
 		//    what "joining players never get a character" looked like.
-		//  - plain single-player: neither — leave the pre-placed Sam alone.
+		//  - plain single-player: neither — spawn the one local Sam here
+		//    instead of falling through to the networked path below.
 		bool isServer = networkManager.IsNetworked && Multiplayer.IsServer();
 		bool isJoiningClient = networkManager.HasPendingJoin;
+
+		_playersRoot = GetNode(PlayersRootPath);
+
 		if (!isServer && !isJoiningClient)
 		{
+			SpawnSinglePlayer();
 			return;
 		}
 
-		// The level ships with a single hardcoded Sam for the plain
-		// single-player case — when actually networked, every player
-		// (including the host) instead gets a spawned NetworkPlayer below,
-		// so the pre-placed one has to go or the host would see double.
+		// The Tutorial level is the one remaining exception that still ships
+		// a hardcoded "Sam" node (its scripted intro beats are authored
+		// against that exact instance) — freeing it here is what stops the
+		// host from seeing double when it's played networked. A no-op
+		// everywhere else, since no other level has one to find any more.
 		GetTree().CurrentScene.GetNodeOrNull("Sam")?.QueueFree();
-
-		_playersRoot = GetNode(PlayersRootPath);
 
 		_spawner = GetNode<MultiplayerSpawner>("MultiplayerSpawner");
 		_spawner.SpawnPath = _playersRoot.GetPath();
@@ -185,5 +202,26 @@ public partial class PlayerSpawner : Node
 	{
 		Node existing = _playersRoot.GetNodeOrNull(id.ToString());
 		existing?.QueueFree();
+	}
+
+	// No MultiplayerSpawner/authority handoff needed here at all — this is
+	// the one-and-only local Sam, not one of several peers' copies. Guarded
+	// against a non-empty PlayersRoot so re-running _Ready() (shouldn't
+	// normally happen, but see the same guard's reasoning in SpawnPlayer's
+	// idempotency check above) can't ever produce a duplicate.
+	private void SpawnSinglePlayer()
+	{
+		if (_playersRoot.GetChildCount() > 0) return;
+
+		PackedScene scene = SinglePlayerScene ?? GD.Load<PackedScene>(DefaultSinglePlayerScenePath);
+		if (scene == null)
+		{
+			GD.PushWarning("PlayerSpawner: no single-player scene available to spawn.");
+			return;
+		}
+
+		var player = scene.Instantiate<Node2D>();
+		player.Position = SpawnPosition;
+		_playersRoot.AddChild(player);
 	}
 }

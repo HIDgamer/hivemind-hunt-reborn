@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" format=3]
+[gd_resource type="CanvasTexture" format=3 uid="uid://b3bsblh2gt4xa"]
 
 [ext_resource type="Texture2D" uid="uid://bkowvx2dcap14" path="res://Assets/Enemies/Crusher_Dead.png" id="1_diffuse"]
 [ext_resource type="Texture2D" uid="uid://cxmpp6mo2qc4p" path="res://Assets/Enemies/Crusher_Dead_n.png" id="2_normal"]

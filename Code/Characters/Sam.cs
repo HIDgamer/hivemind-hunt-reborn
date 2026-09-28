@@ -96,7 +96,10 @@ public partial class Sam : CharacterBody2D
 	[Export] public float JumpBufferTime { get; set; } = 0.12f;
 	[Export] public int BaseJumpCount { get; set; } = 1;
 	[Export] public float LandingParticleThreshold { get; set; } = 120f;
-	[Export] public float DeathRespawnDelay { get; set; } = 1.5f;
+	// A few full seconds, not a quick blip — dying should read as a genuine
+	// beat (death animation, HUD heartbeat icon stopped on its last frame)
+	// before respawn kicks in, not feel like an instant restart.
+	[Export] public float DeathRespawnDelay { get; set; } = 3.0f;
 
 	[ExportCategory("Crawl & Slide")]
 	[Export] public float SlideEntrySpeed { get; set; } = 160f;
@@ -118,6 +121,44 @@ public partial class Sam : CharacterBody2D
 	[Export] public float PowerRegenDelay { get; set; } = 0.65f;
 	[Export] public float SprintPowerDrainPerSecond { get; set; } = 18f;
 	[Export] public float MinimumPowerToSprint { get; set; } = 8f;
+
+	[ExportCategory("Combat")]
+	// Three-hit combo: Punch1 -> Punch2 -> Kick, escalating damage. Punch1/
+	// Punch2 are the same drawn sheet split into its first and second half
+	// (see the SpriteFrames setup in Sam.tscn) rather than separate art.
+	[Export] public int Punch1Damage { get; set; } = 6;
+	[Export] public int Punch2Damage { get; set; } = 9;
+	[Export] public int KickDamage { get; set; } = 14;
+	// Punches play at the sheet's own drawn 10fps (speed 1.0) — deliberately
+	// slower and weightier than Kick, which gets a multiplier on top (same
+	// technique as FlipPlaybackSpeed/PushWindupPlaybackSpeed elsewhere) so
+	// the finisher snaps out fast by contrast instead of matching their pace.
+	[Export] public float Punch1PlaybackSpeed { get; set; } = 1.0f;
+	[Export] public float Punch2PlaybackSpeed { get; set; } = 1.0f;
+	[Export] public float KickPlaybackSpeed { get; set; } = 3.0f;
+	// Frame index (into the clip's own frame count) where the swing actually
+	// connects — a hit is only ever checked once per swing, the first tick
+	// its current frame reaches this. First-pass guess; retune once the
+	// drawn impact frame is visible in-editor.
+	[Export] public int Punch1ActiveFrame { get; set; } = 4;
+	[Export] public int Punch2ActiveFrame { get; set; } = 4;
+	[Export] public int KickActiveFrame { get; set; } = 9;
+	// A press before its swing reaches this frame is too early to chain and
+	// is simply swallowed — the current swing just keeps playing itself out.
+	// Mashing the button as fast as possible means every press lands before
+	// this opens, so it reads as "just throwing Punch1 over and over" rather
+	// than ever reaching Kick; timing presses to land inside the window (a
+	// beat after the hit connects — see the matching ActiveFrame above) is
+	// what actually advances the combo.
+	[Export] public int Punch1ComboWindowFrame { get; set; } = 5;
+	[Export] public int Punch2ComboWindowFrame { get; set; } = 5;
+	[Export] public float AttackHitboxRadius { get; set; } = 22f;
+	[Export] public float AttackHitboxForwardOffset { get; set; } = 26f;
+	[Export] public float AttackKnockbackForce { get; set; } = 140f;
+	// Not every hit staggers the target — see ApplyAttackHit. Independent
+	// roll per body hit, not per swing.
+	[Export] public float StunChance { get; set; } = 0.15f;
+	[Export] public float StunDuration { get; set; } = 0.8f;
 
 	[ExportCategory("Status Effects")]
 	// Paced at 0.8s deliberately — HealthComponent's own invulnerability
@@ -181,7 +222,9 @@ private CpuParticles2D _dashParticles;
 		Push,
 		Pull,
 		Hurt,
-		Dead
+		Dead,
+		Emote,
+		Attack
 	}
 
 	private State _currentState = State.Idle;
@@ -211,6 +254,41 @@ private CpuParticles2D _dashParticles;
 	// gate in exact agreement.
 	private bool _slideWindupActive = false;
 	private bool _crawlEntryActive = false;
+	// Emotes: one input action per emote clip, all one-shot except Pushups,
+	// which loops (see the SpriteFrames "loop" flag set in Sam.tscn) and so
+	// only ever ends when explicitly cancelled — pressing its own key again,
+	// or any movement/jump/crawl/interact/dash input. Starting a new emote
+	// requires standing still on the floor with nothing else going on (see
+	// CanStartEmote), and pressing a different emote's key mid-emote switches
+	// straight to it. New emotes just need a new row here plus a matching
+	// "EmoteN" action in project.godot and animation in Sam.tscn.
+	private static readonly (string Action, string Animation, bool Loop)[] EmoteDefinitions =
+	{
+		("Emote1", "Wave", false),
+		("Emote2", "Clapping", false),
+		("Emote3", "Kiss", false),
+		("Emote4", "ThumbsUp", false),
+		("Emote5", "ThumbsDown", false),
+		("Emote6", "Pushups", true),
+	};
+	private string _currentEmoteAnimation = null;
+	private bool _emoteLooping = false;
+	private bool IsEmoting => _currentEmoteAnimation != null;
+	// Combat: Attack (left mouse) starts Punch1; Interact (Z) also throws a
+	// punch whenever it *isn't* grabbing something that frame — see
+	// UpdateCombat — so Z stays "interact if there's something to interact
+	// with, attack otherwise" without any of the prop scripts that poll
+	// "Interact" directly (TaskStationBase, NpcDialogueTrigger, doors) needing
+	// to know or care that Attack exists. A three-hit combo: a fresh press
+	// while Punch1 is still playing cancels straight into Punch2, and again
+	// into Kick, the finisher — Kick doesn't chain into anything further.
+	// Movement is never gated on this — Sam can walk, turn, and jump through
+	// all three hits, only the pose overlays on top.
+	private enum AttackKind { None, Punch1, Punch2, Kick }
+	private AttackKind _currentAttack = AttackKind.None;
+	private bool IsAttacking => _currentAttack != AttackKind.None;
+	private bool _attackHitLanded = false;
+	private Area2D _attackHitbox;
 	// Turnaround/TurnaroundRun have no separate left-facing art — the same
 	// clip is played forward for one turn direction and backward (from its
 	// last frame) for the other, since a time-reversed pivot reads as the
@@ -244,6 +322,9 @@ private CpuParticles2D _dashParticles;
 		"Idle", "Walk", "Run", "Jump", "Land", "Hurt", "Death",
 		"Pull", "PushWindup", "Push", "Slide", "SlideIn",
 		"Crawl", "CrawlIdle", "CrawlEntry", "Flip", "Wallslide", "AirRoll",
+		// Emotes with dedicated left-facing art.
+		"Wave", "Clapping", "Kiss", "Pushups", "ThumbsUp", "ThumbsDown",
+		"Punch1", "Punch2", "Kick",
 	};
 	private List<DashTrailFrame> _dashTrailFrames = new();
 	private float _dashTrailTimer = 0f;
@@ -265,13 +346,14 @@ private CpuParticles2D _dashParticles;
 	// pair apart from an ordinary side-by-side encounter and leave it alone.
 	public Sam RidingOnPlayer => _ridingOnPlayer;
 
-	// Same hand-rolled carry as _ridingOnPlayer above, kept as its own
-	// separate pair rather than generalized — MovingPlatform is a distinct
-	// collider type, and duplicating this small a mechanism is cheaper than
-	// risking a regression in the already-proven player-riding path. See
-	// UpdatePlatformRiding.
-	private MovingPlatform _ridingOnPlatform;
-	private Vector2 _ridingOnPlatformLastPosition;
+	// MovingPlatform riding used to need its own hand-rolled carry here too
+	// (the same class of Rapier2D limitation as _ridingOnPlayer above, but
+	// for ordinary move_and_slide() platform-velocity propagation rather
+	// than one-way collision) — removed now that the project runs on
+	// GodotPhysics2D (see project.godot), which carries a CharacterBody2D
+	// riding a moving platform natively. Sam.tscn's platform_on_leave is
+	// back at its default (ADD_VELOCITY) so jumping off a moving platform
+	// also correctly keeps its momentum, the same native behavior.
 
 	// True while a UI element (dialogue box, chat input) owns the keyboard —
 	// all gameplay input reads as neutral so typing "wasd" in chat doesn't
@@ -310,6 +392,25 @@ private CpuParticles2D _dashParticles;
 _interactionPlayer = GetOrCreateAudioPlayer("InteractPlayer");
 _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 	_voiceChatPlayer = GetNode<AudioStreamPlayer2D>("VoiceChatPlayer");
+
+	// Same "build a default if the scene doesn't have one" fallback
+	// InteractionComponent uses for its own GrabArea. Layer 0 (detects only,
+	// isn't itself detectable) / mask 8 ("Enemies" — see project.godot's
+	// layer_names) matches every enemy Hurtbox's own convention exactly
+	// reversed: they scan for the Player layer, this scans for theirs.
+	_attackHitbox = GetNodeOrNull<Area2D>("AttackHitbox");
+	if (_attackHitbox == null)
+	{
+		_attackHitbox = new Area2D
+		{
+			Name = "AttackHitbox",
+			CollisionLayer = 0,
+			CollisionMask = 8,
+			Monitorable = false,
+		};
+		_attackHitbox.AddChild(new CollisionShape2D { Shape = new CircleShape2D { Radius = AttackHitboxRadius } });
+		AddChild(_attackHitbox);
+	}
 
 	if (FootstepSound != null) _footstepPlayer.Stream = FootstepSound;
 		if (JumpSound != null) _jumpPlayer.Stream = JumpSound;
@@ -406,10 +507,17 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		if (!IsNetworked)
 		{
 			var checkpointManager = GetNodeOrNull<CheckpointManager>("/root/CheckpointManager");
-			if (checkpointManager != null
-				&& checkpointManager.ConsumePendingRespawn(GetTree().CurrentScene.SceneFilePath, out Vector2 loadPosition))
+			string currentScenePath = GetTree().CurrentScene.SceneFilePath;
+			if (checkpointManager != null && checkpointManager.ConsumePendingRespawn(currentScenePath, out Vector2 loadPosition))
 			{
 				RespawnAt(loadPosition);
+			}
+			// Arriving via a LevelExitDoor (backtracking into a previously-
+			// visited level) — separate from the checkpoint respawn above,
+			// see CheckpointManager.RequestArrivalOnLoad's own comment for why.
+			else if (checkpointManager != null && checkpointManager.ConsumePendingArrival(currentScenePath, out Vector2 arrivalPosition))
+			{
+				RespawnAt(arrivalPosition);
 			}
 		}
 	}
@@ -454,9 +562,19 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 			_lastHeldInputAge += deltaTime;
 		}
 
+		// Reads LAST frame's IsOnFloor()/collision data (still valid — it
+		// persists correctly frame-to-frame while resting on something) —
+		// still hand-rolled for standing on another player's head (Rapier's
+		// one-way-collision gap, unrelated to moving platforms). Riding an
+		// actual MovingPlatform no longer needs anything here at all — see
+		// the field comment above _ridingOnPlayer.
+		UpdatePlayerRiding();
+
 		UpdateTimers(deltaTime);
 		UpdateStatusEffects(deltaTime);
 		UpdateInteraction(inputDir, deltaTime);
+		UpdateEmotes(inputDir);
+		UpdateCombat();
 		UpdateDashTrail(deltaTime);
 
 		bool dashActive = _dash != null && _dash.Tick(this, inputDir, deltaTime);
@@ -513,6 +631,13 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 				// hopping instead of committing to the push.
 				HandleInteractionMovement(inputDir, deltaTime);
 			}
+			else if (IsEmoting)
+			{
+				// Emotes are a stationary pose — hold in place with normal
+				// ground friction rather than snapping to a dead stop, same
+				// feel as releasing movement input during ordinary standing.
+				Velocity = new Vector2(Mathf.MoveToward(Velocity.X, 0f, Friction * deltaTime), Velocity.Y);
+			}
 			else
 			{
 				HandleCrawlAndSlide(inputDir, deltaTime);
@@ -530,8 +655,6 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
 		ApplyPlayerSeparation();
 		MoveAndSlide();
-		UpdatePlayerRiding();
-		UpdatePlatformRiding();
 		HandleLanding(wasOnFloorBeforeMove, fallSpeedBeforeMove);
 		UpdatePower(deltaTime);
 
@@ -539,6 +662,11 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		{
 			HandleAnimations(inputDir, facingBeforeMove, heldInputSignBeforeMove, heldInputAgeBeforeMove);
 			HandleFootsteps(deltaTime);
+			// Reads _animatedSprite.Frame, so this must run after
+			// HandleAnimations has actually driven this tick's Punch/Kick
+			// frame forward — checking it any earlier would still see last
+			// frame's value.
+			ProcessAttackHitbox();
 		}
 
 		if (IsNetworked && IsMultiplayerAuthority())
@@ -650,12 +778,213 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		_wasInteracting = _interaction.IsInteracting;
 	}
 
+	private void UpdateEmotes(Vector2 inputDir)
+	{
+		if (!UiInputCaptured)
+		{
+			foreach (var def in EmoteDefinitions)
+			{
+				if (!Input.IsActionJustPressed(def.Action)) continue;
+
+				if (_currentEmoteAnimation == def.Animation)
+				{
+					// Pressing the active emote's own key again cancels it —
+					// the only way to end Pushups, which loops until cancelled.
+					CancelEmote();
+				}
+				else if (CanStartEmote(inputDir))
+				{
+					_currentEmoteAnimation = def.Animation;
+					_emoteLooping = def.Loop;
+				}
+				break;
+			}
+		}
+
+		if (!IsEmoting) return;
+
+		bool cancelledByAction = !IsOnFloor()
+			|| Mathf.Abs(inputDir.X) > 0.01f
+			|| (!UiInputCaptured && (Input.IsActionJustPressed("Jump")
+				|| Input.IsActionPressed("Crawl")
+				|| Input.IsActionPressed("Interact")
+				|| Input.IsActionJustPressed("Dash")
+				|| Input.IsActionJustPressed("Attack")));
+		if (cancelledByAction)
+		{
+			CancelEmote();
+		}
+	}
+
+	// Emotes only start from a plain, grounded standstill — nothing else
+	// going on and no direction already held (see UpdateEmotes for why
+	// requiring zero input here matters: it's what stops a freshly-started
+	// emote from being cancelled by that same frame's own held movement).
+	private bool CanStartEmote(Vector2 inputDir)
+	{
+		return IsOnFloor()
+			&& Mathf.Abs(inputDir.X) < 0.01f
+			&& !_interaction.IsInteracting
+			&& !_isCrawling
+			&& !_isSliding
+			&& !_isDashing
+			&& _currentState != State.Hurt
+			&& _currentState != State.Dead;
+	}
+
+	private void CancelEmote()
+	{
+		_currentEmoteAnimation = null;
+		_emoteLooping = false;
+	}
+
+	private void UpdateCombat()
+	{
+		// Left mouse always attacks. Z (Interact) attacks too, but only on a
+		// frame where it *didn't* just grab a pushable — UpdateInteraction
+		// (called before this) has already resolved that for this frame, so
+		// IsInteracting here reflects whether this same Z-press was actually
+		// a grab. Every other "Interact" consumer in the game (task stations,
+		// doors, NPC dialogue) polls that raw action directly and neither
+		// knows nor cares that Attack exists.
+		bool attackPressed = !UiInputCaptured
+			&& (Input.IsActionJustPressed("Attack")
+				|| (Input.IsActionJustPressed("Interact") && !_interaction.IsInteracting));
+
+		if (attackPressed)
+		{
+			if (_currentAttack == AttackKind.None && CanStartAttack())
+			{
+				StartAttack(AttackKind.Punch1);
+			}
+			else if (_currentAttack == AttackKind.Punch1 && _animatedSprite.Frame >= Punch1ComboWindowFrame)
+			{
+				// The cancel: a press timed after the window opens (a beat
+				// past the hit landing, not immediately) skips the rest of
+				// Punch1's recovery and cuts straight to Punch2.
+				StartAttack(AttackKind.Punch2);
+			}
+			else if (_currentAttack == AttackKind.Punch2 && _animatedSprite.Frame >= Punch2ComboWindowFrame)
+			{
+				// Same cancel, chaining into the finisher.
+				StartAttack(AttackKind.Kick);
+			}
+			// Too early inside Punch1/Punch2 (mashing faster than the window),
+			// or already mid-Kick: the press is simply swallowed and the
+			// current swing keeps playing itself out — spamming the button
+			// just repeats Punch1 over and over rather than ever reaching
+			// Kick, since every press lands before its window opens.
+		}
+
+		if (!IsAttacking) return;
+
+		bool cancelledByAction = _interaction.IsInteracting
+			|| _isCrawling
+			|| _isSliding
+			|| IsWallSlideCandidate()
+			|| _currentState == State.Hurt
+			|| _currentState == State.Dead
+			|| (!UiInputCaptured && Input.IsActionJustPressed("Dash"));
+		if (cancelledByAction)
+		{
+			CancelAttack();
+		}
+	}
+
+	// No standstill requirement here (unlike CanStartEmote) — movement stays
+	// fully free during combat, Sam can walk, turn, and jump through both
+	// hits. Only states with their own conflicting standing pose are
+	// excluded: no drawn crawl/slide/wallslide-punch art exists.
+	private bool CanStartAttack()
+	{
+		return !_interaction.IsInteracting
+			&& !_isCrawling
+			&& !_isSliding
+			&& !IsWallSlideCandidate()
+			&& !_isDashing
+			&& _currentState != State.Hurt
+			&& _currentState != State.Dead;
+	}
+
+	private void StartAttack(AttackKind kind)
+	{
+		_currentAttack = kind;
+		_attackHitLanded = false;
+	}
+
+	private void CancelAttack()
+	{
+		_currentAttack = AttackKind.None;
+		_attackHitLanded = false;
+	}
+
+	// Keeps the hitbox tracking Sam's facing every tick she's attacking (not
+	// just at the hit-check moment) — Area2D overlap queries reflect the
+	// physics server's last broadphase pass, not the position as of this
+	// exact script line, so the shape needs at least one full physics step
+	// in the right place before GetOverlappingBodies() below can be trusted.
+	private void ProcessAttackHitbox()
+	{
+		if (!IsAttacking) return;
+
+		_attackHitbox.Position = new Vector2(AttackHitboxForwardOffset * FacingDirection, 0f);
+
+		if (_attackHitLanded) return;
+
+		int activeFrame = _currentAttack switch
+		{
+			AttackKind.Punch1 => Punch1ActiveFrame,
+			AttackKind.Punch2 => Punch2ActiveFrame,
+			_ => KickActiveFrame,
+		};
+		if (_animatedSprite.Frame < activeFrame) return;
+
+		_attackHitLanded = true;
+		ApplyAttackHit();
+	}
+
+	private void ApplyAttackHit()
+	{
+		int damage = _currentAttack switch
+		{
+			AttackKind.Punch1 => Punch1Damage,
+			AttackKind.Punch2 => Punch2Damage,
+			_ => KickDamage,
+		};
+		Vector2 knockback = new Vector2(FacingDirection, -0.2f) * AttackKnockbackForce;
+
+		foreach (Node2D body in _attackHitbox.GetOverlappingBodies())
+		{
+			HealthComponent health = body.GetNodeOrNull<HealthComponent>("HealthComponent");
+			// Same gate Damage() itself applies internally — checked here too
+			// so a hit that Damage() would silently drop (an armored Crusher
+			// mid-charge, an enemy still in its post-hit i-frames) also never
+			// rolls apply_stun below. Without this, punching a boss through
+			// its own attack armor couldn't hurt it but could still stun-
+			// cancel the attack for free.
+			if (health == null || health.IsDead || health.IsInvulnerable || health.ExternallyInvulnerable) continue;
+
+			health.Damage(damage, knockback);
+
+			// Sometimes, not often — an independent roll per body hit, not
+			// per swing, so a cleave through several enemies doesn't stagger
+			// all of them together just because one roll succeeded.
+			// apply_stun lives on EnemyBase.gd (GDScript); HasMethod guards
+			// anything on the Enemies layer that isn't actually one.
+			if (body.HasMethod("apply_stun") && GD.Randf() < StunChance)
+			{
+				body.Call("apply_stun", StunDuration);
+			}
+		}
+	}
+
 	private void ApplyGravity(float deltaTime)
 	{
 		if (IsOnFloor()) return;
 
 		float currentGravity = Gravity;
-		if (Mathf.Abs(Velocity.Y) < ApexThreshold && !Input.IsActionPressed("Crawl"))
+		bool holdingCrawl = !UiInputCaptured && Input.IsActionPressed("Crawl");
+		if (Mathf.Abs(Velocity.Y) < ApexThreshold && !holdingCrawl)
 		{
 			currentGravity *= ApexGravityMultiplier;
 		}
@@ -749,8 +1078,9 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
 	private void HandleCrawlAndSlide(Vector2 inputDir, float deltaTime)
 	{
-		bool wantsCrawl = Input.IsActionPressed("Crawl") && IsOnFloor();
-		bool canEnterSlide = Input.IsActionJustPressed("Crawl")
+		bool wantsCrawl = !UiInputCaptured && Input.IsActionPressed("Crawl") && IsOnFloor();
+		bool canEnterSlide = !UiInputCaptured
+			&& Input.IsActionJustPressed("Crawl")
 			&& IsOnFloor()
 			&& !_isCrawling
 			&& Mathf.Abs(Velocity.X) >= SlideEntrySpeed
@@ -824,7 +1154,7 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
 	private void HandleJumping(Vector2 inputDir)
 	{
-		if (Input.IsActionJustReleased("Jump") && Velocity.Y < 0f)
+		if (!UiInputCaptured && Input.IsActionJustReleased("Jump") && Velocity.Y < 0f)
 		{
 			Velocity = new Vector2(Velocity.X, Velocity.Y * JumpCutMultiplier);
 		}
@@ -977,45 +1307,6 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		}
 	}
 
-	// Byte-for-byte the same shape as UpdatePlayerRiding — carries this Sam
-	// along with a MovingPlatform's frame-to-frame motion, since Rapier2D
-	// doesn't reliably propagate a CharacterBody2D platform's velocity via
-	// MoveAndSlide (see MovingPlatform.cs's own header comment).
-	private void UpdatePlatformRiding()
-	{
-		MovingPlatform standingOn = null;
-		if (IsOnFloor())
-		{
-			int count = GetSlideCollisionCount();
-			for (int i = 0; i < count; i++)
-			{
-				KinematicCollision2D collision = GetSlideCollision(i);
-				if (collision.GetCollider() is MovingPlatform platform)
-				{
-					standingOn = platform;
-					break;
-				}
-			}
-		}
-
-		if (standingOn != _ridingOnPlatform)
-		{
-			_ridingOnPlatform = standingOn;
-			_ridingOnPlatformLastPosition = standingOn?.GlobalPosition ?? Vector2.Zero;
-			return;
-		}
-
-		if (_ridingOnPlatform != null && IsInstanceValid(_ridingOnPlatform))
-		{
-			Vector2 delta = _ridingOnPlatform.GlobalPosition - _ridingOnPlatformLastPosition;
-			if (delta != Vector2.Zero)
-			{
-				GlobalPosition += delta;
-			}
-			_ridingOnPlatformLastPosition = _ridingOnPlatform.GlobalPosition;
-		}
-	}
-
 	private void HandleLanding(bool wasOnFloorBeforeMove, float fallSpeedBeforeMove)
 	{
 		if (!IsOnFloor()) return;
@@ -1062,6 +1353,15 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 
 	private void HandleAnimations(Vector2 inputDir, float facingBeforeMove, float heldInputSignBeforeMove, float heldInputAgeBeforeMove)
 	{
+		if (IsEmoting)
+		{
+			_turnaroundActive = false;
+			_landingAnimActive = false;
+			_flipAnimActive = false;
+			SetState(State.Emote, _currentEmoteAnimation);
+			return;
+		}
+
 		if (_interaction.IsInteracting)
 		{
 			_turnaroundActive = false;
@@ -1101,6 +1401,28 @@ _dashParticles = GetNodeOrNull<CpuParticles2D>("DashParticles");
 		if (_flipAnimActive)
 		{
 			SetState(State.Roll, "Flip", FlipPlaybackSpeed);
+			return;
+		}
+
+		// Combat overlays the walk/idle/airborne pose the same way the dash
+		// follow-through above does — movement keeps running underneath
+		// (see UpdateCombat), only the displayed clip changes.
+		if (IsAttacking)
+		{
+			_turnaroundActive = false;
+			_landingAnimActive = false;
+			switch (_currentAttack)
+			{
+				case AttackKind.Punch1:
+					SetState(State.Attack, "Punch1", Punch1PlaybackSpeed);
+					break;
+				case AttackKind.Punch2:
+					SetState(State.Attack, "Punch2", Punch2PlaybackSpeed);
+					break;
+				default:
+					SetState(State.Attack, "Kick", KickPlaybackSpeed);
+					break;
+			}
 			return;
 		}
 
@@ -1657,6 +1979,8 @@ private AudioStream GetRandomHurtSound()
 		_flipAnimActive = false;
 		_turnaroundActive = false;
 		_landingAnimActive = false;
+		CancelEmote();
+		CancelAttack();
 		_currentState = State.Hurt;
 		Velocity = knockbackDirection * 100f;
 		PlayAnimation("Hurt");
@@ -1750,6 +2074,29 @@ private AudioStream GetRandomHurtSound()
 			case "Flip":
 				_flipAnimActive = false;
 				break;
+			case "Punch1":
+				// Only clears if nothing chained it into Punch2 in the
+				// meantime — StartAttack already switched _currentAttack away
+				// by the time this fires for a cancelled-into-Punch2 swing,
+				// so this only ever resets a Punch1 that played out solo.
+				if (_currentAttack == AttackKind.Punch1) CancelAttack();
+				break;
+			case "Punch2":
+				// Same idea, one step later in the chain.
+				if (_currentAttack == AttackKind.Punch2) CancelAttack();
+				break;
+			case "Kick":
+				// The finisher always ends the combo, chained into or not.
+				CancelAttack();
+				break;
+		}
+
+		// One-shot emotes end on their own once the clip plays out. Pushups
+		// loops (see EmoteDefinitions) and so never clears here — only
+		// UpdateEmotes' explicit cancel ends it.
+		if (IsEmoting && !_emoteLooping && baseName == _currentEmoteAnimation)
+		{
+			CancelEmote();
 		}
 	}
 
@@ -1757,6 +2104,8 @@ private void OnDied()
 {
 	StopSlide();
 	SetCrawling(false);
+	CancelEmote();
+	CancelAttack();
 	_currentState = State.Dead;
 	Velocity = Vector2.Zero;
 	if (_hurtFlashTween != null && _hurtFlashTween.IsValid()) _hurtFlashTween.Kill();
@@ -1937,6 +2286,14 @@ private void RemoteDashEffect(float facing)
 	public void RespawnAt(Vector2 position)
 	{
 		GlobalPosition = position;
+		// PlayerCamera (CameraSystem.gd) leaves Godot's own
+		// position_smoothing_enabled on for its normal moment-to-moment
+		// follow — great for ordinary movement, but it means an instant
+		// teleport like this one still gets smoothly panned to over time
+		// instead of snapping, reading as the camera "slingshotting" across
+		// the level. ResetSmoothing() clears that interpolation state so the
+		// very next position update (this same teleport) applies immediately.
+		GetNodeOrNull<Camera2D>("PlayerCamera")?.ResetSmoothing();
 		Velocity = Vector2.Zero;
 		_currentState = State.Idle;
 		_stateLockTimer = 0f;

@@ -17,7 +17,7 @@ public partial class NpcDialogueTrigger : Area2D
 
 	private bool _playerInRange;
 	private bool _hasSpoken;
-	private Node2D _playerInRangeNode;
+	private Sam _playerInRangeNode;
 	// The Z press that advances the final line and the Z press that opens a
 	// fresh conversation are read by two different consumers: DialogueBox
 	// closes on the event (_unhandled_input), this polls IsActionJustPressed
@@ -47,6 +47,10 @@ public partial class NpcDialogueTrigger : Area2D
 		}
 
 		if (!_playerInRange || _playerInRangeNode == null) return;
+		// Otherwise typing "z" into chat (or any other UI capturing input)
+		// could open/re-open dialogue mid-message — Interact is polled here
+		// independently of Sam's own gameplay-input gating.
+		if (_playerInRangeNode.UiInputCaptured) return;
 		if (!Repeatable && _hasSpoken) return;
 
 		var dialogueUi = GetNodeOrNull<CanvasLayer>("/root/DialogueUI");

@@ -24,7 +24,12 @@ public partial class SaveManager : Node
 	// after a level got renamed/removed — gets treated as empty and quietly
 	// deleted the next time it's read, rather than handing LoadSlot a
 	// checkpoint that no longer resolves to anything and breaking the load.
-	private const int SaveFormatVersion = 1;
+	// v2: added ability unlocks (SquadAbilityState) and completed-levels
+	// (LevelProgress) — a v1 save has neither, so bumping this intentionally
+	// wipes old saves rather than silently loading them with abilities reset.
+	// v3: added LevelStateManager's dead-enemy/solved-station/triggered-door
+	// entries, for the same reason — a v2 save predates it entirely.
+	private const int SaveFormatVersion = 3;
 
 	private struct SlotData
 	{
@@ -33,6 +38,15 @@ public partial class SaveManager : Node
 		public string Timestamp;
 		public string ScenePath;
 		public Vector2 Position;
+		public bool ExtraJumpUnlocked;
+		public int ExtraJumpCount;
+		public bool DashUnlocked;
+		public bool MaxHealthCollected;
+		public int MaxHealthBonus;
+		public string[] CompletedLevels;
+		public string[] DeadEnemies;
+		public string[] SolvedStations;
+		public string[] TriggeredDoors;
 	}
 
 	// Scene-authored checkpoints reach this through CheckpointManager, not
@@ -106,6 +120,15 @@ public partial class SaveManager : Node
 		SlotData data = ReadSlot(slot);
 		if (!data.Occupied) return "";
 
+		GetNode<SquadAbilityState>("/root/SquadAbilityState").RestoreState(
+			data.ExtraJumpUnlocked, data.ExtraJumpCount, data.DashUnlocked, data.MaxHealthCollected, data.MaxHealthBonus);
+		GetNode<LevelProgress>("/root/LevelProgress").SetCompletedLevels(data.CompletedLevels);
+
+		var levelState = GetNode<LevelStateManager>("/root/LevelStateManager");
+		levelState.SetDeadEnemyEntries(data.DeadEnemies);
+		levelState.SetSolvedStationEntries(data.SolvedStations);
+		levelState.SetTriggeredDoorEntries(data.TriggeredDoors);
+
 		GetNode<CheckpointManager>("/root/CheckpointManager").RequestRespawnOnLoad(data.Position, data.ScenePath);
 		return data.ScenePath;
 	}
@@ -139,6 +162,10 @@ public partial class SaveManager : Node
 
 		CaptureThumbnail(SlotThumbnailPath(slot));
 
+		var squad = GetNode<SquadAbilityState>("/root/SquadAbilityState");
+		var levelProgress = GetNode<LevelProgress>("/root/LevelProgress");
+		var levelState = GetNode<LevelStateManager>("/root/LevelStateManager");
+
 		var config = new ConfigFile();
 		config.SetValue("save", "version", SaveFormatVersion);
 		config.SetValue("save", "name", displayName);
@@ -147,6 +174,15 @@ public partial class SaveManager : Node
 		config.SetValue("save", "scene_path", scenePath);
 		config.SetValue("save", "pos_x", position.X);
 		config.SetValue("save", "pos_y", position.Y);
+		config.SetValue("save", "extra_jump_unlocked", squad.ExtraJumpUnlocked);
+		config.SetValue("save", "extra_jump_count", squad.ExtraJumpCount);
+		config.SetValue("save", "dash_unlocked", squad.DashUnlocked);
+		config.SetValue("save", "max_health_collected", squad.MaxHealthCollected);
+		config.SetValue("save", "max_health_bonus", squad.MaxHealthBonus);
+		config.SetValue("save", "completed_levels", levelProgress.GetCompletedLevels());
+		config.SetValue("save", "dead_enemies", levelState.GetDeadEnemyEntries());
+		config.SetValue("save", "solved_stations", levelState.GetSolvedStationEntries());
+		config.SetValue("save", "triggered_doors", levelState.GetTriggeredDoorEntries());
 		config.Save(SlotConfigPath(slot));
 	}
 
@@ -176,6 +212,15 @@ public partial class SaveManager : Node
 			(float)(double)config.GetValue("save", "pos_x", 0.0),
 			(float)(double)config.GetValue("save", "pos_y", 0.0)
 		);
+		data.ExtraJumpUnlocked = (bool)config.GetValue("save", "extra_jump_unlocked", false);
+		data.ExtraJumpCount = (int)config.GetValue("save", "extra_jump_count", 0);
+		data.DashUnlocked = (bool)config.GetValue("save", "dash_unlocked", false);
+		data.MaxHealthCollected = (bool)config.GetValue("save", "max_health_collected", false);
+		data.MaxHealthBonus = (int)config.GetValue("save", "max_health_bonus", 0);
+		data.CompletedLevels = (string[])config.GetValue("save", "completed_levels", System.Array.Empty<string>());
+		data.DeadEnemies = (string[])config.GetValue("save", "dead_enemies", System.Array.Empty<string>());
+		data.SolvedStations = (string[])config.GetValue("save", "solved_stations", System.Array.Empty<string>());
+		data.TriggeredDoors = (string[])config.GetValue("save", "triggered_doors", System.Array.Empty<string>());
 		return data;
 	}
 

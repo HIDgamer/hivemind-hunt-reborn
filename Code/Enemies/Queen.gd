@@ -239,6 +239,15 @@ func _on_self_damaged(_amount: int, _knockback: Vector2) -> void:
 		_change_state(State.APPROACH)
 
 
+# Reuses the existing whiff-stun state rather than the passed duration —
+# _change_state(STUNNED) always sets whiff_stun_duration itself, so a punch/
+# kick stagger lasts exactly as long as whiffing an attack does. Sam.cs
+# already skips calling this while HEADBUTT/SPIT has this armored
+# (ExternallyInvulnerable), so there's no need to re-guard that here.
+func apply_stun(_duration: float) -> void:
+	_change_state(State.STUNNED)
+
+
 func _on_self_died() -> void:
 	super._on_self_died()
 	_change_state(State.DEAD)
@@ -248,6 +257,19 @@ func _change_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
 	current_state = new_state
+
+	# Armored through the entire headbutt/spit (telegraph included) — same
+	# "punish the whiff, don't just out-damage her" reasoning as Crusher's
+	# CHARGE/STOMP. Vulnerable in IDLE/APPROACH/STUNNED, which is exactly the
+	# reward window a whiffed headbutt creates.
+	if is_instance_valid(_health):
+		_health.ExternallyInvulnerable = new_state == State.HEADBUTT or new_state == State.SPIT
+
+	# Boss music/health bar track "not idle and not dead" — see EnemyBase's
+	# is_boss. DEAD must explicitly end it here since it'd otherwise never
+	# transition away from the "already active" state.
+	_set_boss_combat_active(new_state != State.IDLE and new_state != State.DEAD)
+
 	match new_state:
 		State.IDLE:
 			$AnimatedSprite2D.play("Idle")

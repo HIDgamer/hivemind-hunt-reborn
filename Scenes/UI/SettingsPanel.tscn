@@ -10,7 +10,7 @@ anchors_preset = 0
 theme = ExtResource("2_theme")
 script = ExtResource("1_panel")
 
-[node name="TabContainer" type="TabContainer" parent="."]
+[node name="TabContainer" type="TabContainer" parent="." unique_id=1860587121]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,11 +18,13 @@ anchor_bottom = 1.0
 offset_bottom = -48.0
 grow_horizontal = 2
 grow_vertical = 2
+current_tab = 0
 
-[node name="Audio" type="Control" parent="TabContainer"]
+[node name="Audio" type="Control" parent="TabContainer" unique_id=1760988526]
 layout_mode = 2
+metadata/_tab_index = 0
 
-[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Audio"]
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Audio" unique_id=1917230496]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -127,7 +129,7 @@ theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "DISABLE VOICE CHAT"
 
-[node name="VoiceChatDisabledCheck" type="CheckBox" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceChatDisabledRow"]
+[node name="VoiceChatDisabledCheck" type="CheckBox" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceChatDisabledRow" unique_id=1060994713]
 layout_mode = 2
 
 [node name="MicDeviceRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=384710265]
@@ -140,7 +142,7 @@ theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MIC DEVICE"
 
-[node name="MicDeviceOption" type="OptionButton" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicDeviceRow"]
+[node name="MicDeviceOption" type="OptionButton" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicDeviceRow" unique_id=609848426]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 clip_text = true
@@ -155,7 +157,7 @@ theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MIC GAIN"
 
-[node name="MicGainSlider" type="HSlider" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicGainRow"]
+[node name="MicGainSlider" type="HSlider" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicGainRow" unique_id=1454035359]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 max_value = 2.0
@@ -172,38 +174,37 @@ theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MIC TEST"
 
-[node name="MicTestButton" type="Button" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicTestRow"]
+[node name="MicTestButton" type="Button" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicTestRow" unique_id=2105000991]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 text = "HOLD TO TEST"
 
-[node name="MicTestBar" type="ProgressBar" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicTestRow"]
+[node name="MicTestBar" type="ProgressBar" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/MicTestRow" unique_id=1210931515]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 max_value = 1.0
-step = 0.01
-value = 0.0
 show_percentage = false
 
-[node name="VoiceModeRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer"]
+[node name="VoiceModeRow" type="HBoxContainer" parent="TabContainer/Audio/ScrollContainer/VBoxContainer" unique_id=560327238]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceModeRow"]
+[node name="Label" type="Label" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceModeRow" unique_id=2046248170]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "VOICE MODE"
 
-[node name="VoiceModeOption" type="OptionButton" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceModeRow"]
+[node name="VoiceModeOption" type="OptionButton" parent="TabContainer/Audio/ScrollContainer/VBoxContainer/VoiceModeRow" unique_id=137202420]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 
-[node name="Graphics" type="Control" parent="TabContainer"]
+[node name="Graphics" type="Control" parent="TabContainer" unique_id=919947705]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Graphics"]
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Graphics" unique_id=983256976]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -212,22 +213,22 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Graphics/ScrollContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Graphics/ScrollContainer" unique_id=1838447322]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 18
 
-[node name="BrightnessRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+[node name="BrightnessRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=2137786424]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/BrightnessRow"]
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/BrightnessRow" unique_id=674422252]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "BRIGHTNESS"
 
-[node name="BrightnessSlider" type="HSlider" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/BrightnessRow"]
+[node name="BrightnessSlider" type="HSlider" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/BrightnessRow" unique_id=880925060]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 min_value = 0.5
@@ -235,73 +236,73 @@ max_value = 1.5
 step = 0.01
 value = 1.0
 
-[node name="CrtThemeRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+[node name="CrtThemeRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=284962893]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/CrtThemeRow"]
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/CrtThemeRow" unique_id=529838602]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "CRT THEME"
 
-[node name="CrtThemeOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/CrtThemeRow"]
+[node name="CrtThemeOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/CrtThemeRow" unique_id=941547049]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 
-[node name="GraphicsPresetRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+[node name="GraphicsPresetRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=1387425035]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/GraphicsPresetRow"]
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/GraphicsPresetRow" unique_id=721111053]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "GRAPHICS PRESET"
 
-[node name="GraphicsPresetOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/GraphicsPresetRow"]
+[node name="GraphicsPresetOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/GraphicsPresetRow" unique_id=1889859749]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 
-[node name="ShadowQualityRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+[node name="ShadowQualityRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=1415318751]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/ShadowQualityRow"]
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/ShadowQualityRow" unique_id=1832209122]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "SHADOW QUALITY"
 
-[node name="ShadowQualityOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/ShadowQualityRow"]
+[node name="ShadowQualityOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/ShadowQualityRow" unique_id=594305525]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 
-[node name="LineOfSightRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+[node name="LineOfSightRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=1512082459]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightRow"]
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightRow" unique_id=76609197]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "LINE OF SIGHT"
 
-[node name="LineOfSightOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightRow"]
+[node name="LineOfSightOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightRow" unique_id=400318292]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 
-[node name="LineOfSightQualityRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer"]
+[node name="LineOfSightQualityRow" type="HBoxContainer" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer" unique_id=429073374]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightQualityRow"]
+[node name="Label" type="Label" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightQualityRow" unique_id=1781940732]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "LOS SMOOTHING"
 
-[node name="LineOfSightQualityOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightQualityRow"]
+[node name="LineOfSightQualityOption" type="OptionButton" parent="TabContainer/Graphics/ScrollContainer/VBoxContainer/LineOfSightQualityRow" unique_id=784580875]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 
@@ -359,11 +360,12 @@ text = "MAX FRAMERATE"
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 
-[node name="Gameplay" type="Control" parent="TabContainer"]
+[node name="Gameplay" type="Control" parent="TabContainer" unique_id=1397084200]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Gameplay"]
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Gameplay" unique_id=1053696576]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -372,7 +374,7 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Gameplay/ScrollContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Gameplay/ScrollContainer" unique_id=476037207]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 18
@@ -391,10 +393,10 @@ autowrap_mode = 2
 [node name="SteadyCamCheck" type="CheckBox" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/SteadyCamRow" unique_id=936030288]
 layout_mode = 2
 
-[node name="ClearSavesRow" type="HBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer"]
+[node name="ClearSavesRow" type="HBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer" unique_id=305124155]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/ClearSavesRow"]
+[node name="Label" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/ClearSavesRow" unique_id=816867668]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
@@ -402,22 +404,22 @@ theme_override_font_sizes/font_size = 18
 text = "SAVE DATA"
 autowrap_mode = 2
 
-[node name="ClearSavesButton" type="Button" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/ClearSavesRow"]
+[node name="ClearSavesButton" type="Button" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/ClearSavesRow" unique_id=26040891]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "CLEAR ALL SAVES"
 
-[node name="MouseSensitivityRow" type="HBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer"]
+[node name="MouseSensitivityRow" type="HBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer" unique_id=1415235483]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/MouseSensitivityRow"]
+[node name="Label" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/MouseSensitivityRow" unique_id=587816462]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "MOUSE SENSITIVITY"
 
-[node name="MouseSensitivitySlider" type="HSlider" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/MouseSensitivityRow"]
+[node name="MouseSensitivitySlider" type="HSlider" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer/MouseSensitivityRow" unique_id=426413115]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 min_value = 0.5
@@ -425,25 +427,25 @@ max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="KeybindsLabel" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer"]
+[node name="KeybindsLabel" type="Label" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer" unique_id=241310404]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 1, 0.85, 1)
 theme_override_font_sizes/font_size = 20
 text = "CONTROLS"
 
-[node name="KeybindsContainer" type="VBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer"]
+[node name="KeybindsContainer" type="VBoxContainer" parent="TabContainer/Gameplay/ScrollContainer/VBoxContainer" unique_id=2112190469]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ConfirmDialog" type="ConfirmationDialog" parent="."]
+[node name="ConfirmDialog" type="ConfirmationDialog" parent="." unique_id=985952952]
 title = "CONFIRM"
 initial_position = 1
 size = Vector2i(360, 120)
 ok_button_text = "YES"
-cancel_button_text = "CANCEL"
 dialog_text = "Clear ALL saves? This can't be undone."
+cancel_button_text = "CANCEL"
 
-[node name="BackButton" type="Button" parent="."]
+[node name="BackButton" type="Button" parent="." unique_id=176542355]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0

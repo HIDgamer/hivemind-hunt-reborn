@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://crksn2t3dnfu"]
+
+[ext_resource type="Script" uid="uid://by8dt8wingveu" path="res://Code/Props/InvisibleTrigger.cs" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(64, 64)
+
+[node name="InvisibleTrigger" type="Area2D" unique_id=728915195]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=380199880]
+shape = SubResource("RectangleShape2D_trigger")

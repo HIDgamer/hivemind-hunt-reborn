@@ -1,7 +1,7 @@
-[gd_resource type="CanvasTexture" format=3]
+[gd_resource type="CanvasTexture" format=3 uid="uid://crhlfndckm2su"]
 
 [ext_resource type="Texture2D" uid="uid://xhy0bvndexbv" path="res://Assets/Sam/Sam wall slide 48x48.png" id="1_diffuse"]
-[ext_resource type="Texture2D" path="res://Assets/Sam/Sam wall slide 48x48_n.png" id="2_normal"]
+[ext_resource type="Texture2D" uid="uid://bklv4t3qm8gv4" path="res://Assets/Sam/Sam wall slide 48x48_n.png" id="2_normal"]
 
 [resource]
 diffuse_texture = ExtResource("1_diffuse")

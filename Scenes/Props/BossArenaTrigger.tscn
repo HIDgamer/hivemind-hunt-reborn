@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://ye27djresjhb"]
+
+[ext_resource type="Script" uid="uid://c7j44dbjudwxd" path="res://Code/Props/BossArenaTrigger.cs" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(64, 64)
+
+[node name="BossArenaTrigger" type="Area2D" unique_id=1254296412]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=428924923]
+shape = SubResource("RectangleShape2D_trigger")

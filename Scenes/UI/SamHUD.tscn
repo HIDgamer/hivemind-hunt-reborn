@@ -1,8 +1,11 @@
 [gd_scene format=3 uid="uid://dkdkecbaht2d7"]
 
 [ext_resource type="Script" uid="uid://c6r6o7hd5nm6s" path="res://Code/UI/SamHUD.cs" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cutg8iix1koyy" path="res://Assets/UI/Monitor 256x256.png" id="2_4om6l"]
 [ext_resource type="FontFile" uid="uid://ccu6qdavb3rm0" path="res://Assets/Font/AlteHaasGroteskBold.ttf" id="3_haas_bold"]
-[ext_resource type="Shader" path="res://Assets/Materials/crt_overlay.gdshader" id="4_crt"]
+[ext_resource type="Shader" uid="uid://cgr6rdri2brxe" path="res://Assets/Materials/crt_overlay.gdshader" id="4_crt"]
+[ext_resource type="Texture2D" uid="uid://bcfcu88ourkal" path="res://Assets/UI/Upgrade.png" id="4_v71pw"]
+[ext_resource type="Texture2D" uid="uid://0dsl2ws1va6v" path="res://Assets/UI/Monitor Overlay 256x256.png" id="5_v71pw"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hud_crt"]
 resource_local_to_scene = true
@@ -15,152 +18,178 @@ shader_parameter/vignette_strength = 0.35
 shader_parameter/noise_amount = 0.04
 shader_parameter/flicker_amount = 0.04
 shader_parameter/flicker_speed = 4.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hudframe"]
-bg_color = Color(0.06, 0.09, 0.08, 0.82)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.35, 0.85, 0.55, 0.9)
-shadow_color = Color(0.3, 1, 0.5, 0.15)
-shadow_size = 3
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_upgradeslot"]
-bg_color = Color(0.35, 0.4, 0.38, 0.1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.35, 0.4, 0.38, 0.5)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
+shader_parameter/anomaly_speed = 0.045
+shader_parameter/anomaly_width = 0.07
+shader_parameter/anomaly_brightness = 0.3
 
 [node name="SamHUD" type="CanvasLayer" unique_id=645091165]
+scale = Vector2(0.9, 0.9)
+transform = Transform2D(0.9, 0, 0, 0.9, 0, 0)
 script = ExtResource("1_script")
 
-[node name="Panel" type="Panel" parent="." unique_id=573986418]
-offset_left = 20.0
-offset_top = 20.0
-offset_right = 250.0
-offset_bottom = 136.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_hudframe")
+[node name="MonitorArt" type="TextureRect" parent="." unique_id=599084019]
+anchors_preset = -1
+anchor_left = 0.20522773
+anchor_top = -0.047413804
+anchor_right = 0.59510875
+anchor_bottom = 0.38591942
+offset_left = -438.7826
+offset_top = 25.206913
+offset_right = -438.7827
+offset_bottom = 25.207031
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_4om6l")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="HeaderLabel" type="Label" parent="Panel" unique_id=1021907698]
+[node name="UpgradeFlash" type="Control" parent="." unique_id=1130822511]
+visible = false
+layout_mode = 3
+anchor_left = 0.15476191
+anchor_top = 0.24074075
+anchor_right = 0.21190476
+anchor_bottom = 0.32592592
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Icon" type="TextureRect" parent="UpgradeFlash" unique_id=709550244]
 layout_mode = 0
-offset_left = 8.0
-offset_top = 2.0
-offset_right = 222.0
-offset_bottom = 18.0
+offset_left = 24.0
+offset_right = 72.0
+offset_bottom = 48.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="UpgradeFlash" unique_id=475202606]
+layout_mode = 0
+offset_top = 52.0
+offset_right = 96.0
+offset_bottom = 74.0
+theme_override_colors/font_color = Color(0.75, 1, 0.85, 1)
+theme_override_fonts/font = ExtResource("3_haas_bold")
+theme_override_font_sizes/font_size = 12
+text = "UPGRADE ACQUIRED"
+horizontal_alignment = 1
+
+[node name="HeaderLabel" type="Label" parent="." unique_id=1021907698]
+offset_left = 141.0
+offset_top = 92.0
+offset_right = 355.0
+offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.5, 0.75, 0.65, 0.75)
 theme_override_fonts/font = ExtResource("3_haas_bold")
 theme_override_font_sizes/font_size = 11
 text = "OPERATOR STATUS"
 
-[node name="HPLabel" type="Label" parent="Panel" unique_id=2006274545]
-layout_mode = 0
-offset_left = 8.0
-offset_top = 22.0
-offset_right = 36.0
-offset_bottom = 44.0
-theme_override_colors/font_color = Color(0.75, 1, 0.85, 1)
-theme_override_fonts/font = ExtResource("3_haas_bold")
-theme_override_font_sizes/font_size = 14
-text = "HP"
-vertical_alignment = 1
+[node name="HealthIcon" type="TextureRect" parent="." unique_id=2006274546]
+offset_left = 139.88889
+offset_top = 114.22224
+offset_right = 171.88889
+offset_bottom = 146.22223
+scale = Vector2(1.5, 1.5)
+expand_mode = 1
+stretch_mode = 5
 
-[node name="HealthSegments" type="Control" parent="Panel" unique_id=1221844617]
-anchors_preset = 0
-offset_left = 40.0
-offset_top = 26.0
-offset_right = 222.0
-offset_bottom = 40.0
-mouse_filter = 2
+[node name="HealthBar" type="TextureRect" parent="." unique_id=1221844618]
+offset_left = 161.22221
+offset_top = 120.1111
+offset_right = 259.5
+offset_bottom = 143.1111
+scale = Vector2(2, 2)
+expand_mode = 1
+stretch_mode = 5
 
-[node name="PWRLabel" type="Label" parent="Panel" unique_id=997848774]
-layout_mode = 0
-offset_left = 8.0
-offset_top = 54.0
-offset_right = 36.0
-offset_bottom = 76.0
-theme_override_colors/font_color = Color(0.75, 1, 0.85, 1)
-theme_override_fonts/font = ExtResource("3_haas_bold")
-theme_override_font_sizes/font_size = 14
-text = "PWR"
-vertical_alignment = 1
+[node name="PowerIcon" type="TextureRect" parent="." unique_id=515845447]
+offset_left = 141.0
+offset_top = 161.33327
+offset_right = 173.0
+offset_bottom = 193.33325
+scale = Vector2(1.5, 1.5)
+expand_mode = 1
+stretch_mode = 5
 
-[node name="PowerSegments" type="Control" parent="Panel" unique_id=515845448]
-anchors_preset = 0
-offset_left = 40.0
-offset_top = 58.0
-offset_right = 222.0
-offset_bottom = 72.0
-mouse_filter = 2
+[node name="PowerBar" type="TextureRect" parent="." unique_id=515845448]
+offset_left = 154.44446
+offset_top = 164.44446
+offset_right = 259.94452
+offset_bottom = 187.44444
+scale = Vector2(2, 2)
+expand_mode = 1
+stretch_mode = 5
 
-[node name="UPGLabel" type="Label" parent="Panel" unique_id=997848775]
-layout_mode = 0
-offset_left = 8.0
-offset_top = 86.0
-offset_right = 36.0
-offset_bottom = 108.0
-theme_override_colors/font_color = Color(0.75, 1, 0.85, 1)
-theme_override_fonts/font = ExtResource("3_haas_bold")
-theme_override_font_sizes/font_size = 14
-text = "UPG"
-vertical_alignment = 1
+[node name="UpgradeIcon" type="TextureRect" parent="." unique_id=1734881375]
+offset_left = 143.44446
+offset_top = 208.88892
+offset_right = 191.44446
+offset_bottom = 256.88892
+scale = Vector2(0.9, 0.9)
+texture = ExtResource("4_v71pw")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="UpgradeSlots" type="Control" parent="Panel" unique_id=515845449]
-anchors_preset = 0
-offset_left = 40.0
-offset_top = 90.0
-offset_right = 222.0
-offset_bottom = 108.0
-mouse_filter = 2
-
-[node name="DashSlot" type="Panel" parent="Panel/UpgradeSlots" unique_id=515845450]
-layout_mode = 0
-offset_right = 48.0
-offset_bottom = 18.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_upgradeslot")
-
-[node name="Label" type="Label" parent="Panel/UpgradeSlots/DashSlot" unique_id=515845451]
-layout_mode = 0
-offset_right = 48.0
-offset_bottom = 18.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("3_haas_bold")
-theme_override_font_sizes/font_size = 10
-text = "DASH"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="ExtraJumpSlot" type="Panel" parent="Panel/UpgradeSlots" unique_id=515845452]
-layout_mode = 0
-offset_left = 56.0
-offset_right = 104.0
-offset_bottom = 18.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_upgradeslot")
-
-[node name="Label" type="Label" parent="Panel/UpgradeSlots/ExtraJumpSlot" unique_id=515845453]
-layout_mode = 0
-offset_right = 48.0
-offset_bottom = 18.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("3_haas_bold")
-theme_override_font_sizes/font_size = 10
-text = "JUMP+"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="CRTOverlay" type="ColorRect" parent="Panel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="CRTOverlay" type="ColorRect" parent="." unique_id=648888338]
+material = SubResource("ShaderMaterial_hud_crt")
+anchors_preset = -1
+anchor_left = -0.048780486
+anchor_top = -0.22297297
+anchor_right = 0.11074335
+anchor_bottom = 0.0013200548
+offset_left = 202.95125
+offset_top = 293.57434
+offset_right = 202.9512
+offset_bottom = 293.57434
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-material = SubResource("ShaderMaterial_hud_crt")
 color = Color(0, 0, 0, 1)
+
+[node name="UpgradeSlots" type="Control" parent="." unique_id=515845449]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 205.00003
+offset_top = 210.00002
+offset_right = 349.0
+offset_bottom = 258.0
+mouse_filter = 2
+
+[node name="DashSlot" type="Container" parent="UpgradeSlots" unique_id=1356295736]
+layout_mode = 0
+offset_right = 48.0
+offset_bottom = 48.0
+
+[node name="Icon" type="TextureRect" parent="UpgradeSlots/DashSlot" unique_id=515845451]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ExtraJumpSlot" type="Container" parent="UpgradeSlots" unique_id=1453199442]
+layout_mode = 0
+offset_left = 56.0
+offset_right = 104.0
+offset_bottom = 48.0
+
+[node name="Icon" type="TextureRect" parent="UpgradeSlots/ExtraJumpSlot" unique_id=515845453]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MonitorOverlay" type="TextureRect" parent="." unique_id=676040070]
+anchors_preset = -1
+anchor_left = 0.20522773
+anchor_top = -0.047413804
+anchor_right = 0.59510875
+anchor_bottom = 0.38591942
+offset_left = -438.7826
+offset_top = 25.206913
+offset_right = -438.7827
+offset_bottom = 25.207031
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_v71pw")
+expand_mode = 1
+stretch_mode = 5

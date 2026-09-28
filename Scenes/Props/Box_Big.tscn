@@ -6,12 +6,11 @@
 [ext_resource type="Script" uid="uid://cvjj6vn6x0mf4" path="res://Code/Props/BurnableComponent.cs" id="4_burnable"]
 [ext_resource type="Shader" uid="uid://c3d71s11l0mcg" path="res://Assets/Materials/gas_smoke.gdshader" id="5_gas_smoke"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_8rpua"]
-size = Vector2(64, 64)
-
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_boxbig"]
 friction = 0.15
-friction_combine_mode = 1
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8rpua"]
+size = Vector2(62, 62)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_boxdust_smoke"]
 shader = ExtResource("5_gas_smoke")
@@ -34,6 +33,7 @@ properties/1/replication_mode = 1
 collision_layer = 4
 collision_mask = 7
 physics_material_override = SubResource("PhysicsMaterial_boxbig")
+continuous_cd = 1
 script = ExtResource("2_boxbig")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=198450959]

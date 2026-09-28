@@ -49,6 +49,10 @@ public partial class GasVent : Node2D
 	// GasSimulation.BreakNearbyVents) should be able to blow it out. Flip
 	// off for a vent you specifically want blast-immune.
 	[Export] public bool DestructibleByExplosion = true;
+	// Lets a level designer author "this vent is already leaking when the
+	// level loads" (e.g. for a PipePatchStation to have something to fix on
+	// spawn) without waiting for an in-game explosion to break it first.
+	[Export] public bool StartBroken = false;
 
 	public bool IsBroken { get; private set; }
 
@@ -65,6 +69,7 @@ public partial class GasVent : Node2D
 		SetActive(StartActive);
 
 		if (DestructibleByExplosion) AddToGroup("ExplodableVent");
+		if (StartBroken) Break();
 
 		// GasSimulation.Instance is safely non-null here — it's set in
 		// GasSimulation's own _EnterTree(), which for the whole initial scene
@@ -156,5 +161,29 @@ public partial class GasVent : Node2D
 			Vector2I tile = GasSimulation.Instance.WorldToTile(GlobalPosition);
 			GasSimulation.Instance.SetVentBroken(tile, true);
 		}
+	}
+
+	// Undoes Break() — the counterpart PipePatchStation calls once its puzzle
+	// is solved. Restores the idle sprite, re-registers with the pipe
+	// network (revalidating the tile, same as SetActive), and resumes
+	// emitting if it was left Active. Safe to call on an already-fine vent
+	// (no-op).
+	public void Repair()
+	{
+		if (!IsBroken) return;
+		IsBroken = false;
+
+		if (_sprite != null && _sprite.SpriteFrames != null && _sprite.SpriteFrames.HasAnimation("Idle"))
+		{
+			_sprite.Play("Idle");
+		}
+
+		if (Role != VentRole.Emitter && GasSimulation.Instance != null)
+		{
+			Vector2I tile = GasSimulation.Instance.WorldToTile(GlobalPosition);
+			GasSimulation.Instance.SetVentBroken(tile, false);
+		}
+
+		SetActive(StartActive);
 	}
 }

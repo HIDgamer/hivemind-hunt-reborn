@@ -70,6 +70,39 @@ public partial class CheckpointManager : Node
 		return HasCheckpoint && CheckpointScenePath == scenePath;
 	}
 
+	// Deliberately separate from the checkpoint fields above — arriving in a
+	// level through a LevelExitDoor is not the same as reaching a checkpoint.
+	// Reusing RequestRespawnOnLoad/CheckpointPosition for this would silently
+	// overwrite the player's real checkpoint with wherever the door happened
+	// to drop them, so a later death in the OTHER level would respawn them
+	// back at the door instead of their actual last checkpoint there.
+	private bool _pendingArrival = false;
+	private Vector2 _pendingArrivalPosition = Vector2.Zero;
+	private string _pendingArrivalScenePath = "";
+
+	// Called by LevelExitDoor right before changing scene, so the destination
+	// level knows to place Sam at the corresponding entrance instead of her
+	// scene-authored default spawn.
+	public void RequestArrivalOnLoad(Vector2 position, string scenePath)
+	{
+		_pendingArrival = true;
+		_pendingArrivalPosition = position;
+		_pendingArrivalScenePath = scenePath;
+	}
+
+	// One-shot, same shape as ConsumePendingRespawn — only fires the first
+	// time the freshly loaded scene asks.
+	public bool ConsumePendingArrival(string currentScenePath, out Vector2 position)
+	{
+		position = _pendingArrivalPosition;
+		if (_pendingArrival && _pendingArrivalScenePath == currentScenePath)
+		{
+			_pendingArrival = false;
+			return true;
+		}
+		return false;
+	}
+
 	// Respawns the LOCAL player at their checkpoint if one exists for the
 	// current scene. Single-player may fall back to a full scene reload
 	// when no checkpoint was reached yet; a networked peer NEVER may — a

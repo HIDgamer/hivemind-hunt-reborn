@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://c8k2m5tstat2"]
+
+[ext_resource type="Script" uid="uid://t0afwu2owwix" path="res://Code/Props/PowerRerouteStation.cs" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c8k2m5tpu00l3" path="res://Scenes/UI/PowerReroutePuzzle.tscn" id="2_puzzle"]
+[ext_resource type="Texture2D" uid="uid://iw56m5v8delm" path="res://Assets/Hazards/Console.tres" id="3_console"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_range"]
+size = Vector2(48, 44)
+
+[node name="PowerRerouteStation" type="Area2D" unique_id=768526340]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+PuzzleScene = ExtResource("2_puzzle")
+Title = "POWER REROUTE"
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1455932480]
+texture = ExtResource("3_console")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2082324468]
+position = Vector2(0, 2)
+shape = SubResource("RectangleShape2D_range")

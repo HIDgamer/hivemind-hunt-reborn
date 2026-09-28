@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://bjn1201k26ew2" path="res://Code/Enemies/EnemyLocomotion.gd" id="7_locomotion"]
 [ext_resource type="AudioStream" uid="uid://cxgkvf1j64dby" path="res://Sound/fx/Alien_Language_00.ogg" id="8_alert_sound"]
 [ext_resource type="AudioStream" uid="uid://caffr2oy4fefs" path="res://Sound/fx/alien-talk-2.ogg" id="9_attack_sound"]
+[ext_resource type="AudioStream" uid="uid://4kk3uphskmkl" path="res://Sound/fx/battle.ogg" id="9_boss_music"]
 [ext_resource type="AudioStream" uid="uid://coaokmgtn7jq" path="res://Sound/fx/alien-talk-1.ogg" id="10_hurt_sound"]
 [ext_resource type="AudioStream" uid="uid://3j6bjw2xkvux" path="res://Sound/fx/alien-talk-3.ogg" id="11_death_sound"]
 
@@ -203,6 +204,9 @@ alert_sound = ExtResource("8_alert_sound")
 attack_sound = ExtResource("9_attack_sound")
 hurt_sound = ExtResource("10_hurt_sound")
 death_sound = ExtResource("11_death_sound")
+is_boss = true
+boss_display_name = "CRUSHER"
+boss_music = ExtResource("9_boss_music")
 
 [node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=384849671]
 path_postprocessing = 1
@@ -249,5 +253,5 @@ MaxHealth = 140
 InvulnerabilityDuration = 0.6
 
 [node name="VoiceAudio" type="AudioStreamPlayer2D" parent="." unique_id=666852406]
-bus = &"Voice"
 max_distance = 900.0
+bus = &"Voice"

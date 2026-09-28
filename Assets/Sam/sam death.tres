@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" format=3]
+[gd_resource type="CanvasTexture" format=3 uid="uid://cwifwtt5o4wl7"]
 
 [ext_resource type="Texture2D" uid="uid://bndvx5u16308s" path="res://Assets/Sam/Sam death 48x48.png" id="1_diffuse"]
 [ext_resource type="Texture2D" uid="uid://bxnlu53fnnxta" path="res://Assets/Sam/Sam death 48x48_n.png" id="2_normal"]

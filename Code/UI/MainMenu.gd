@@ -1,15 +1,18 @@
 extends MenuBase
 
-const TUTORIAL_LEVEL := "uid://dpo7v6ksd0n07" # Level_00_Tutorial.tscn
+const LEVEL_01 := "uid://dpo7v6ksd0n07" # Level_01.tscn
+const TUTORIAL_LEVEL := "uid://c7ppjuncl7kpj" # Level_00_Tutorial.tscn — the real, dedicated tutorial, outside the numbered progression
 
 @onready var tutorial_button = $VBoxContainer/TutorialButton
 @onready var new_game_button = $VBoxContainer/NewGameButton
+@onready var levels_button = $VBoxContainer/LevelsButton
 @onready var load_button = $VBoxContainer/LoadButton
 @onready var multiplayer_button = $VBoxContainer/MultiplayerButton
 @onready var settings_button = $VBoxContainer/SettingsButton
 @onready var quit_button = $VBoxContainer/QuitButton
-@onready var reborn_label = $VBoxContainer/RebornLabel
+@onready var reborn_label = $TitleBox/RebornLabel
 @onready var load_game_menu = $LoadGameMenuInstance
+@onready var level_select_menu = $LevelSelectMenuInstance
 @onready var start_game_label: Label = $StartGameLabel
 @onready var start_game_audio: AudioStreamPlayer = $StartGameAudio
 @onready var crt_scanline_rect: ColorRect = $CRTOverlay/ScanlineRect
@@ -17,11 +20,8 @@ const TUTORIAL_LEVEL := "uid://dpo7v6ksd0n07" # Level_00_Tutorial.tscn
 func _ready() -> void:
 	super._ready()
 	_connect_menu_button(tutorial_button, Callable(self, "_on_tutorial_pressed"))
-	# No real level 1 exists yet — only the tutorial is playable right now, so
-	# New Game stays greyed out (like Load with no saves) until there's an
-	# actual first level for it to start.
-	new_game_button.disabled = true
 	_connect_menu_button(new_game_button, Callable(self, "_on_new_game_pressed"))
+	_connect_menu_button(levels_button, Callable(self, "_on_levels_pressed"))
 	_connect_menu_button(multiplayer_button, Callable(self, "_on_multiplayer_pressed"))
 	_connect_menu_button(settings_button, Callable(self, "_on_settings_pressed"))
 	_connect_menu_button(quit_button, Callable(self, "_on_quit_pressed"))
@@ -31,6 +31,9 @@ func _ready() -> void:
 
 	load_game_menu.back_pressed.connect(_on_load_game_back)
 	load_game_menu.slot_selected.connect(_on_save_slot_selected)
+
+	level_select_menu.back_pressed.connect(_on_level_select_back)
+	level_select_menu.level_chosen.connect(_on_level_chosen)
 
 	_start_reborn_pulse()
 
@@ -63,26 +66,57 @@ func _maybe_flicker_reborn() -> void:
 	flick.tween_property(reborn_label, "modulate", Color(1, 1, 1, 1), 0.12)
 	flick.tween_callback(_run_reborn_cycle)
 
+# Standalone practice run, always Level_00_Tutorial.tscn specifically —
+# outside the numbered Level 1/Level 2 progression entirely (see
+# LevelProgress's Order comment), so it's never part of what Levels lists
+# and never counts toward unlocking anything.
 func _on_tutorial_pressed():
-	# A prior multiplayer session (hosted or joined, then backed out to this
-	# menu) leaves a live MultiplayerPeer behind — without tearing it down
-	# here, the tutorial level would see IsNetworked still true and try to
-	# spawn networked players instead of just using the plain single Sam.
 	get_node("/root/NetworkManager").Disconnect()
-	# Same reasoning as New Game: browsing the Load screen (or a save loaded
-	# earlier this session) can leave a pending checkpoint respawn queued on
-	# CheckpointManager — Tutorial is a standalone practice run, never a
-	# resume, and must never inherit it.
 	get_node("/root/CheckpointManager").ClearPendingRespawn()
+	# A clean slate every time — replaying Tutorial should never start
+	# pre-upgraded or with a stale completed-levels list from a real run.
+	get_node("/root/SquadAbilityState").Reset()
+	get_node("/root/LevelProgress").Reset()
+	get_node("/root/LevelStateManager").Reset()
 	_fade_out_and_change_scene(TUTORIAL_LEVEL)
 
+# Always starts fresh at Level 1 — unlike Levels below (which deliberately
+# keeps whatever abilities/unlocks this session has earned so picking an
+# earlier level still feels like your save), New Game resets everything so
+# it never starts pre-upgraded.
 func _on_new_game_pressed():
+	# A prior multiplayer session (hosted or joined, then backed out to this
+	# menu) leaves a live MultiplayerPeer behind — without tearing it down
+	# here, Level 01 would see IsNetworked still true and try to spawn
+	# networked players instead of just using the plain single Sam.
 	get_node("/root/NetworkManager").Disconnect()
-	# A fresh run starts with a clean slate — any checkpoint left over from a
-	# previous session (or from browsing the Load screen) must not leak in
-	# and reposition Sam somewhere she hasn't actually reached yet this run.
+	# Browsing the Load screen (or a save loaded earlier this session) can
+	# leave a pending checkpoint respawn queued on CheckpointManager — New
+	# Game is a standalone fresh run, never a resume, and must never inherit it.
 	get_node("/root/CheckpointManager").ClearPendingRespawn()
-	_start_new_game_and_change_scene(TUTORIAL_LEVEL)
+	get_node("/root/SquadAbilityState").Reset()
+	get_node("/root/LevelProgress").Reset()
+	get_node("/root/LevelStateManager").Reset()
+	_fade_out_and_change_scene(LEVEL_01)
+
+# Opens the level-select screen rather than jumping straight to a fixed
+# scene — LevelProgress/SquadAbilityState are deliberately NOT reset here,
+# since picking a level from this screen is closer to "continue" than
+# "start over": whatever's unlocked/earned so far this session stays intact
+# regardless of which level you jump into.
+func _on_levels_pressed():
+	level_select_menu.refresh()
+	button_box_visible(false)
+	level_select_menu.visible = true
+
+func _on_level_select_back():
+	level_select_menu.visible = false
+	button_box_visible(true)
+
+func _on_level_chosen(scene_path: String):
+	get_node("/root/NetworkManager").Disconnect()
+	get_node("/root/CheckpointManager").ClearPendingRespawn()
+	_start_new_game_and_change_scene(scene_path)
 
 func _on_load_pressed():
 	load_game_menu.refresh()
@@ -122,6 +156,11 @@ func _start_new_game_and_change_scene(scene_path: String, play_intro_audio := tr
 	if play_intro_audio:
 		start_game_audio.play()
 
+	# CRTOverlay stays hidden during normal browsing (the ambient scanline
+	# tint was competing with the interactive starfield for attention) — but
+	# the "losing signal" burst that announces a new run is worth keeping,
+	# so it's switched back on just for this transition.
+	$CRTOverlay.visible = true
 	var mat: ShaderMaterial = crt_scanline_rect.material
 	const BASE_NOISE := 0.05
 	const BASE_FLICKER := 0.05

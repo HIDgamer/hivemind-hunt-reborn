@@ -73,6 +73,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not _enemy_base_physics_process(delta):
+		return
+
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	elif velocity.y > 0.0:
@@ -235,6 +238,15 @@ func _on_self_damaged(_amount: int, _knockback: Vector2) -> void:
 		_change_state(State.CHASE)
 
 
+# Reuses the existing whiff-stun state rather than the passed duration —
+# _change_state(STUNNED) always sets whiff_stun_duration itself (see below),
+# so a punch/kick stagger lasts exactly as long as whiffing a charge does.
+# Sam.cs already skips calling this at all while CHARGE/STOMP has this armored
+# (ExternallyInvulnerable), so there's no need to re-guard that here.
+func apply_stun(_duration: float) -> void:
+	_change_state(State.STUNNED)
+
+
 func _on_self_died() -> void:
 	super._on_self_died()
 	_change_state(State.DEAD)
@@ -244,6 +256,20 @@ func _change_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
 	current_state = new_state
+
+	# Armored while actively attacking (charge/stomp) — the "punish the
+	# whiff" rhythm the state machine already implies (a whiffed CHARGE ends
+	# in STUNNED) only means anything if the boss genuinely can't be
+	# out-damaged mid-attack instead. Vulnerable everywhere else, including
+	# STUNNED, which is exactly the reward window this creates.
+	if is_instance_valid(_health):
+		_health.ExternallyInvulnerable = new_state == State.CHARGE or new_state == State.STOMP
+
+	# Boss music/health bar track "not patrolling and not dead" — see
+	# EnemyBase's is_boss. DEAD must explicitly end it here since it'd
+	# otherwise never transition away from the "already active" state.
+	_set_boss_combat_active(new_state != State.PATROL and new_state != State.DEAD)
+
 	match new_state:
 		State.PATROL:
 			$AnimatedSprite2D.play("Walk")

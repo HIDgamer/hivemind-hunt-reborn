@@ -15,6 +15,9 @@ shader_parameter/vignette_strength = 0.55
 shader_parameter/noise_amount = 0.05
 shader_parameter/flicker_amount = 0.05
 shader_parameter/flicker_speed = 5.0
+shader_parameter/anomaly_speed = 0.045
+shader_parameter/anomaly_width = 0.07
+shader_parameter/anomaly_brightness = 0.3
 
 [node name="CRTOverlay" type="Control" unique_id=1525145186]
 layout_mode = 3

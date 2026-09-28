@@ -1,8 +1,10 @@
 [gd_scene format=3 uid="uid://dl0gue8ox0001"]
 
-[ext_resource type="Script" path="res://Code/UI/DialogueBox.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dgy8k1y0dkvli" path="res://Code/UI/DialogueBox.gd" id="1_script"]
 [ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="2_alienbold"]
+[ext_resource type="Texture2D" uid="uid://0dsl2ws1va6v" path="res://Assets/UI/Monitor Overlay 256x256.png" id="3_5e3hf"]
 [ext_resource type="FontFile" uid="uid://u386rb0ghw82" path="res://Assets/Font/AlteHaasGroteskRegular.ttf" id="3_haas"]
+[ext_resource type="Texture2D" uid="uid://cutg8iix1koyy" path="res://Assets/UI/Monitor 256x256.png" id="4_monitor"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialogue"]
 bg_color = Color(0.05, 0.08, 0.07, 0.92)
@@ -11,50 +13,72 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.35, 0.85, 0.55, 0.9)
-shadow_color = Color(0.3, 1, 0.5, 0.15)
-shadow_size = 4
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
+shadow_color = Color(0.3, 1, 0.5, 0.15)
+shadow_size = 4
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portrait"]
-bg_color = Color(0.03, 0.05, 0.045, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.35, 0.85, 0.55, 0.6)
-
-[node name="DialogueBox" type="CanvasLayer"]
+[node name="DialogueBox" type="CanvasLayer" unique_id=1056569206]
 layer = 90
 script = ExtResource("1_script")
 
-[node name="Panel" type="Panel" parent="."]
-visible = false
+[node name="Panel" type="Panel" parent="." unique_id=622346257]
 offset_left = 40.0
 offset_top = 340.0
 offset_right = 760.0
 offset_bottom = 480.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_dialogue")
 
-[node name="PortraitFrame" type="Panel" parent="Panel"]
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 108.0
-offset_bottom = 108.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_portrait")
+[node name="PortraitFrame" type="Control" parent="Panel" unique_id=1891120028]
+anchors_preset = 0
+offset_left = -3.0
+offset_top = -5.0
+offset_right = 153.0
+offset_bottom = 148.0
+mouse_filter = 2
 
-[node name="Portrait" type="TextureRect" parent="Panel/PortraitFrame"]
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 92.0
-offset_bottom = 92.0
+[node name="MonitorArt" type="TextureRect" parent="Panel/PortraitFrame" unique_id=1724600860]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -1.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_monitor")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="NameLabel" type="Label" parent="Panel"]
-offset_left = 122.0
+[node name="Portrait" type="TextureRect" parent="Panel/PortraitFrame" unique_id=1303450240]
+layout_mode = 0
+offset_left = 41.0
+offset_top = 32.0
+offset_right = 124.0
+offset_bottom = 103.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MontiroOverlay" type="TextureRect" parent="Panel/PortraitFrame" unique_id=1576459060]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -1.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_5e3hf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="Panel" unique_id=1756138087]
+layout_mode = 0
+offset_left = 150.0
 offset_top = 10.0
 offset_right = 700.0
 offset_bottom = 32.0
@@ -63,8 +87,9 @@ theme_override_fonts/font = ExtResource("2_alienbold")
 theme_override_font_sizes/font_size = 20
 text = "SPEAKER"
 
-[node name="TextLabel" type="RichTextLabel" parent="Panel"]
-offset_left = 122.0
+[node name="TextLabel" type="RichTextLabel" parent="Panel" unique_id=1322414505]
+layout_mode = 0
+offset_left = 153.0
 offset_top = 36.0
 offset_right = 700.0
 offset_bottom = 118.0
@@ -75,8 +100,9 @@ bbcode_enabled = true
 scroll_active = false
 visible_characters = 0
 
-[node name="ContinueHint" type="Label" parent="Panel"]
+[node name="ContinueHint" type="Label" parent="Panel" unique_id=611835730]
 visible = false
+layout_mode = 0
 offset_left = 440.0
 offset_top = 116.0
 offset_right = 700.0
@@ -84,5 +110,5 @@ offset_bottom = 134.0
 theme_override_colors/font_color = Color(0.5, 0.75, 0.65, 0.8)
 theme_override_fonts/font = ExtResource("3_haas")
 theme_override_font_sizes/font_size = 12
-horizontal_alignment = 2
 text = "[Z] ▼    [ESC] CLOSE"
+horizontal_alignment = 2

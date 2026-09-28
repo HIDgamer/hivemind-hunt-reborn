@@ -1,4 +1,4 @@
-[gd_scene format=4 uid="uid://cnw6i1v1qt1rh"]
+[gd_scene format=3 uid="uid://cnw6i1v1qt1rh"]
 
 [ext_resource type="Script" uid="uid://c5xl0s58fiyx5" path="res://Code/UI/MainMenu.gd" id="1_script"]
 [ext_resource type="Theme" uid="uid://bda50snfg8lq2" path="res://Scenes/UI/SciFiButtonTheme.tres" id="2_theme"]
@@ -6,9 +6,75 @@
 [ext_resource type="PackedScene" uid="uid://cwkxtm0y5wvxk" path="res://Scenes/Background/ParallaxBackground.tscn" id="4_parallax"]
 [ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="6_alienbold"]
 [ext_resource type="FontFile" uid="uid://k0g07rd7xou" path="res://Assets/Font/alienleague3d.ttf" id="7_alien"]
-[ext_resource type="PackedScene" path="res://Scenes/UI/LoadGameMenu.tscn" id="8_loadgame"]
-[ext_resource type="AudioStream" uid="uid://c1p887vnlte0f" path="res://Sound/UI/start-level.ogg" id="9_startlevel"]
+[ext_resource type="PackedScene" uid="uid://dcjegmvfstb1j" path="res://Scenes/UI/LoadGameMenu.tscn" id="8_loadgame"]
 [ext_resource type="AudioStream" uid="uid://c5j1fnqvmq4ls" path="res://Sound/UI/menu.ogg" id="8_menuogg"]
+[ext_resource type="AudioStream" uid="uid://c1p887vnlte0f" path="res://Sound/UI/start-level.ogg" id="9_startlevel"]
+[ext_resource type="Texture2D" uid="uid://b16suta22wham" path="res://Assets/UI/Button.png" id="10_button"]
+[ext_resource type="Texture2D" uid="uid://0dsl2ws1va6v" path="res://Assets/UI/Monitor Overlay 256x256.png" id="10_euk5f"]
+[ext_resource type="Script" uid="uid://ckxnaitxoxos1" path="res://Code/UI/MonitorTitleWidget.gd" id="12_monitorwidget"]
+[ext_resource type="Texture2D" uid="uid://cutg8iix1koyy" path="res://Assets/UI/Monitor 256x256.png" id="13_monitor"]
+[ext_resource type="Shader" uid="uid://cgr6rdri2brxe" path="res://Assets/Materials/crt_overlay.gdshader" id="14_crtshader"]
+[ext_resource type="PackedScene" uid="uid://037med8h4p6k" path="res://Scenes/UI/LevelSelectMenu.tscn" id="14_levelselect"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sidepanel"]
+bg_color = Color(0.14, 0.12, 0.1, 0.88)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.55, 0.46, 0.36, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.1, 0.08, 0.06, 0.4)
+shadow_size = 6
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_monitor_static"]
+shader = ExtResource("14_crtshader")
+shader_parameter/tint_color = Color(0.55, 1, 0.7, 1)
+shader_parameter/tint_amount = 0.15
+shader_parameter/scanline_intensity = 0.15
+shader_parameter/scanline_spacing_px = 2.0
+shader_parameter/vignette_strength = 0.2
+shader_parameter/noise_amount = 0.0
+shader_parameter/flicker_amount = 0.0
+shader_parameter/flicker_speed = 4.0
+shader_parameter/anomaly_speed = 0.045
+shader_parameter/anomaly_width = 0.07
+shader_parameter/anomaly_brightness = 0.3
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_button_normal"]
+texture = ExtResource("10_button")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_button_focus"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_button_hover"]
+texture = ExtResource("10_button")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+modulate_color = Color(1.25, 1.4, 1.3, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_button_pressed"]
+texture = ExtResource("10_button")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+modulate_color = Color(0.8, 0.9, 0.85, 1)
+
+[sub_resource type="Theme" id="Theme_mainmenu_buttons"]
+Button/styles/disabled = SubResource("StyleBoxTexture_button_normal")
+Button/styles/focus = SubResource("StyleBoxEmpty_button_focus")
+Button/styles/hover = SubResource("StyleBoxTexture_button_hover")
+Button/styles/normal = SubResource("StyleBoxTexture_button_normal")
+Button/styles/pressed = SubResource("StyleBoxTexture_button_pressed")
 
 [node name="MainMenu" type="Control" unique_id=1603301812]
 layout_mode = 3
@@ -17,6 +83,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
@@ -26,21 +93,22 @@ script = ExtResource("1_script")
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.04, 0.05, 0.045, 0.55)
+mouse_filter = 2
+color = Color(0.04, 0.05, 0.045, 0.35)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1118561852]
+[node name="TitleBox" type="VBoxContainer" parent="." unique_id=1118561852]
 layout_mode = 0
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 0.22
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -150.0
-offset_right = 200.0
-offset_bottom = 150.0
-alignment = 1
+anchor_bottom = 0.22
+offset_left = -260.0
+offset_top = -70.0
+offset_right = 260.0
+offset_bottom = 70.0
+mouse_filter = 2
 
-[node name="Title" type="Label" parent="VBoxContainer" unique_id=726205319]
+[node name="Title" type="Label" parent="TitleBox" unique_id=726205319]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
 theme_override_fonts/font = ExtResource("6_alienbold")
@@ -49,7 +117,7 @@ text = "HIVEMIND HUNT"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="RebornLabel" type="Label" parent="VBoxContainer" unique_id=726205320]
+[node name="RebornLabel" type="Label" parent="TitleBox" unique_id=726205320]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.22, 0.16, 1)
 theme_override_colors/font_outline_color = Color(1, 0.12, 0.08, 0.45)
@@ -60,35 +128,144 @@ text = "R E B O R N"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TutorialButton" type="Button" parent="VBoxContainer" unique_id=1956366529]
+[node name="SidePanel" type="Panel" parent="." unique_id=304464782]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.175
+anchor_right = 0.1452381
+anchor_bottom = 0.74722224
+offset_right = -1.5258789e-05
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_sidepanel")
+metadata/_edit_use_anchors_ = true
+
+[node name="MonitorTitleWidget" type="Control" parent="." unique_id=304464781]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 8.0
+offset_top = -280.0
+offset_right = 128.0
+offset_bottom = -160.0
+grow_vertical = 2
+script = ExtResource("12_monitorwidget")
+
+[node name="MonitorArt" type="TextureRect" parent="MonitorTitleWidget" unique_id=1438951891]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.36666667
+anchor_top = -0.55
+anchor_right = 2.1416667
+anchor_bottom = 1.1166667
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_monitor")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScreenLabel" type="Label" parent="MonitorTitleWidget" unique_id=529760400]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.49166667
+anchor_top = -0.225
+anchor_right = 1.4666667
+anchor_bottom = 0.5833333
+theme_override_colors/font_color = Color(0.55, 1, 0.7, 1)
+theme_override_fonts/font = ExtResource("6_alienbold")
+theme_override_font_sizes/font_size = 15
+text = "HIVEMIND
+HUNT"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="ScreenStatic" type="ColorRect" parent="MonitorTitleWidget" unique_id=2071330567]
+material = SubResource("ShaderMaterial_monitor_static")
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.45833334
+anchor_top = -0.225
+anchor_right = 1.4333333
+anchor_bottom = 0.5833333
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="MonitorOverlay" type="TextureRect" parent="MonitorTitleWidget" unique_id=252178587]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.36666667
+anchor_top = -0.55
+anchor_right = 2.1416667
+anchor_bottom = 1.1166667
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_euk5f")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1118561853]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 8.0
+offset_top = -150.0
+offset_right = 228.0
+offset_bottom = 220.0
+grow_vertical = 2
+theme = SubResource("Theme_mainmenu_buttons")
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="TutorialButton" type="Button" parent="VBoxContainer" unique_id=1711294238]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "TUTORIAL"
 
-[node name="NewGameButton" type="Button" parent="VBoxContainer" unique_id=1956366530]
+[node name="NewGameButton" type="Button" parent="VBoxContainer" unique_id=1956366529]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "NEW GAME"
 
+[node name="LevelsButton" type="Button" parent="VBoxContainer" unique_id=1956366530]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "LEVELS"
+
 [node name="LoadButton" type="Button" parent="VBoxContainer" unique_id=1956366531]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "LOAD"
 
 [node name="MultiplayerButton" type="Button" parent="VBoxContainer" unique_id=1001497260]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "MULTIPLAYER"
 
 [node name="SettingsButton" type="Button" parent="VBoxContainer" unique_id=1760093941]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "SETTINGS"
 
 [node name="QuitButton" type="Button" parent="VBoxContainer" unique_id=724526419]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "QUIT"
 
 [node name="CRTOverlay" parent="." unique_id=1320928123 instance=ExtResource("3_crt")]
+visible = false
 layout_mode = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="LoadGameMenuInstance" parent="." unique_id=1819848046 instance=ExtResource("8_loadgame")]
+visible = false
+layout_mode = 1
+
+[node name="LevelSelectMenuInstance" parent="." unique_id=953618223 instance=ExtResource("14_levelselect")]
 visible = false
 layout_mode = 1
 

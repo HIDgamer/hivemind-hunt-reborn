@@ -1,54 +1,110 @@
 using Godot;
 
-// One combined CCTV-style status panel: HP and Power both use the same
-// segmented-meter language (no more hand-drawn HealthBar sprite), plus an
-// upgrades row that lights up as Sam collects ability pickups (dash, extra
-// jump, ...), all framed together under one "OPERATOR STATUS" header.
+// One combined CCTV-style status panel: a heartbeat icon + depleting health
+// bar, a depleting stamina bar (color baked into its own sprite sheet), and
+// an upgrades row that lights up with the matching icon as Sam collects
+// ability pickups (dash, extra jump, ...), all framed together under one
+// "OPERATOR STATUS" header.
+//
+// Health_Bar_Icon.png/Health_Bar.png/Stamina_Bar.png/Upgrades.png are all
+// hand-drawn sprite sheets — sliced here via a single AtlasTexture per
+// widget whose Region gets moved to the right frame, rather than pre-baking
+// dozens of AtlasTexture sub-resources into the .tscn. AnimatedTexture would
+// be the more obvious fit for the heartbeat loop, but Godot explicitly
+// doesn't support AtlasTexture frames inside an AnimatedTexture — hand-
+// rolling the frame advance in _Process is what actually lets a single
+// sprite sheet work here, and it's also what makes "freeze on the last
+// frame at 0 HP" trivial to control directly.
 public partial class SamHUD : CanvasLayer
 {
 	[Export] public Sam Player { get; set; }
-	// One segment per hit point — the row grows as MaxHealth upgrades are
-	// collected instead of stretching a fixed bar (see UpdateHealth).
-	[Export] public Vector2 HealthSegmentSize = new Vector2(16f, 14f);
-	[Export] public int PowerSegmentCount = 14;
-	[Export] public Vector2 SegmentSize = new Vector2(9f, 14f);
-	[Export] public float SegmentGap = 3f;
-	[Export] public Color HealthLitColor = new Color(0.95f, 0.35f, 0.3f, 1f);
-	[Export] public Color HealthLitColorLow = new Color(1f, 0.75f, 0.2f, 1f);
-	[Export] public Color PowerLitColor = new Color(0.45f, 1f, 0.6f, 1f);
-	[Export] public Color PowerLitColorLow = new Color(1f, 0.35f, 0.3f, 1f);
-	[Export] public Color SegmentUnlitColor = new Color(0.1f, 0.2f, 0.15f, 0.85f);
-	[Export] public Color UpgradeLitColor = new Color(0.45f, 1f, 0.6f, 1f);
-	[Export] public Color UpgradeUnlitColor = new Color(0.35f, 0.4f, 0.38f, 0.5f);
+
+	[ExportGroup("Heartbeat")]
+	// Frames-per-second the heart loops at, interpolated by HP fraction —
+	// slow/calm at full health, franticly fast as HP drops, then frozen
+	// entirely (see UpdateHealth) once dead.
+	[Export] public float HeartbeatFpsFull = 1.6f;
+	[Export] public float HeartbeatFpsCritical = 7f;
+
+	private const int HeartFrameCount = 8;
+	private const int HeartFrameSize = 32;
+	private const int HealthBarFrameCount = 12;
+	private const int HealthBarFrameWidth = 96;
+	private const int HealthBarFrameHeight = 32;
+	private const int StaminaBarFrameCount = 37;
+	private const int StaminaBarFrameWidth = 80;
+	private const int StaminaBarFrameHeight = 32;
+	// Stamina_Bar_Icon.png shares the same 37-frame count as the bar itself
+	// (unlike the heart, which loops independently of HP) — its frame index
+	// is always kept in lockstep with the bar's own, not animated on its own
+	// timer, so the badge's blue→yellow→red progression always matches
+	// exactly what the bar is showing.
+	private const int StaminaIconFrameSize = 32;
+	private const int UpgradeIconSize = 48;
+	// Upgrades.png's 4-icon strip order.
+	private const int UpgradeIconGeneric = 0;
+	private const int UpgradeIconHealth = 1;
+	private const int UpgradeIconJump = 2;
+	private const int UpgradeIconDash = 3;
 
 	private HealthComponent _playerHealth;
 	private DashComponent _dashComponent;
 	private ExtraJumpComponent _extraJumpComponent;
 
-	private Control _healthSegmentRoot;
-	private Control _powerSegmentRoot;
-	private ColorRect[] _healthSegments;
-	private ColorRect[] _powerSegments;
+	private TextureRect _healthIconRect;
+	private AtlasTexture _healthIconAtlas;
+	private float _heartFrameProgress;
+	private int _heartFrame;
+	private float _heartbeatFps = 1.6f;
+	private bool _heartFrozen;
 
-	private Panel _dashSlot;
-	private Label _dashSlotLabel;
-	private Panel _extraJumpSlot;
-	private Label _extraJumpSlotLabel;
+	private TextureRect _healthBarRect;
+	private AtlasTexture _healthBarAtlas;
+	private TextureRect _powerBarRect;
+	private AtlasTexture _powerBarAtlas;
+	private TextureRect _powerIconRect;
+	private AtlasTexture _powerIconAtlas;
 
-	private bool _lowHealth;
-	private bool _lowPower;
-	private float _pulseTime;
+	private TextureRect _dashSlotIcon;
+	private TextureRect _extraJumpSlotIcon;
+
+	private Control _upgradeFlash;
+	private TextureRect _upgradeFlashIcon;
+	private Label _upgradeFlashLabel;
+	private Tween _upgradeFlashTween;
 
 	public override void _Ready()
 	{
-		_healthSegmentRoot = GetNode<Control>("Panel/HealthSegments");
-		_powerSegmentRoot = GetNode<Control>("Panel/PowerSegments");
-		_powerSegments = BuildSegments(_powerSegmentRoot, SegmentSize, PowerSegmentCount);
+		Texture2D heartSheet = GD.Load<Texture2D>("res://Assets/UI/Health_Bar_Icon.png");
+		Texture2D healthBarSheet = GD.Load<Texture2D>("res://Assets/UI/Health_Bar.png");
+		Texture2D staminaBarSheet = GD.Load<Texture2D>("res://Assets/UI/Stamina_Bar.png");
+		Texture2D staminaIconSheet = GD.Load<Texture2D>("res://Assets/UI/Stamina_Bar_Icon.png");
+		Texture2D upgradesSheet = GD.Load<Texture2D>("res://Assets/UI/Upgrades.png");
 
-		_dashSlot = GetNode<Panel>("Panel/UpgradeSlots/DashSlot");
-		_dashSlotLabel = _dashSlot.GetNode<Label>("Label");
-		_extraJumpSlot = GetNode<Panel>("Panel/UpgradeSlots/ExtraJumpSlot");
-		_extraJumpSlotLabel = _extraJumpSlot.GetNode<Label>("Label");
+		_healthIconRect = GetNode<TextureRect>("HealthIcon");
+		_healthIconAtlas = new AtlasTexture { Atlas = heartSheet, Region = new Rect2(0, 0, HeartFrameSize, HeartFrameSize) };
+		_healthIconRect.Texture = _healthIconAtlas;
+
+		_healthBarRect = GetNode<TextureRect>("HealthBar");
+		_healthBarAtlas = new AtlasTexture { Atlas = healthBarSheet, Region = new Rect2(0, 0, HealthBarFrameWidth, HealthBarFrameHeight) };
+		_healthBarRect.Texture = _healthBarAtlas;
+
+		_powerBarRect = GetNode<TextureRect>("PowerBar");
+		_powerBarAtlas = new AtlasTexture { Atlas = staminaBarSheet, Region = new Rect2(0, 0, StaminaBarFrameWidth, StaminaBarFrameHeight) };
+		_powerBarRect.Texture = _powerBarAtlas;
+
+		_powerIconRect = GetNode<TextureRect>("PowerIcon");
+		_powerIconAtlas = new AtlasTexture { Atlas = staminaIconSheet, Region = new Rect2(0, 0, StaminaIconFrameSize, StaminaIconFrameSize) };
+		_powerIconRect.Texture = _powerIconAtlas;
+
+		_dashSlotIcon = GetNode<TextureRect>("UpgradeSlots/DashSlot/Icon");
+		_dashSlotIcon.Texture = MakeUpgradeIconAtlas(upgradesSheet, UpgradeIconDash);
+		_extraJumpSlotIcon = GetNode<TextureRect>("UpgradeSlots/ExtraJumpSlot/Icon");
+		_extraJumpSlotIcon.Texture = MakeUpgradeIconAtlas(upgradesSheet, UpgradeIconJump);
+
+		_upgradeFlash = GetNode<Control>("UpgradeFlash");
+		_upgradeFlashIcon = _upgradeFlash.GetNode<TextureRect>("Icon");
+		_upgradeFlashLabel = _upgradeFlash.GetNode<Label>("Label");
 
 		ApplyCrtTheme();
 		var settings = GetNodeOrNull<GameSettings>("/root/GameSettings");
@@ -71,56 +127,46 @@ public partial class SamHUD : CanvasLayer
 		_dashComponent = Player.GetNodeOrNull<DashComponent>("DashComponent");
 		if (_dashComponent != null)
 		{
-			_dashComponent.DashUnlocked += () => SetUpgradeSlotState(_dashSlot, _dashSlotLabel, true);
-			SetUpgradeSlotState(_dashSlot, _dashSlotLabel, _dashComponent.IsUnlocked);
+			_dashComponent.DashUnlocked += () =>
+			{
+				SetUpgradeSlotState(_dashSlotIcon, true);
+				FlashUpgradeAcquired("res://Assets/UI/Dash_Upgrade.png", "DASH UNLOCKED");
+			};
+			SetUpgradeSlotState(_dashSlotIcon, _dashComponent.IsUnlocked);
 		}
 
 		_extraJumpComponent = Player.GetNodeOrNull<ExtraJumpComponent>("ExtraJumpComponent");
 		if (_extraJumpComponent != null)
 		{
-			_extraJumpComponent.ExtraJumpsChanged += _ => SetUpgradeSlotState(_extraJumpSlot, _extraJumpSlotLabel, true);
-			SetUpgradeSlotState(_extraJumpSlot, _extraJumpSlotLabel, _extraJumpComponent.IsUnlocked);
+			_extraJumpComponent.ExtraJumpsChanged += _ =>
+			{
+				SetUpgradeSlotState(_extraJumpSlotIcon, true);
+				FlashUpgradeAcquired("res://Assets/UI/Jump_Upgrade.png", "JUMP+ UNLOCKED");
+			};
+			SetUpgradeSlotState(_extraJumpSlotIcon, _extraJumpComponent.IsUnlocked);
 		}
+	}
+
+	private static AtlasTexture MakeUpgradeIconAtlas(Texture2D sheet, int index)
+	{
+		return new AtlasTexture
+		{
+			Atlas = sheet,
+			Region = new Rect2(index * UpgradeIconSize, 0, UpgradeIconSize, UpgradeIconSize),
+		};
 	}
 
 	public override void _Process(double delta)
 	{
-		if (!_lowHealth && !_lowPower)
-		{
-			return;
-		}
+		if (_heartFrozen) return;
 
-		_pulseTime += (float)delta;
-		float pulse = Mathf.Sin(_pulseTime * 6f) * 0.5f + 0.5f;
-		float brightness = Mathf.Lerp(0.55f, 1.15f, pulse);
-		Color pulseColor = new Color(brightness, brightness, brightness, 1f);
-
-		if (_lowHealth)
+		_heartFrameProgress += (float)delta * _heartbeatFps;
+		if (_heartFrameProgress >= 1f)
 		{
-			_healthSegmentRoot.Modulate = pulseColor;
+			_heartFrameProgress -= 1f;
+			_heartFrame = (_heartFrame + 1) % HeartFrameCount;
+			_healthIconAtlas.Region = new Rect2(_heartFrame * HeartFrameSize, 0, HeartFrameSize, HeartFrameSize);
 		}
-		if (_lowPower)
-		{
-			_powerSegmentRoot.Modulate = pulseColor;
-		}
-	}
-
-	private ColorRect[] BuildSegments(Control root, Vector2 segmentSize, int count)
-	{
-		var segments = new ColorRect[count];
-		for (int i = 0; i < count; i++)
-		{
-			var segment = new ColorRect
-			{
-				Size = segmentSize,
-				Position = new Vector2(i * (segmentSize.X + SegmentGap), 0f),
-				Color = SegmentUnlitColor,
-				MouseFilter = Control.MouseFilterEnum.Ignore,
-			};
-			root.AddChild(segment);
-			segments[i] = segment;
-		}
-		return segments;
 	}
 
 	private void OnHealthChanged(int currentHealth, int maxHealth)
@@ -133,36 +179,25 @@ public partial class SamHUD : CanvasLayer
 		UpdateHealth(0, _playerHealth?.MaxHealth ?? 1);
 	}
 
-	// One pip per hit point rather than a fixed-count bar rescaled to fit —
-	// a MaxHealth upgrade visibly adds a new segment to the row instead of
-	// just changing how "full" a fixed bar reads, which otherwise made
-	// health upgrades invisible on the HUD.
-	private int _builtHealthSegmentCount = -1;
-
 	private void UpdateHealth(int currentHealth, int maxHealth)
 	{
-		if (maxHealth != _builtHealthSegmentCount)
+		float fraction = maxHealth > 0 ? Mathf.Clamp((float)currentHealth / maxHealth, 0f, 1f) : 0f;
+
+		int barFrame = Mathf.RoundToInt((1f - fraction) * (HealthBarFrameCount - 1));
+		_healthBarAtlas.Region = new Rect2(barFrame * HealthBarFrameWidth, 0, HealthBarFrameWidth, HealthBarFrameHeight);
+
+		if (currentHealth <= 0)
 		{
-			foreach (ColorRect segment in _healthSegments ?? [])
-			{
-				segment.QueueFree();
-			}
-			_healthSegments = BuildSegments(_healthSegmentRoot, HealthSegmentSize, maxHealth);
-			_builtHealthSegmentCount = maxHealth;
+			// Dead — stop the heart cold on its last frame rather than
+			// leaving it looping/twitching over a death screen.
+			_heartFrozen = true;
+			_heartFrame = HeartFrameCount - 1;
+			_healthIconAtlas.Region = new Rect2(_heartFrame * HeartFrameSize, 0, HeartFrameSize, HeartFrameSize);
 		}
-
-		bool critical = maxHealth > 0 && currentHealth <= Mathf.Max(1, maxHealth / 4);
-		Color lit = critical ? HealthLitColorLow : HealthLitColor;
-
-		for (int i = 0; i < _healthSegments.Length; i++)
+		else
 		{
-			_healthSegments[i].Color = i < currentHealth ? lit : SegmentUnlitColor;
-		}
-
-		_lowHealth = critical;
-		if (!_lowHealth)
-		{
-			_healthSegmentRoot.Modulate = Colors.White;
+			_heartFrozen = false;
+			_heartbeatFps = Mathf.Lerp(HeartbeatFpsFull, HeartbeatFpsCritical, 1f - fraction);
 		}
 	}
 
@@ -173,30 +208,43 @@ public partial class SamHUD : CanvasLayer
 
 	private void UpdatePower(float currentPower, float maxPower)
 	{
-		float normalized = maxPower > 0f ? Mathf.Clamp(currentPower / maxPower, 0f, 1f) : 0f;
-		bool canSprint = Player != null && currentPower > Player.MinimumPowerToSprint;
-		Color lit = canSprint ? PowerLitColor : PowerLitColorLow;
-
-		int litCount = Mathf.RoundToInt(normalized * PowerSegmentCount);
-		for (int i = 0; i < PowerSegmentCount; i++)
-		{
-			_powerSegments[i].Color = i < litCount ? lit : SegmentUnlitColor;
-		}
-
-		_lowPower = !canSprint;
-		if (!_lowPower)
-		{
-			_powerSegmentRoot.Modulate = Colors.White;
-		}
+		float fraction = maxPower > 0f ? Mathf.Clamp(currentPower / maxPower, 0f, 1f) : 0f;
+		int barFrame = Mathf.RoundToInt((1f - fraction) * (StaminaBarFrameCount - 1));
+		_powerBarAtlas.Region = new Rect2(barFrame * StaminaBarFrameWidth, 0, StaminaBarFrameWidth, StaminaBarFrameHeight);
+		_powerIconAtlas.Region = new Rect2(barFrame * StaminaIconFrameSize, 0, StaminaIconFrameSize, StaminaIconFrameSize);
 	}
 
-	private void SetUpgradeSlotState(Panel slot, Label label, bool unlocked)
+	// The slots are plain Containers now (the old boxed Panel frame around
+	// each icon was dropped in the HUD reorg) — "lit" is conveyed purely by
+	// the icon's own modulate rather than a background stylebox tint.
+	private void SetUpgradeSlotState(TextureRect icon, bool unlocked)
 	{
-		var style = (StyleBoxFlat)slot.GetThemeStylebox("panel").Duplicate();
-		style.BgColor = unlocked ? new Color(UpgradeLitColor, 0.18f) : new Color(UpgradeUnlitColor, 0.1f);
-		style.BorderColor = unlocked ? UpgradeLitColor : UpgradeUnlitColor;
-		slot.AddThemeStyleboxOverride("panel", style);
-		label.Modulate = unlocked ? Colors.White : new Color(1f, 1f, 1f, 0.35f);
+		icon.Modulate = unlocked ? Colors.White : new Color(1f, 1f, 1f, 0.35f);
+	}
+
+	// Brief "just picked this up" popup using the bigger individual upgrade
+	// art (Dash_Upgrade.png/Jump_Upgrade.png) — separate from the small
+	// persistent Upgrades.png strip icon in the slot itself, which just
+	// stays lit from here on.
+	private void FlashUpgradeAcquired(string iconPath, string label)
+	{
+		_upgradeFlashIcon.Texture = GD.Load<Texture2D>(iconPath);
+		_upgradeFlashLabel.Text = label;
+
+		if (_upgradeFlashTween != null && _upgradeFlashTween.IsValid()) _upgradeFlashTween.Kill();
+
+		_upgradeFlash.Visible = true;
+		_upgradeFlash.Modulate = new Color(1f, 1f, 1f, 0f);
+		_upgradeFlash.Scale = new Vector2(0.7f, 0.7f);
+		_upgradeFlash.PivotOffset = _upgradeFlash.Size / 2f;
+
+		_upgradeFlashTween = CreateTween();
+		_upgradeFlashTween.TweenProperty(_upgradeFlash, "modulate:a", 1f, 0.15f);
+		_upgradeFlashTween.Parallel().TweenProperty(_upgradeFlash, "scale", Vector2.One, 0.15f)
+			.SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+		_upgradeFlashTween.TweenInterval(1.2f);
+		_upgradeFlashTween.TweenProperty(_upgradeFlash, "modulate:a", 0f, 0.3f);
+		_upgradeFlashTween.TweenCallback(Callable.From(() => _upgradeFlash.Visible = false));
 	}
 
 	// Matches the CRT tint color chosen in Settings — same theme applies to
@@ -206,7 +254,7 @@ public partial class SamHUD : CanvasLayer
 	{
 		var settings = GetNodeOrNull<GameSettings>("/root/GameSettings");
 		if (settings == null) return;
-		var crtRect = GetNodeOrNull<ColorRect>("Panel/CRTOverlay");
+		var crtRect = GetNodeOrNull<ColorRect>("CRTOverlay");
 		if (crtRect?.Material is ShaderMaterial mat)
 		{
 			mat.SetShaderParameter("tint_color", settings.CrtThemeColors[settings.CrtThemeIndex]);

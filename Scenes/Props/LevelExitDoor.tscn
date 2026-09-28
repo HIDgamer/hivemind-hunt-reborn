@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://gb8ar6u34bjq"]
+
+[ext_resource type="Script" uid="uid://dym8oecsnrha3" path="res://Code/Props/LevelExitDoor.cs" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dchyeyxityhtg" path="res://Assets/Hazards/Airlock-4.tres" id="2_gylxl"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(46, 51)
+
+[node name="LevelExitDoor" type="Area2D" unique_id=424995670]
+scale = Vector2(1.2, 1.2)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=941138085]
+position = Vector2(0, -15)
+texture = ExtResource("2_gylxl")
+region_enabled = true
+region_rect = Rect2(448, 0, 64, 64)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1518032754]
+position = Vector2(0, -13.5)
+shape = SubResource("RectangleShape2D_trigger")

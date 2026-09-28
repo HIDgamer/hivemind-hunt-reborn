@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://c0irqm7n43qu7" path="res://Scenes/UI/CRTOverlay.tscn" id="4_crt"]
 [ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="5_alienbold"]
 [ext_resource type="AudioStream" uid="uid://dycrn64wppvbm" path="res://Sound/UI/loading_muffled.ogg" id="6_ambient"]
-[ext_resource type="PackedScene" path="res://Scenes/UI/LoadGameMenu.tscn" id="7_saveload"]
+[ext_resource type="PackedScene" uid="uid://dcjegmvfstb1j" path="res://Scenes/UI/LoadGameMenu.tscn" id="7_saveload"]
 
 [node name="PauseMenu" type="CanvasLayer" unique_id=1721896027]
 layer = 100
@@ -56,12 +56,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "RESUME"
 
-[node name="SaveButton" type="Button" parent="MenuRoot/VBoxContainer"]
+[node name="SaveButton" type="Button" parent="MenuRoot/VBoxContainer" unique_id=126420666]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "SAVE"
 
-[node name="LoadButton" type="Button" parent="MenuRoot/VBoxContainer"]
+[node name="LoadButton" type="Button" parent="MenuRoot/VBoxContainer" unique_id=872479437]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "LOAD"
@@ -91,7 +91,7 @@ offset_bottom = 320.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="SaveLoadMenuInstance" parent="MenuRoot" instance=ExtResource("7_saveload")]
+[node name="SaveLoadMenuInstance" parent="MenuRoot" unique_id=1675982279 instance=ExtResource("7_saveload")]
 visible = false
 layout_mode = 1
 

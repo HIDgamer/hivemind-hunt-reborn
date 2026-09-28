@@ -1,20 +1,20 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://fghmceig656"]
 
-[ext_resource type="Script" path="res://Code/Props/LaserTurret.cs" id="1_script"]
+[ext_resource type="Script" uid="uid://kvkw17w0ayjg" path="res://Code/Props/LaserTurret.cs" id="1_script"]
 [ext_resource type="Texture2D" path="res://Assets/Hazards/Laser_Turret.tres" id="2_body"]
-[ext_resource type="PackedScene" path="res://Scenes/Hazards/LaserBolt.tscn" id="3_bolt"]
+[ext_resource type="PackedScene" uid="uid://hapcl7cfrfp3" path="res://Scenes/Hazards/LaserBolt.tscn" id="3_bolt"]
 
-[node name="LaserTurret" type="Node2D"]
+[node name="LaserTurret" type="Node2D" unique_id=1431463571]
 script = ExtResource("1_script")
 BoltScene = ExtResource("3_bolt")
 
-[node name="SightCone" type="Polygon2D" parent="."]
+[node name="SightCone" type="Polygon2D" parent="." unique_id=1688818560]
 show_behind_parent = true
 color = Color(0.6, 0.65, 0.7, 0.1)
 
-[node name="Body" type="Sprite2D" parent="."]
+[node name="Body" type="Sprite2D" parent="." unique_id=1458609634]
 texture = ExtResource("2_body")
 
-[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="."]
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=777938882]
 
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=854433577]

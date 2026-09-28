@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" format=3]
+[gd_resource type="CanvasTexture" format=3 uid="uid://deufesmbg0kgo"]
 
 [ext_resource type="Texture2D" uid="uid://d2pml30a7kiqr" path="res://Assets/Hazards/Laser_Turret.png" id="1_body"]
 [ext_resource type="Texture2D" uid="uid://b0bqyukp4t1pk" path="res://Assets/Hazards/Laser_Turret_n.png" id="2_body_n"]

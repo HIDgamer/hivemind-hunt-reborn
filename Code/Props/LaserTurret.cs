@@ -74,11 +74,6 @@ public partial class LaserTurret : Node2D
 	// front of wherever it's mounted, not a narrow forward slice.
 	[Export] public float ScanArcDeg = 90f;
 	[Export] public float ScanSpeedDegPerSec = 40f;
-	// A short probe straight ahead of the CURRENT scan direction — if it's
-	// already blocked this close, the sweep reverses right there instead of
-	// grinding on toward (and visually/logically pointing straight into) a
-	// wall it can't see past anyway.
-	[Export] public float WallProbeDistance = 40f;
 	// Detection cone half-width, shared with the visible sight-cone polygon
 	// (BuildSightCone) so what you SEE lines up exactly with what can
 	// actually notice you — a wider cosmetic cone than the real detection
@@ -98,6 +93,14 @@ public partial class LaserTurret : Node2D
 	// difficulty setting can scale this, not wired to one yet.
 	[Export] public float AimErrorDeg = 10f;
 
+	[ExportGroup("Power")]
+	// A turret in a dead/unpowered section (see PowerRerouteStation) starts
+	// dark and inert until re-powered — same "receive powered state"
+	// contract Door.cs/GasVent.cs already use, so a power-reroute puzzle can
+	// drive a turret exactly like it drives a light or a door.
+	[Export] public bool StartPowered = true;
+
+	private bool _powered = true;
 	private AudioStreamPlayer2D _audioPlayer;
 	private Polygon2D _sightCone;
 	private Sprite2D _body;
@@ -112,13 +115,21 @@ public partial class LaserTurret : Node2D
 	private float _cooldownTimer;
 	// +1 or -1 — which way the idle scan sweep is currently turning.
 	private int _scanDirection = 1;
-	// Rising-edge latch for the wall probe — without it, sitting anywhere
-	// near a wall reversed direction EVERY frame (the scan is deliberately
-	// slow, so one frame's movement isn't enough to leave "blocked" range
-	// before the next frame re-checks and flips back), leaving the turret
-	// visibly jittering in place by a fraction of a degree forever instead
-	// of actually sweeping — this is what read as the turret "freezing."
-	private bool _wasWallBlocked;
+	// _scanDirection at the moment a target was acquired — restored verbatim
+	// in GiveUpTarget so the sweep genuinely resumes the pattern it was
+	// already in, instead of a fresh guess computed from wherever Tracking
+	// happened to leave the aim (which is what still produced back-and-forth
+	// ping-ponging: that guess and the wall-probe's own re-check on the very
+	// next tick could each pick a different direction and immediately
+	// contradict one another).
+	private int _savedScanDirection = 1;
+	// Rising-edge latch for the "reached the extreme" reversal — without it,
+	// this fired on every frame spent inside the 1° window (one frame's
+	// step at slow ScanSpeedDegPerSec can be smaller than that), flipping
+	// _scanDirection repeatedly before the aim ever actually got away from
+	// the extreme, which read as the turret jittering in place by a
+	// fraction of a degree instead of actually sweeping.
+	private bool _reachedExtremeLatch;
 	private MultiplayerSpawner _boltSpawner;
 	private NetworkManager _networkManager;
 	private readonly RandomNumberGenerator _rng = new();
@@ -136,6 +147,9 @@ public partial class LaserTurret : Node2D
 		_currentAimRad = Rotation + Mathf.DegToRad(RestAngleDeg);
 		ApplyAimVisuals();
 		BuildSightCone();
+
+		_powered = StartPowered;
+		if (_sightCone != null) _sightCone.Visible = _powered;
 
 		_networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
 		// IsClientSession, not IsNetworked — _Ready can run before a joining
@@ -171,8 +185,26 @@ public partial class LaserTurret : Node2D
 		return bolt;
 	}
 
+	// Generic "receive powered state" contract — same method name Door.cs/
+	// GasVent.cs already use, so a power-reroute puzzle can drive a turret
+	// exactly like it drives a door or a vent. Powering off drops any
+	// current target and hides the sight cone rather than leaving it aimed
+	// and glowing at whatever it last saw.
+	public void Powered(bool active)
+	{
+		_powered = active;
+		if (!_powered)
+		{
+			_target = null;
+			_state = State.Idle;
+		}
+		if (_sightCone != null) _sightCone.Visible = _powered;
+	}
+
 	public override void _PhysicsProcess(double delta)
 	{
+		if (!_powered) return;
+
 		float dt = (float)delta;
 		_cooldownTimer -= dt;
 
@@ -223,39 +255,58 @@ public partial class LaserTurret : Node2D
 		_target = null;
 		_state = State.Idle;
 		UpdateSightCone(false);
+
+		// Restore the exact direction the sweep was already going in before
+		// this target was ever acquired, rather than guessing a fresh one
+		// from wherever Tracking happened to leave the aim.
+		_scanDirection = _savedScanDirection;
+
+		// _currentAimRad was left wherever the target last was, which could
+		// coincidentally already be within the "reached extreme" window.
+		// Seeding this from what's actually true RIGHT NOW — instead of
+		// unconditionally false — means the very first TickScanning call
+		// after resuming sees this as "already known," not a fresh rising
+		// edge, so it can't immediately flip the direction right back out
+		// from under the one just restored above.
+		float restRad = Rotation + Mathf.DegToRad(RestAngleDeg);
+		float extremeRad = restRad + Mathf.DegToRad(ScanArcDeg) * _scanDirection;
+		_reachedExtremeLatch = Mathf.Abs(Mathf.AngleDifference(_currentAimRad, extremeRad)) <= Mathf.DegToRad(1f);
 	}
 
 	// Idle is a slow searchlight sweep, not a fixed stare: back and forth
-	// across ScanArcDeg either side of RestAngleDeg, reversing early if the
-	// sweep is about to point straight into a nearby wall. A player is only
-	// ever noticed while they're inside the narrow sight cone the sweep is
+	// across ScanArcDeg either side of RestAngleDeg. A player is only ever
+	// noticed while they're inside the narrow sight cone the sweep is
 	// CURRENTLY aimed through (see FindTargetInCone) — not anywhere within
 	// DetectionRange the instant they're in line of sight, which is what
 	// made this "instantly lock on" before.
+	//
+	// Deliberately no obstacle/wall awareness here — a probe-based early
+	// reversal was tried and pulled back out. It was meant to stop the
+	// sweep from grinding into a wall it can't see past, but the probe
+	// could clip the turret's OWN mounting surface (a wall/floor-mounted
+	// turret sits flush against it) and, combined with the direction this
+	// picks after losing a target, could get stuck reversing back and
+	// forth in place instead of ever resetting to a clean sweep. A fixed
+	// arc that always completes its full sweep can't get stuck on geometry
+	// at all, at the cost of occasionally visibly sweeping into a wall on
+	// turrets mounted somewhere ScanArcDeg doesn't fully clear.
 	private void TickScanning(float dt)
 	{
 		float restRad = Rotation + Mathf.DegToRad(RestAngleDeg);
 		float extremeRad = restRad + Mathf.DegToRad(ScanArcDeg) * _scanDirection;
 
-		// Only flip on the rising edge (just became blocked), not on every
-		// frame the probe still reads blocked — the scan speed is slow
-		// enough that one frame's movement can't clear the blocked zone
-		// before the next check, so re-testing unconditionally every frame
-		// just flips back and forth forever without ever making progress.
-		bool blockedNow = IsWallProbeBlocked(_currentAimRad);
-		if (blockedNow && !_wasWallBlocked)
-		{
-			_scanDirection = -_scanDirection;
-			extremeRad = restRad + Mathf.DegToRad(ScanArcDeg) * _scanDirection;
-		}
-		_wasWallBlocked = blockedNow;
-
 		EaseAimToward(extremeRad, dt, ScanSpeedDegPerSec);
 
-		if (Mathf.Abs(Mathf.AngleDifference(_currentAimRad, extremeRad)) <= Mathf.DegToRad(1f))
+		// Rising-edge only (see _reachedExtremeLatch's field comment) — at
+		// slow ScanSpeedDegPerSec, one frame's step can be smaller than this
+		// 1° window, so without the latch this fired on every frame spent
+		// inside it instead of just once.
+		bool reachedExtreme = Mathf.Abs(Mathf.AngleDifference(_currentAimRad, extremeRad)) <= Mathf.DegToRad(1f);
+		if (reachedExtreme && !_reachedExtremeLatch)
 		{
 			_scanDirection = -_scanDirection;
 		}
+		_reachedExtremeLatch = reachedExtreme;
 
 		UpdateSightCone(false);
 
@@ -265,18 +316,11 @@ public partial class LaserTurret : Node2D
 			_target = found;
 			_state = State.Tracking;
 			_loseTrackTimer = LoseTrackTime;
+			// So GiveUpTarget can restore exactly this direction later,
+			// instead of guessing a new one from wherever Tracking leaves
+			// the aim.
+			_savedScanDirection = _scanDirection;
 		}
-	}
-
-	// A short ray straight along `aimRad` — true if something (a wall, per
-	// SightBlockingMask) sits closer than WallProbeDistance in that exact
-	// direction, meaning the scan shouldn't keep turning toward/through it.
-	private bool IsWallProbeBlocked(float aimRad)
-	{
-		Vector2 dir = Vector2.Right.Rotated(aimRad);
-		PhysicsDirectSpaceState2D spaceState = GetWorld2D().DirectSpaceState;
-		var query = PhysicsRayQueryParameters2D.Create(GlobalPosition, GlobalPosition + dir * WallProbeDistance, SightBlockingMask);
-		return spaceState.IntersectRay(query).Count > 0;
 	}
 
 	// Radians throughout, wrapped to (-PI, PI] after every step — degrees

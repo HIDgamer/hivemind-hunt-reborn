@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://c7bfkdphrt34t"]
+
+[ext_resource type="Script" uid="uid://dyia5oxk40bqr" path="res://Code/UI/BossHealthBar.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bossbar"]
+bg_color = Color(0.08, 0.03, 0.03, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.25, 0.2, 0.9)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+shadow_color = Color(0.6, 0.05, 0.05, 0.25)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_bg"]
+bg_color = Color(0.2, 0.05, 0.05, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+bg_color = Color(0.9, 0.2, 0.15, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[node name="BossHealthBar" type="CanvasLayer" unique_id=1515939920]
+layer = 90
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="." unique_id=333639174]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -260.0
+offset_top = 24.0
+offset_right = 260.0
+offset_bottom = 78.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bossbar")
+
+[node name="NameLabel" type="Label" parent="Panel" unique_id=2116581405]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 2.0
+offset_right = 512.0
+offset_bottom = 22.0
+theme_override_colors/font_color = Color(1, 0.6, 0.55, 1)
+theme_override_font_sizes/font_size = 15
+text = "BOSS"
+horizontal_alignment = 1
+
+[node name="Fill" type="ProgressBar" parent="Panel" unique_id=2016271058]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 26.0
+offset_right = 512.0
+offset_bottom = 46.0
+theme_override_styles/background = SubResource("StyleBoxFlat_fill_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
+value = 100.0
+show_percentage = false

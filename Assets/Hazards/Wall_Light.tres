@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" format=3 uid="uid://bjpc4iftrnp0v"]
+
+[ext_resource type="Texture2D" uid="uid://dh3jplf7vd3qj" path="res://Assets/Hazards/Wall_Light.png" id="1_bw38b"]
+[ext_resource type="Texture2D" uid="uid://doqr05r1vuyy8" path="res://Assets/Hazards/Wall_Light_n.png" id="2_nsl2p"]
+
+[resource]
+diffuse_texture = ExtResource("1_bw38b")
+normal_texture = ExtResource("2_nsl2p")

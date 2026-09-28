@@ -3,4 +3,6 @@
 [ext_resource type="Script" uid="uid://c4hof5sd5hltq" path="res://Code/Props/VentComponent.cs" id="1_4tpjd"]
 
 [node name="Vent" type="Area2D" unique_id=1278803596]
+collision_layer = 0
+collision_mask = 2
 script = ExtResource("1_4tpjd")

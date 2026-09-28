@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" format=3]
+[gd_resource type="CanvasTexture" format=3 uid="uid://b8fks35s0ktyl"]
 
 [ext_resource type="Texture2D" uid="uid://r8cpwar1nsp2" path="res://Assets/Enemies/Lucy right.png" id="1_diffuse"]
 [ext_resource type="Texture2D" uid="uid://6fy200il7pqm" path="res://Assets/Enemies/Lucy right_n.png" id="2_normal"]

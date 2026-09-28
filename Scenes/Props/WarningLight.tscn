@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://csely8u3ijhur"]
 
 [ext_resource type="Script" uid="uid://qchytwxuimpn" path="res://Code/Props/BeaconLight.cs" id="1_beacon"]
 
@@ -11,7 +11,7 @@ fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
-[node name="WarningLight" type="Node2D"]
+[node name="WarningLight" type="Node2D" unique_id=893249324]
 script = ExtResource("1_beacon")
 Spin = 1
 SpinSpeedDegPerSec = 70.0
@@ -19,7 +19,7 @@ Pulse = true
 PulseSpeed = 2.5
 PulseMinEnergyScale = 0.4
 
-[node name="PointLight2D" type="PointLight2D" parent="."]
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=1144616273]
 color = Color(1, 0.75, 0.15, 1)
 energy = 1.2
 texture = SubResource("GradientTexture2D_warn")

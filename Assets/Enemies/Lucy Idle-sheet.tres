@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" format=3]
+[gd_resource type="CanvasTexture" format=3 uid="uid://cgpxphq2njr4k"]
 
 [ext_resource type="Texture2D" uid="uid://tsn2yn0jxt88" path="res://Assets/Enemies/Lucy Idle-sheet.png" id="1_diffuse"]
 [ext_resource type="Texture2D" uid="uid://bx3ofyw4mmj17" path="res://Assets/Enemies/Lucy Idle-sheet_n.png" id="2_normal"]

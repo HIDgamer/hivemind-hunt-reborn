@@ -134,6 +134,9 @@ func _on_node_added(node: Node) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not _enemy_base_physics_process(delta):
+		return
+
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	elif velocity.y > 0.0:

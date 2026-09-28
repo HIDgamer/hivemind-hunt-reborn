@@ -1,4 +1,4 @@
-[gd_resource type="CanvasTexture" format=3]
+[gd_resource type="CanvasTexture" format=3 uid="uid://cfd2le0lqrnrx"]
 
 [ext_resource type="Texture2D" uid="uid://dmo6e8wa7e30h" path="res://Assets/Sam/sam pull left 48x48.png" id="1_diffuse"]
 [ext_resource type="Texture2D" uid="uid://cbtw8s0bvmqrn" path="res://Assets/Sam/sam pull left 48x48_n.png" id="2_normal"]

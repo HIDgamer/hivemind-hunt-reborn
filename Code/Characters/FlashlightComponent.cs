@@ -39,6 +39,15 @@ public partial class FlashlightComponent : Node2D
 	// itself, the engine scales this offset by TextureScale before drawing,
 	// so it's applied that way below rather than baked into the constant.
 	[Export] public Vector2 TextureOffset = new Vector2(0f, 128f);
+	// The cone art's own neutral (Rotation = 0) facing direction isn't East
+	// — Vector2.Right.Angle() is 0°, but the artwork itself is drawn facing
+	// a different direction at rest, so setting Rotation directly to
+	// toMouse.Angle() pointed the cone 90° away from the cursor (mouse due
+	// north rendered as facing east). This constant corrects for that: the
+	// aim target is toMouse.Angle() + AimOffsetDeg, not toMouse.Angle()
+	// alone. -90 is derived from that exact north-shows-as-east symptom;
+	// retune here (not in the aiming math) if the art itself changes.
+	[Export] public float AimOffsetDeg = -90f;
 	// Temporary calibration aid — draws a small magenta dot at the light's
 	// actual pivot (its own local origin, which never moves even while
 	// _light.Rotation spins the cone around it). Turn on to see exactly
@@ -60,6 +69,13 @@ public partial class FlashlightComponent : Node2D
 			Color = LightColor,
 			Enabled = StartOn,
 			Position = LightOffset,
+			// Same shadow settings as every other placed light (see
+			// light.tscn's PointLight2D) — without this the flashlight was
+			// the only light in the game that didn't actually occlude
+			// geometry, just glowed through walls.
+			ShadowEnabled = true,
+			ShadowFilter = Light2D.ShadowFilterEnum.Pcf13,
+			ShadowFilterSmooth = 3.0f,
 		};
 		AddChild(_light);
 
@@ -104,7 +120,8 @@ public partial class FlashlightComponent : Node2D
 		{
 			float sensitivity = GetNodeOrNull<GameSettings>("/root/GameSettings")?.MouseSensitivity ?? 1f;
 			float t = 1f - Mathf.Exp(-BaseAimSpeed * sensitivity * (float)delta);
-			_light.Rotation = Mathf.LerpAngle(_light.Rotation, toMouse.Angle(), t);
+			float targetRad = toMouse.Angle() + Mathf.DegToRad(AimOffsetDeg);
+			_light.Rotation = Mathf.LerpAngle(_light.Rotation, targetRad, t);
 		}
 	}
 }

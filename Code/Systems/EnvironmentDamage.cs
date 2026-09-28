@@ -186,6 +186,18 @@ void fragment() {
 	// MaxScorch rather than resetting, so a spot burned twice reads as more
 	// damaged than one only caught once. Falls off linearly toward the edge
 	// of radius, same idea as a blast losing intensity with distance.
+	// Read-side counterpart to ApplyScorch — TerminalBypassStation uses this
+	// to scale its puzzle difficulty by how charred that specific spot is.
+	// Returns 0 for an untouched tile, same "no entry = pristine" convention
+	// ApplyScorch itself relies on via TryGetValue.
+	public float GetScorchAt(Vector2 worldPosition)
+	{
+		if (_tileMap == null) return 0f;
+		Vector2I tile = _tileMap.LocalToMap(_tileMap.ToLocal(worldPosition));
+		_scorch.TryGetValue(tile, out float value);
+		return value;
+	}
+
 	public void ApplyScorch(Vector2 worldPosition, float amount, float radius)
 	{
 		if (_tileMap == null) return;

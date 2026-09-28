@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bfudlirvmfuoy" path="res://Code/PowerUps/AbilityPickupComponent.cs" id="1_pickup"]
 [ext_resource type="Texture2D" uid="uid://cy6stmmtk7y75" path="res://Assets/Decals/Sign 5 Glow - BLUE.tres" id="2_3lu82"]
-[ext_resource type="Texture2D" uid="uid://ctc3u34dbptuq" path="res://Assets/Particles/Smoke 8x8.png" id="3_particle"]
+[ext_resource type="Texture2D" uid="uid://ctc3u34dbptuq" path="res://Assets/FX/Smoke 8x8.png" id="3_particle"]
 [ext_resource type="AudioStream" uid="uid://c0l4wqhu1gpki" path="res://Sound/UI/Flashpoint001d.ogg" id="4_pickupsound"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_m3cu7"]

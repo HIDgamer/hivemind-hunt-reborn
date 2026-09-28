@@ -45,6 +45,14 @@ public partial class HealthComponent : Node
 	public int CurrentHealth { get; private set; }
 	public bool IsDead { get; private set; }
 	public bool IsInvulnerable { get; private set; }
+	// A second, independent invulnerability gate — unlike IsInvulnerable
+	// (a brief automatic post-hit i-frame timer, always self-clearing), this
+	// is driven entirely by an owning state machine (e.g. a boss setting it
+	// true during an attack windup and false while stunned) and stays
+	// whatever it was last set to until that owner changes it again. Damage()
+	// respects both, so a boss mid-attack can't be chipped down by a stray
+	// hazard any more than by a stomp.
+	public bool ExternallyInvulnerable { get; set; }
 
 	private float _hurtTimer = 0f;
 	private int _lastSyncedHealth = -1;
@@ -104,10 +112,23 @@ public partial class HealthComponent : Node
 		}
 	}
 
-	public void Damage(int amount, Vector2 knockbackDirection, DamageType type = DamageType.Generic)
+	// Split into two explicit overloads rather than one method with a
+	// `DamageType type = DamageType.Generic` default. A default value on a
+	// custom enum parameter is a C#-compiler-only feature — it's resolved at
+	// the CALLER's compile time, which every GDScript call site (Crusher.gd,
+	// Queen.gd, Runner.gd, AcidSpit.gd, EnemyBase.gd's own stomp-kill) can't
+	// do, since they go through Godot's dynamic MethodBind dispatch instead.
+	// An enum default that doesn't marshal into that binding cleanly can
+	// make the whole method fail to register as callable from script at
+	// all — surfacing as "Nonexistent function 'Damage'" rather than an
+	// argument-count error, exactly what every 2-argument GDScript call site
+	// hit. Two genuine overloads sidestep default-value marshaling entirely.
+	public void Damage(int amount, Vector2 knockbackDirection) => Damage(amount, knockbackDirection, DamageType.Generic);
+
+	public void Damage(int amount, Vector2 knockbackDirection, DamageType type)
 	{
 		if (RequireMultiplayerAuthority && Multiplayer.HasMultiplayerPeer() && !IsMultiplayerAuthority()) return;
-		if (IsInvulnerable || IsDead) return;
+		if (IsInvulnerable || ExternallyInvulnerable || IsDead) return;
 
 		float scaled = amount * ResistanceMultiplierFor(type);
 		int finalAmount = amount > 0 ? Mathf.Max(1, Mathf.RoundToInt(scaled - Armor)) : 0;

@@ -8,9 +8,9 @@
 [ext_resource type="Texture2D" uid="uid://ckolmil86p385" path="res://Assets/FX/Smoke.png" id="4_ga76a"]
 [ext_resource type="AudioStream" uid="uid://b6lud0ounxbhw" path="res://Sound/fx/Vent_loop.ogg" id="5_ventloop"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_wetcj"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_em4el"]
 atlas = ExtResource("2_em4el")
-region = Rect2(32, 128, 32, 32)
+region = Rect2(96, 160, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_g8ccg"]
 atlas = ExtResource("2_je2ci")
@@ -48,7 +48,7 @@ region = Rect2(224, 0, 32, 32)
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_wetcj")
+"texture": SubResource("AtlasTexture_em4el")
 }],
 "loop": 1,
 "name": &"Broken",

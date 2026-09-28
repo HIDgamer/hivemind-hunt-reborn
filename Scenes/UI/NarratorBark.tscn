@@ -2,7 +2,7 @@
 
 [ext_resource type="FontFile" uid="uid://hi8p6ovt040o" path="res://Assets/Font/alienleaguebold.ttf" id="1_alienbold"]
 [ext_resource type="FontFile" uid="uid://u386rb0ghw82" path="res://Assets/Font/AlteHaasGroteskRegular.ttf" id="2_haas"]
-[ext_resource type="Script" path="res://Code/Systems/Narrator.gd" id="3_script"]
+[ext_resource type="Script" uid="uid://c2xk7j1gcclj7" path="res://Code/Systems/Narrator.gd" id="3_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bark"]
 bg_color = Color(0.05, 0.08, 0.07, 0.88)
@@ -11,12 +11,12 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.6, 0.85, 1, 0.75)
-shadow_color = Color(0.4, 0.7, 1, 0.15)
-shadow_size = 4
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
+shadow_color = Color(0.4, 0.7, 1, 0.15)
+shadow_size = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portrait"]
 bg_color = Color(0.03, 0.05, 0.06, 1)
@@ -26,11 +26,11 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.6, 0.85, 1, 0.5)
 
-[node name="NarratorBark" type="CanvasLayer"]
+[node name="NarratorBark" type="CanvasLayer" unique_id=1905644598]
 layer = 88
 script = ExtResource("3_script")
 
-[node name="Panel" type="Panel" parent="."]
+[node name="Panel" type="Panel" parent="." unique_id=1300245106]
 visible = false
 anchors_preset = 1
 anchor_left = 1.0
@@ -41,14 +41,16 @@ offset_right = -20.0
 offset_bottom = 100.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_bark")
 
-[node name="PortraitFrame" type="Panel" parent="Panel"]
+[node name="PortraitFrame" type="Panel" parent="Panel" unique_id=35712405]
+layout_mode = 0
 offset_left = 12.0
 offset_top = 12.0
 offset_right = 68.0
 offset_bottom = 68.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_portrait")
 
-[node name="Portrait" type="TextureRect" parent="Panel/PortraitFrame"]
+[node name="Portrait" type="TextureRect" parent="Panel/PortraitFrame" unique_id=2046352370]
+layout_mode = 0
 offset_left = 3.0
 offset_top = 3.0
 offset_right = 53.0
@@ -56,7 +58,8 @@ offset_bottom = 53.0
 expand_mode = 1
 stretch_mode = 5
 
-[node name="NameLabel" type="Label" parent="Panel"]
+[node name="NameLabel" type="Label" parent="Panel" unique_id=870801584]
+layout_mode = 0
 offset_left = 78.0
 offset_top = 8.0
 offset_right = 390.0
@@ -66,7 +69,8 @@ theme_override_fonts/font = ExtResource("1_alienbold")
 theme_override_font_sizes/font_size = 15
 text = "SAFFI"
 
-[node name="TextLabel" type="RichTextLabel" parent="Panel"]
+[node name="TextLabel" type="RichTextLabel" parent="Panel" unique_id=1617377605]
+layout_mode = 0
 offset_left = 78.0
 offset_top = 28.0
 offset_right = 390.0
@@ -78,5 +82,5 @@ bbcode_enabled = true
 scroll_active = false
 visible_characters = 0
 
-[node name="VoiceAudio" type="AudioStreamPlayer" parent="."]
+[node name="VoiceAudio" type="AudioStreamPlayer" parent="." unique_id=1616583660]
 bus = &"Voice"

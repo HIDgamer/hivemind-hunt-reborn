@@ -1,23 +1,23 @@
 [gd_scene format=3 uid="uid://bqk7f2m8w3xy0"]
 
-[ext_resource type="Script" path="res://Code/UI/KeybindRow.gd" id="1_keybind"]
+[ext_resource type="Script" uid="uid://ct8amhyvd4bt6" path="res://Code/UI/KeybindRow.gd" id="1_keybind"]
 
-[node name="KeybindRow" type="HBoxContainer"]
+[node name="KeybindRow" type="HBoxContainer" unique_id=1731153295]
 script = ExtResource("1_keybind")
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=902992515]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
 theme_override_font_sizes/font_size = 18
 text = "ACTION"
 
-[node name="KeyButton" type="Button" parent="."]
+[node name="KeyButton" type="Button" parent="." unique_id=1617953481]
 custom_minimum_size = Vector2(110, 0)
 layout_mode = 2
 text = "UNBOUND"
 
-[node name="JoyButton" type="Button" parent="."]
+[node name="JoyButton" type="Button" parent="." unique_id=1805578544]
 custom_minimum_size = Vector2(110, 0)
 layout_mode = 2
 text = "UNBOUND"

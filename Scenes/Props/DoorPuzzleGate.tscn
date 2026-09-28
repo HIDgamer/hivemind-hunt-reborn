@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://cysete0g4xgd8"]
+
+[ext_resource type="Script" uid="uid://dxymj8dthvjem" path="res://Code/Props/DoorPuzzleGate.cs" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://iw56m5v8delm" path="res://Assets/Hazards/Console.tres" id="2_console"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_range"]
+size = Vector2(48, 44)
+
+[node name="DoorPuzzleGate" type="Area2D" unique_id=2072298611]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+Title = "ACCESS TERMINAL"
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=988938718]
+texture = ExtResource("2_console")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=281110568]
+position = Vector2(0, 2)
+shape = SubResource("RectangleShape2D_range")

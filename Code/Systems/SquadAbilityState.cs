@@ -46,6 +46,20 @@ public partial class SquadAbilityState : Node
 		MaxHealthBonus = 0;
 	}
 
+	// SaveManager-only: overwrites every field directly from a loaded save
+	// slot, bypassing RecordAbility's "highest grant wins"/additive rules —
+	// those rules are for accumulating NEW pickups during play, not for
+	// replaying history, so a loaded MaxHealthBonus is the already-final
+	// total, not something to add to.
+	public void RestoreState(bool extraJumpUnlocked, int extraJumpCount, bool dashUnlocked, bool maxHealthCollected, int maxHealthBonus)
+	{
+		ExtraJumpUnlocked = extraJumpUnlocked;
+		ExtraJumpCount = extraJumpCount;
+		DashUnlocked = dashUnlocked;
+		MaxHealthCollected = maxHealthCollected;
+		MaxHealthBonus = maxHealthBonus;
+	}
+
 	public void RecordAbility(AbilityPickupComponent.AbilityKind kind, int amount)
 	{
 		switch (kind)
