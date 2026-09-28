@@ -136,6 +136,7 @@ animations = [{
 }]
 
 [node name="SparkConduit" type="Node2D" unique_id=951953642]
+z_index = 4
 script = ExtResource("1_flicker")
 Profile = 2
 SparkIntervalMin = 2.0

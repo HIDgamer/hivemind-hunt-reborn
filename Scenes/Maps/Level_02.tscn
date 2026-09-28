@@ -41,7 +41,7 @@
 [ext_resource type="Script" uid="uid://bivmkpmtwbny6" path="res://Code/Systems/NavLinkGenerator.gd" id="38_c44iv"]
 [ext_resource type="PackedScene" uid="uid://gb8ar6u34bjq" path="res://Scenes/Props/LevelExitDoor.tscn" id="39_f7rbp"]
 [ext_resource type="PackedScene" uid="uid://csor0v10mj8aq" path="res://Scenes/Props/door2.tscn" id="42_n0vej"]
-[ext_resource type="PackedScene" path="res://Scenes/Props/DoorPuzzleGate.tscn" id="43_hkynw"]
+[ext_resource type="PackedScene" uid="uid://cysete0g4xgd8" path="res://Scenes/Props/DoorPuzzleGate.tscn" id="43_hkynw"]
 [ext_resource type="PackedScene" uid="uid://c8k2m5tpu00l4" path="res://Scenes/UI/TerminalBypassPuzzle.tscn" id="45_bypasspuzzle"]
 [ext_resource type="AudioStream" uid="uid://diflscyix00m3" path="res://Sound/BackgroundMusic/2 - Galactic Odyssey (Loop).ogg" id="46_level01_theme"]
 [ext_resource type="PackedScene" uid="uid://c8k2m5tpu00l2" path="res://Scenes/UI/PipePatchPuzzle.tscn" id="47_pipepatchpuzzle"]
@@ -1444,7 +1444,7 @@ layer_4/name = "Props2"
 layer_4/z_index = 2
 layer_5/name = "Objects"
 layer_5/z_index = 5
-layer_5/tile_data = PackedInt32Array(-65527, 524289, 2, 131091, 327681, 1342177286, -196589, 327681, 1342177286, -524269, 327681, 1342177286, -851949, 327681, 1342177286, -458776, 589825, 6, -1048599, 393217, 6, -524287, 393217, 2, -458754, 393217, 2, -589825, 393217, 2, -524284, 393217, 2, -458763, 393217, 2, -917520, 786433, 0, -983031, 786433, 0, -917522, 196609, 4, -917515, 196609, 4, -917508, 196609, 4, -983035, 196609, 4, -983026, 196609, 4, -262141, 196609, 6, -196617, 196609, 6, -720884, 196609, 6, -655369, 196609, 6, -720896, 196609, 6, -655383, 196609, 6, -1114141, 196609, 6, -1114128, 196609, 6, -1114113, 196609, 6, -1179630, 196609, 6, -1179638, 196609, 6, -327661, 196609, 1342177286, 196629, 196609, 6, -524280, 786433, 2, -65523, 196609, 4, 327697, 196609, 4)
+layer_5/tile_data = PackedInt32Array(-65527, 524289, 2, 131091, 327681, 1342177286, -196589, 327681, 1342177286, -524269, 327681, 1342177286, -851949, 327681, 1342177286, -458776, 589825, 6, -1048599, 393217, 6, -524287, 393217, 2, -458754, 393217, 2, -589825, 393217, 2, -524284, 393217, 2, -917520, 786433, 0, -983031, 786433, 0, -917522, 196609, 4, -917515, 196609, 4, -917508, 196609, 4, -983035, 196609, 4, -983026, 196609, 4, -262141, 196609, 6, -196617, 196609, 6, -720884, 196609, 6, -655369, 196609, 6, -720896, 196609, 6, -655383, 196609, 6, -1114141, 196609, 6, -1114128, 196609, 6, -1114113, 196609, 6, -1179630, 196609, 6, -1179638, 196609, 6, -327661, 196609, 1342177286, 196629, 196609, 6, -524280, 786433, 2, -65523, 196609, 4, 327697, 196609, 4)
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=254170399]
 color = Color(0, 0, 0, 1)
